@@ -1,6 +1,5 @@
 """Main CLI entry point for MCP Config Converter."""
 
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -104,7 +103,9 @@ def convert(
                 )
             
             if not output:
-                suggested_output = input_file.with_suffix(f".{format}")
+                # Use format if available, otherwise default to original extension
+                ext = format if format else input_file.suffix.lstrip('.')
+                suggested_output = input_file.with_suffix(f".{ext}")
                 output = Path(
                     Prompt.ask(
                         "Enter output file path",
