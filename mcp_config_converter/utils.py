@@ -2,7 +2,9 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from rich.prompt import Confirm, Prompt
 
 
 def get_env_variable(name: str, default: Optional[str] = None) -> Optional[str]:
@@ -72,4 +74,74 @@ def get_file_extension(file_path: Path) -> str:
     Returns:
         File extension
     """
-    return Path(file_path).suffix.lstrip('.')
+    return Path(file_path).suffix.lstrip(".")
+
+
+def prompt_for_choice(
+    message: str, choices: List[str], default: Optional[str] = None
+) -> str:
+    """Prompt user to select from a list of choices.
+
+    Args:
+        message: Prompt message
+        choices: List of valid choices
+        default: Default choice if user presses enter
+
+    Returns:
+        Selected choice
+    """
+    return Prompt.ask(message, choices=choices, default=default)
+
+
+def prompt_for_confirmation(message: str, default: bool = False) -> bool:
+    """Prompt user for yes/no confirmation.
+
+    Args:
+        message: Confirmation message
+        default: Default value if user presses enter
+
+    Returns:
+        True if user confirms, False otherwise
+    """
+    return Confirm.ask(message, default=default)
+
+
+def prompt_for_text(message: str, default: Optional[str] = None) -> str:
+    """Prompt user for text input.
+
+    Args:
+        message: Prompt message
+        default: Default value if user presses enter
+
+    Returns:
+        User input
+    """
+    return Prompt.ask(message, default=default)
+
+
+def select_provider(default: str = "claude") -> str:
+    """Interactive provider selection.
+
+    Args:
+        default: Default provider
+
+    Returns:
+        Selected provider
+    """
+    providers = ["claude", "gemini", "vscode", "opencode"]
+    return prompt_for_choice(
+        "Select target LLM provider", choices=providers, default=default
+    )
+
+
+def select_format(default: str = "json") -> str:
+    """Interactive format selection.
+
+    Args:
+        default: Default format
+
+    Returns:
+        Selected format
+    """
+    formats = ["json", "yaml", "toml"]
+    return prompt_for_choice("Select output format", choices=formats, default=default)
