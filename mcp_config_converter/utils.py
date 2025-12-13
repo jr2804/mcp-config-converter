@@ -4,10 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from rich.console import Console
 from rich.prompt import Confirm, Prompt
-
-console = Console()
 
 
 def get_env_variable(name: str, default: Optional[str] = None) -> Optional[str]:

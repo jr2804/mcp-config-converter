@@ -57,7 +57,7 @@ def convert(
             if not format:
                 format_choice = Prompt.ask(
                     "Select output format",
-                    choices=["json", "yaml", "toml"],
+                    choices=[f.value for f in OutputFormat],
                     default="json",
                 )
                 format = OutputFormat(format_choice)
@@ -65,7 +65,7 @@ def convert(
             if not provider:
                 provider_choice = Prompt.ask(
                     "Select target provider",
-                    choices=["claude", "gemini", "vscode", "opencode"],
+                    choices=[p.value for p in Provider],
                     default="claude",
                 )
                 provider = Provider(provider_choice)
@@ -144,7 +144,9 @@ def init(
             # Interactive prompts
             config_name = Prompt.ask("Configuration name", default="mcp-config")
             format_choice = Prompt.ask(
-                "Select format", choices=["json", "yaml", "toml"], default="json"
+                "Select format",
+                choices=[f.value for f in OutputFormat],
+                default="json",
             )
 
             console.print(f"[green]✓[/green] Creating {config_name}.{format_choice}...")
