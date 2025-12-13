@@ -30,7 +30,6 @@ class MCPConfig(BaseModel):
             }
         }
     )
-    
     version: str = Field(default="1.0", description="Configuration version")
     servers: Dict[str, MCPServer] = Field(default_factory=dict, description="MCP servers")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Global metadata")

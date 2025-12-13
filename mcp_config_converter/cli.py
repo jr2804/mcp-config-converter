@@ -102,8 +102,8 @@ def convert(
             
             if not output:
                 # Use format if available, otherwise default to original extension
-                ext = format if format else input_file.suffix.lstrip('.')
-                suggested_output = input_file.with_suffix(f".{ext}")
+                output_extension = format if format else input_file.suffix.lstrip('.')
+                suggested_output = input_file.with_suffix(f".{output_extension}")
                 output = Path(
                     Prompt.ask(
                         "Enter output file path",
