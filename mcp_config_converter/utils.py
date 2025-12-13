@@ -2,9 +2,10 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, List
-from rich.prompt import Prompt, Confirm
+from typing import Any, Dict, List, Optional
+
 from rich.console import Console
+from rich.prompt import Confirm, Prompt
 
 console = Console()
 
@@ -76,13 +77,11 @@ def get_file_extension(file_path: Path) -> str:
     Returns:
         File extension
     """
-    return Path(file_path).suffix.lstrip('.')
+    return Path(file_path).suffix.lstrip(".")
 
 
 def prompt_for_choice(
-    message: str,
-    choices: List[str],
-    default: Optional[str] = None
+    message: str, choices: List[str], default: Optional[str] = None
 ) -> str:
     """Prompt user to select from a list of choices.
 
@@ -134,9 +133,7 @@ def select_provider(default: str = "claude") -> str:
     """
     providers = ["claude", "gemini", "vscode", "opencode"]
     return prompt_for_choice(
-        "Select target LLM provider",
-        choices=providers,
-        default=default
+        "Select target LLM provider", choices=providers, default=default
     )
 
 
@@ -150,8 +147,4 @@ def select_format(default: str = "json") -> str:
         Selected format
     """
     formats = ["json", "yaml", "toml"]
-    return prompt_for_choice(
-        "Select output format",
-        choices=formats,
-        default=default
-    )
+    return prompt_for_choice("Select output format", choices=formats, default=default)
