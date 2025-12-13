@@ -28,3 +28,11 @@ build/
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# Test files
+sample.yaml
+sample.json
+sample.toml
+test_*.yaml
+test_*.json
+test_*.toml

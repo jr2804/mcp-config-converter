@@ -1,14 +1,14 @@
 """Tests for CLI functionality."""
 
 import pytest
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
-from mcp_config_converter.cli import cli
+from mcp_config_converter.cli import app
 
 
 @pytest.fixture
 def runner():
-    """Create a Click CLI test runner."""
+    """Create a Typer CLI test runner."""
     return CliRunner()
 
 
@@ -17,29 +17,31 @@ class TestCLI:
 
     def test_cli_help(self, runner):
         """Test CLI help output."""
-        result = runner.invoke(cli, ['--help'])
+        result = runner.invoke(app, ['--help'])
         assert result.exit_code == 0
-        assert "MCP Config Converter" in result.output
+        assert "MCP Config Converter" in result.stdout
 
     def test_cli_version(self, runner):
         """Test CLI version output."""
-        result = runner.invoke(cli, ['--version'])
+        result = runner.invoke(app, ['--version'])
         assert result.exit_code == 0
+        assert "0.1.0" in result.stdout
 
     @pytest.mark.skip(reason="Requires test file")
     def test_convert_command(self, runner):
         """Test convert command."""
-        result = runner.invoke(cli, ['convert', 'input.json'])
+        result = runner.invoke(app, ['convert', 'input.json'])
         assert result.exit_code == 0
 
     @pytest.mark.skip(reason="Requires test file")
     def test_validate_command(self, runner):
         """Test validate command."""
-        result = runner.invoke(cli, ['validate', 'config.json'])
+        result = runner.invoke(app, ['validate', 'config.json'])
         assert result.exit_code == 0
 
     def test_init_command(self, runner):
         """Test init command."""
-        result = runner.invoke(cli, ['init'])
+        # Use non-interactive mode to avoid prompts
+        result = runner.invoke(app, ['init', '--no-interactive'])
         assert result.exit_code == 0
-        assert "Initializing" in result.output
+        assert "initialized" in result.stdout.lower() or "✓" in result.stdout
