@@ -127,7 +127,11 @@ def select_provider(default: str = "claude") -> str:
 
     Returns:
         Selected provider
+    
+    Note:
+        Provider choices should match the Provider enum in cli.py
     """
+    # These values should match Provider enum in cli.py
     providers = ["claude", "gemini", "vscode", "opencode"]
     return prompt_for_choice(
         "Select target LLM provider", choices=providers, default=default
@@ -142,6 +146,10 @@ def select_format(default: str = "json") -> str:
 
     Returns:
         Selected format
+    
+    Note:
+        Format choices should match the OutputFormat enum in cli.py
     """
+    # These values should match OutputFormat enum in cli.py
     formats = ["json", "yaml", "toml"]
     return prompt_for_choice("Select output format", choices=formats, default=default)
