@@ -10,6 +10,12 @@ from rich.prompt import Confirm, Prompt
 from rich.panel import Panel
 
 from mcp_config_converter import __version__
+from mcp_config_converter.cli_helpers import (
+    select_format,
+    select_provider,
+    validate_format_choice,
+    validate_provider_choice,
+)
 
 app = typer.Typer(
     name="mcp-config-converter",
@@ -89,18 +95,10 @@ def convert(
             )
             
             if not format:
-                format = Prompt.ask(
-                    "Select output format",
-                    choices=["json", "yaml", "toml"],
-                    default="json",
-                )
+                format = select_format()
             
             if not provider:
-                provider = Prompt.ask(
-                    "Select target LLM provider",
-                    choices=["claude", "gemini", "vscode", "opencode"],
-                    default="claude",
-                )
+                provider = select_provider()
             
             if not output:
                 # Use format if available, otherwise default to original extension
@@ -122,21 +120,18 @@ def convert(
                 raise typer.Exit(0)
         
         # Validate choices
-        valid_formats = ["json", "yaml", "toml"]
-        valid_providers = ["claude", "gemini", "vscode", "opencode"]
-        
-        if format and format not in valid_formats:
+        if format and not validate_format_choice(format):
             console.print(
                 f"[red]Error:[/red] Invalid format '{format}'. "
-                f"Choose from: {', '.join(valid_formats)}",
+                f"Choose from: json, yaml, toml",
                 err=True,
             )
             raise typer.Exit(1)
         
-        if provider and provider not in valid_providers:
+        if provider and not validate_provider_choice(provider):
             console.print(
                 f"[red]Error:[/red] Invalid provider '{provider}'. "
-                f"Choose from: {', '.join(valid_providers)}",
+                f"Choose from: claude, gemini, vscode, opencode",
                 err=True,
             )
             raise typer.Exit(1)
@@ -244,11 +239,7 @@ def init(
         
         if interactive:
             if not provider:
-                provider = Prompt.ask(
-                    "Select target LLM provider",
-                    choices=["claude", "gemini", "vscode", "opencode"],
-                    default="claude",
-                )
+                provider = select_provider()
             
             if not output:
                 default_name = f"mcp-config.json"
