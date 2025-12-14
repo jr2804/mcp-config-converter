@@ -71,8 +71,7 @@ def convert(
                 provider = Provider(provider_choice)
 
             if not output:
-                format_ext = format.value if format else "json"
-                default_output = f"{input_file.stem}_converted.{format_ext}"
+                default_output = f"{input_file.stem}_converted.{format.value}"
                 output_str = Prompt.ask("Output file path", default=default_output)
                 output = Path(output_str)
 
