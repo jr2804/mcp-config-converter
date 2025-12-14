@@ -36,3 +36,4 @@ sample.toml
 test_*.yaml
 test_*.json
 test_*.toml
+uv.lock

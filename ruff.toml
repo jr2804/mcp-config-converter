@@ -1,0 +1,69 @@
+
+unsafe-fixes = true
+exclude = [".venv"]
+target-version = "py313"
+line-length = 160
+
+[lint]
+preview = true
+explicit-preview-rules = true
+select = [
+    # Default rules
+    "E",     # pycodestyle errors
+    "F",     # Pyflakes
+    "C4",    # flake8-comprehensions
+    "C90",   # mccabe complex structure
+    "D",     # pydocstyle
+    "I",     # isort
+    "PT",    # flake8-pytest-style
+    "PL",    # Pylint
+    "SIM",   # flake8-simplify
+    "UP",    # pyupgrade
+    "W",     # pycodestyle warnings
+    "S",     # flake8-bandit
+    "ANN",   # flake8-annotations
+    "B",     # flake8-bugbear
+    "NPY",   # NumPy-specific rules
+    "UP045",
+]
+extend-select = [
+    "RUF022",  # unsorted-dunder-all
+    "PLR6301", # no-self-use
+    "PLC0415",
+    "E402",    # module-import-not-at-top-of-file
+]
+ignore = [
+    "B024",
+    "B028",    # no-explicit-stacklevel
+    "B904",
+    "C901",    # complex-structure
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D415",
+    "D200",
+    "D205",
+    "D212",
+    "E722",
+    "ANN002",
+    "ANN003",
+    "ANN204",  # dynamically typed expressions
+    "ANN401",
+    "PLR0913",
+    "PLR2004", # magic value used in comparison
+    "PT028",   # test function parameter has default argument
+]
+
+[lint.pylint]
+max-locals = 20
+
+[lint.pydocstyle]
+convention = "google"
+
+[format]
+docstring-code-format = true
+docstring-code-line-length = 160
