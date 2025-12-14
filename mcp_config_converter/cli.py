@@ -10,9 +10,11 @@ from rich.prompt import Confirm, Prompt
 
 from mcp_config_converter import __version__
 from mcp_config_converter.cli_helpers import (
+    PROVIDER_DEFAULT_OUTPUT_FILES,
     select_format,
     select_provider,
     validate_format_choice,
+    validate_output_action,
     validate_provider_choice,
 )
 
@@ -67,7 +69,7 @@ def convert(
         None,
         "--format",
         "-f",
-        help="Output format (json, yaml, toml)",
+        help="Output format (provider type: github-copilot-cli, vscode, gemini, claude, codex, opencode)",
     ),
     provider: str | None = typer.Option(
         None,
@@ -81,6 +83,13 @@ def convert(
         "-i",
         help="Run in interactive mode",
     ),
+    output_action: str = typer.Option(
+        "overwrite",
+        "--output-action",
+        "-a",
+        help="Action when output file exists: overwrite, skip, or merge",
+        case_sensitive=False,
+    ),
 ) -> None:
     """Convert MCP configuration from one format to another."""
     try:
@@ -88,7 +97,7 @@ def convert(
         if interactive:
             console.print(
                 Panel.fit(
-                    "🔄 Interactive Conversion Mode",
+                    "Interactive Conversion Mode",
                     style="bold blue",
                 )
             )
@@ -100,9 +109,13 @@ def convert(
                 provider = select_provider()
 
             if not output:
-                # Use format if available, otherwise default to original extension
-                output_extension = format if format else input_file.suffix.lstrip(".")
-                suggested_output = input_file.with_suffix(f".{output_extension}")
+                # Determine default output file based on format (provider type)
+                if format and format in PROVIDER_DEFAULT_OUTPUT_FILES:
+                    suggested_output = PROVIDER_DEFAULT_OUTPUT_FILES[format]
+                else:
+                    # Fallback: use original file extension
+                    suggested_output = input_file.with_suffix(".mcp.json")
+
                 output = Path(
                     Prompt.ask(
                         "Enter output file path",
@@ -120,49 +133,91 @@ def convert(
 
         # Validate choices
         if format and not validate_format_choice(format):
+            valid_formats = ", ".join(list(PROVIDER_DEFAULT_OUTPUT_FILES.keys()))
             console.print(
-                f"[red]Error:[/red] Invalid format '{format}'. Choose from: json, yaml, toml",
-                err=True,
+                f"[red]Error:[/red] Invalid format '{format}'. Choose from: {valid_formats}"
             )
             raise typer.Exit(1)
 
         if provider and not validate_provider_choice(provider):
             console.print(
-                f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: claude, gemini, vscode, opencode",
-                err=True,
+                f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: claude, gemini, vscode, opencode"
             )
             raise typer.Exit(1)
 
-        # Perform conversion with progress indicator
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            task = progress.add_task(
-                f"Converting {input_file.name}...",
-                total=None,
+        # Validate output action
+        if not validate_output_action(output_action):
+            console.print(
+                "[red]Error:[/red] Invalid output action. Choose from: overwrite, skip, merge"
             )
+            raise typer.Exit(1)
 
-            # TODO: Implement actual conversion logic
-            # For now, just display what would happen
-            console.print(f"\n✓ Input file: [cyan]{input_file}[/cyan]")
+        # Determine output file if not specified but format is
+        if not output and format:
+            output = PROVIDER_DEFAULT_OUTPUT_FILES.get(format, input_file.with_suffix(".mcp.json"))
+
+        # Perform conversion with progress indicator
+        console.print(f"[blue]Converting {input_file.name}...[/blue]")
+
+        # Import transformers at runtime to avoid circular imports
+        from mcp_config_converter.transformers import ConfigTransformer
+
+        try:
+            # Use the transformer if format is provided
             if format:
-                console.print(f"✓ Target format: [cyan]{format}[/cyan]")
-            if provider:
-                console.print(f"✓ Target provider: [cyan]{provider}[/cyan]")
-            if output:
-                console.print(f"✓ Output file: [green]{output}[/green]")
+                # Use direct transformer for now (LLM conversion can be added later)
+                result = ConfigTransformer.transform(str(input_file), None, format)
 
-            progress.update(task, completed=True)
+                # Handle output file existence based on output_action
+                if output and output.exists():
+                    if output_action.lower() == "skip":
+                        console.print(f"[yellow]Skipping conversion: output file {output} already exists (action: skip)[/yellow]")
+                        return
+                    elif output_action.lower() == "merge":
+                        console.print(f"[blue]Merging with existing file: {output} (action: merge)[/blue]")
+                        # For now, implement basic merge by reading existing file and updating with new values
+                        import json
+                        existing_content = output.read_text(encoding='utf-8')
+                        existing_data = json.loads(existing_content)
+                        new_data = json.loads(result)
 
-        console.print("\n[bold green]✓ Conversion completed successfully![/bold green]")
+                        # Merge: update existing keys with new values
+                        existing_data.update(new_data)
+                        result = json.dumps(existing_data, indent=2)
+                    else:  # overwrite
+                        console.print(f"[blue]Will overwrite existing file: {output} (action: overwrite)[/blue]")
+
+                # Write the result to output file
+                if output:
+                    output.parent.mkdir(parents=True, exist_ok=True)  # Create directories if needed
+                    output.write_text(result, encoding='utf-8')
+
+                    console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
+                else:
+                    console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] Output: [green]No output file specified (result generated)[/green]")
+            else:
+                # If no format is specified, just show what would happen
+                console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
+                if provider:
+                    console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                if output:
+                    console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
+
+        except Exception as e:
+            console.print(f"[red]Error during conversion:[/red] {str(e)}")
+            raise typer.Exit(1)
+
+        console.print("\n[bold green]SUCCESS Conversion completed successfully![/bold green]")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Conversion cancelled by user.[/yellow]")
         raise typer.Exit(130)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {str(e)}", err=True)
+        console.print(f"\n[red]Error:[/red] {str(e)}")
         raise typer.Exit(1)
 
 
@@ -190,17 +245,17 @@ def validate(
             )
 
             # TODO: Implement actual validation logic
-            console.print(f"\n✓ Validating: [cyan]{config_file}[/cyan]")
+            console.print(f"\n[green]SUCCESS[/green] Validating: [cyan]{config_file}[/cyan]")
 
             progress.update(task, completed=True)
 
-        console.print("[bold green]✓ Configuration is valid![/bold green]")
+        console.print("[bold green][green]SUCCESS[/green] Configuration is valid![/bold green]")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Validation cancelled by user.[/yellow]")
         raise typer.Exit(130)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {str(e)}", err=True)
+        console.print(f"\n[red]Error:[/red] {str(e)}")
         raise typer.Exit(1)
 
 
@@ -229,7 +284,7 @@ def init(
     try:
         console.print(
             Panel.fit(
-                "🚀 Initialize New MCP Configuration",
+                "Initialize New MCP Configuration",
                 style="bold blue",
             )
         )
@@ -264,19 +319,19 @@ def init(
 
             # TODO: Implement actual initialization logic
             if provider:
-                console.print(f"\n✓ Provider: [cyan]{provider}[/cyan]")
+                console.print(f"\n[green]SUCCESS[/green] Provider: [cyan]{provider}[/cyan]")
             if output:
-                console.print(f"✓ Output: [green]{output}[/green]")
+                console.print(f"[green]SUCCESS[/green] Output: [green]{output}[/green]")
 
             progress.update(task, completed=True)
 
-        console.print("\n[bold green]✓ Configuration initialized successfully![/bold green]")
+        console.print("\n[bold green][green]SUCCESS[/green] Configuration initialized successfully![/bold green]")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Initialization cancelled by user.[/yellow]")
         raise typer.Exit(130)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {str(e)}", err=True)
+        console.print(f"\n[red]Error:[/red] {str(e)}")
         raise typer.Exit(1)
 
 

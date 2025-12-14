@@ -3,6 +3,7 @@
 import time
 from collections.abc import Callable
 from functools import wraps
+from pathlib import Path
 from typing import Any, TypeVar
 
 from rich.console import Console
@@ -11,6 +12,16 @@ from rich.prompt import Prompt
 T = TypeVar("T")
 
 console = Console()
+
+# Mapping of provider types to their default output filenames
+PROVIDER_DEFAULT_OUTPUT_FILES = {
+    "github-copilot-cli": Path(".vscode/mcp.json"),
+    "vscode": Path(".vscode/mcp.json"),
+    "gemini": Path(".gemini/mcp.json"),
+    "claude": Path("mcp.json"),
+    "codex": Path(".mcp.json"),
+    "opencode": Path("opencode.json"),
+}
 
 
 def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0, backoff_factor: float = 2.0, exceptions: tuple = (Exception,)) -> Callable:
@@ -73,8 +84,8 @@ def select_provider(providers: list[str] | None = None, default: str = "claude")
     )
 
 
-def select_format(formats: list[str] | None = None, default: str = "json") -> str:
-    """Interactively select an output format.
+def select_format(formats: list[str] | None = None, default: str = "claude") -> str:
+    """Interactively select an output format (actually a provider type).
 
     Args:
         formats: List of available formats
@@ -84,10 +95,10 @@ def select_format(formats: list[str] | None = None, default: str = "json") -> st
         Selected format
     """
     if formats is None:
-        formats = ["json", "yaml", "toml"]
+        formats = list(PROVIDER_DEFAULT_OUTPUT_FILES.keys())
 
     return Prompt.ask(
-        "Select output format",
+        "Select target output format (provider type)",
         choices=formats,
         default=default,
     )
@@ -107,7 +118,7 @@ def validate_provider_choice(provider: str) -> bool:
 
 
 def validate_format_choice(format: str) -> bool:
-    """Validate a format choice.
+    """Validate a format choice (provider type).
 
     Args:
         format: Format name to validate
@@ -115,7 +126,7 @@ def validate_format_choice(format: str) -> bool:
     Returns:
         True if valid, False otherwise
     """
-    valid_formats = ["json", "yaml", "toml"]
+    valid_formats = list(PROVIDER_DEFAULT_OUTPUT_FILES.keys())
     return format in valid_formats
 
 
@@ -147,3 +158,16 @@ def get_provider_config(provider: str) -> dict[str, Any]:
         },
     }
     return configs.get(provider, {})
+
+
+def validate_output_action(action: str) -> bool:
+    """Validate the output action choice.
+
+    Args:
+        action: Action to validate ('overwrite', 'skip', 'merge')
+
+    Returns:
+        True if valid, False otherwise
+    """
+    valid_actions = ["overwrite", "skip", "merge"]
+    return action.lower() in valid_actions
