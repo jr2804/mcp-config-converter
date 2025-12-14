@@ -1,7 +1,5 @@
 """Local Ollama LLM provider."""
 
-from typing import Optional
-import os
 
 try:
     import ollama
@@ -38,13 +36,9 @@ class OllamaProvider(BaseLLMProvider):
         """
         if ollama is None:
             raise ImportError("ollama is required. Install with: pip install ollama")
-        
-        response = ollama.generate(
-            model=self.model,
-            prompt=prompt,
-            stream=False
-        )
-        
+
+        response = ollama.generate(model=self.model, prompt=prompt, stream=False)
+
         return response.get("response", "")
 
     def validate_config(self) -> bool:
@@ -55,7 +49,7 @@ class OllamaProvider(BaseLLMProvider):
         """
         if ollama is None:
             return False
-        
+
         try:
             # Try to list models to validate connection
             models = ollama.list()

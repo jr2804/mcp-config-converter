@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Union
 
 from mcp_config_converter.models import MCPConfig
 
@@ -11,7 +10,7 @@ class BaseParser(ABC):
     """Abstract base class for configuration parsers."""
 
     @abstractmethod
-    def parse(self, content: Union[str, bytes]) -> MCPConfig:
+    def parse(self, content: str | bytes) -> MCPConfig:
         """Parse configuration content into MCPConfig model.
 
         Args:

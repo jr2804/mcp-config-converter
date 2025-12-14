@@ -1,7 +1,6 @@
 """TOML parser for MCP configurations."""
 
 from pathlib import Path
-from typing import Any, Dict, Union
 
 try:
     import tomllib
@@ -23,7 +22,7 @@ from mcp_config_converter.parsers.base import BaseParser
 class TOMLParser(BaseParser):
     """Parser for TOML configuration files."""
 
-    def parse(self, content: Union[str, bytes]) -> MCPConfig:
+    def parse(self, content: str | bytes) -> MCPConfig:
         """Parse TOML content into MCPConfig model.
 
         Args:
@@ -37,19 +36,18 @@ class TOMLParser(BaseParser):
         """
         if isinstance(content, bytes):
             if tomllib is not None:
-                data = tomllib.loads(content.decode('utf-8'))
+                data = tomllib.loads(content.decode("utf-8"))
             elif toml is not None:
-                data = toml.loads(content.decode('utf-8'))
+                data = toml.loads(content.decode("utf-8"))
             else:
                 raise ImportError("No TOML library available. Install with: pip install tomli")
+        elif tomllib is not None:
+            data = tomllib.loads(content)
+        elif toml is not None:
+            data = toml.loads(content)
         else:
-            if tomllib is not None:
-                data = tomllib.loads(content)
-            elif toml is not None:
-                data = toml.loads(content)
-            else:
-                raise ImportError("No TOML library available. Install with: pip install tomli")
-        
+            raise ImportError("No TOML library available. Install with: pip install tomli")
+
         return MCPConfig(**data)
 
     def parse_file(self, file_path: Path) -> MCPConfig:
@@ -62,12 +60,12 @@ class TOMLParser(BaseParser):
             MCPConfig: Parsed configuration
         """
         if tomllib is not None:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 data = tomllib.load(f)
         elif toml is not None:
-            with open(file_path, 'r') as f:
+            with open(file_path) as f:
                 data = toml.load(f)
         else:
             raise ImportError("No TOML library available. Install with: pip install tomli")
-        
+
         return MCPConfig(**data)

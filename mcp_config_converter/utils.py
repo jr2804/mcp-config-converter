@@ -2,12 +2,12 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.prompt import Confirm, Prompt
 
 
-def get_env_variable(name: str, default: Optional[str] = None) -> Optional[str]:
+def get_env_variable(name: str, default: str | None = None) -> str | None:
     """Get environment variable safely.
 
     Args:
@@ -34,7 +34,7 @@ def ensure_directory(path: Path) -> Path:
     return path
 
 
-def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+def merge_dicts(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Deep merge two dictionaries.
 
     Args:
@@ -77,9 +77,7 @@ def get_file_extension(file_path: Path) -> str:
     return Path(file_path).suffix.lstrip(".")
 
 
-def prompt_for_choice(
-    message: str, choices: List[str], default: Optional[str] = None
-) -> str:
+def prompt_for_choice(message: str, choices: list[str], default: str | None = None) -> str:
     """Prompt user to select from a list of choices.
 
     Args:
@@ -106,7 +104,7 @@ def prompt_for_confirmation(message: str, default: bool = False) -> bool:
     return Confirm.ask(message, default=default)
 
 
-def prompt_for_text(message: str, default: Optional[str] = None) -> str:
+def prompt_for_text(message: str, default: str | None = None) -> str:
     """Prompt user for text input.
 
     Args:
@@ -128,10 +126,8 @@ def select_provider(default: str = "claude") -> str:
     Returns:
         Selected provider
     """
-    providers = ["claude", "gemini", "vscode", "opencode"]
-    return prompt_for_choice(
-        "Select target LLM provider", choices=providers, default=default
-    )
+    providers: list[str] = ["claude", "gemini", "vscode", "opencode"]
+    return prompt_for_choice("Select target LLM provider", choices=providers, default=default)
 
 
 def select_format(default: str = "json") -> str:
@@ -143,5 +139,5 @@ def select_format(default: str = "json") -> str:
     Returns:
         Selected format
     """
-    formats = ["json", "yaml", "toml"]
+    formats: list[str] = ["json", "yaml", "toml"]
     return prompt_for_choice("Select output format", choices=formats, default=default)

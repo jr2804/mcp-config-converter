@@ -1,6 +1,5 @@
 """OpenAI compatible LLM provider."""
 
-from typing import Optional
 import os
 
 try:
@@ -14,8 +13,7 @@ from mcp_config_converter.llm.base import BaseLLMProvider
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI compatible LLM provider."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo",
-                 base_url: Optional[str] = None, **kwargs):
+    def __init__(self, api_key: str | None = None, model: str = "gpt-4-turbo", base_url: str | None = None, **kwargs):
         """Initialize OpenAI provider.
 
         Args:
@@ -26,18 +24,18 @@ class OpenAIProvider(BaseLLMProvider):
         """
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
-        
+
         super().__init__(api_key=api_key, **kwargs)
         self.model = model
         self.base_url = base_url
         self.client = None
         self._initialize_client()
 
-    def _initialize_client(self):
+    def _initialize_client(self) -> None:
         """Initialize OpenAI client."""
         if OpenAI is None:
             raise ImportError("openai is required. Install with: pip install openai")
-        
+
         if self.api_key:
             if self.base_url:
                 self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
@@ -58,17 +56,11 @@ class OpenAIProvider(BaseLLMProvider):
         """
         if self.client is None:
             raise RuntimeError("Client not initialized")
-        
+
         max_tokens = kwargs.get("max_tokens", 1024)
-        
-        response = self.client.chat.completions.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
-        
+
+        response = self.client.chat.completions.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
+
         return response.choices[0].message.content or ""
 
     def validate_config(self) -> bool:

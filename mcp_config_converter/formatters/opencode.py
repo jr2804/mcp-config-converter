@@ -1,9 +1,9 @@
 """Formatter for OpenCode MCP configuration."""
 
-from typing import Any, Dict
+from typing import Any
 
-from mcp_config_converter.models import MCPConfig
 from mcp_config_converter.formatters.base import BaseFormatter
+from mcp_config_converter.models import MCPConfig
 
 
 class OpenCodeFormatter(BaseFormatter):
@@ -19,9 +19,10 @@ class OpenCodeFormatter(BaseFormatter):
             Formatted configuration as JSON string
         """
         import json
+
         return json.dumps(self.format_dict(config), indent=2)
 
-    def format_dict(self, config: MCPConfig) -> Dict[str, Any]:
+    def format_dict(self, config: MCPConfig) -> dict[str, Any]:
         """Format MCPConfig into OpenCode-specific dictionary structure.
 
         Args:
@@ -40,7 +41,7 @@ class OpenCodeFormatter(BaseFormatter):
             }
             if server.metadata:
                 servers[server_name]["metadata"] = server.metadata
-        
+
         return {
             "format_version": config.version,
             "mcp_servers": servers,

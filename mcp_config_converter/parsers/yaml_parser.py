@@ -1,7 +1,6 @@
 """YAML parser for MCP configurations."""
 
 from pathlib import Path
-from typing import Any, Dict, Union
 
 try:
     import yaml
@@ -15,7 +14,7 @@ from mcp_config_converter.parsers.base import BaseParser
 class YAMLParser(BaseParser):
     """Parser for YAML configuration files."""
 
-    def parse(self, content: Union[str, bytes]) -> MCPConfig:
+    def parse(self, content: str | bytes) -> MCPConfig:
         """Parse YAML content into MCPConfig model.
 
         Args:
@@ -29,10 +28,10 @@ class YAMLParser(BaseParser):
         """
         if yaml is None:
             raise ImportError("PyYAML is required for YAML parsing. Install with: pip install pyyaml")
-        
+
         if isinstance(content, bytes):
-            content = content.decode('utf-8')
-        
+            content = content.decode("utf-8")
+
         data = yaml.safe_load(content)
         return MCPConfig(**data)
 
@@ -45,5 +44,5 @@ class YAMLParser(BaseParser):
         Returns:
             MCPConfig: Parsed configuration
         """
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             return self.parse(f.read())

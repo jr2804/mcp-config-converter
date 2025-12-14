@@ -1,9 +1,9 @@
 """Formatter for Anthropic Claude MCP configuration."""
 
-from typing import Any, Dict
+from typing import Any
 
-from mcp_config_converter.models import MCPConfig
 from mcp_config_converter.formatters.base import BaseFormatter
+from mcp_config_converter.models import MCPConfig
 
 
 class ClaudeFormatter(BaseFormatter):
@@ -19,9 +19,10 @@ class ClaudeFormatter(BaseFormatter):
             Formatted configuration as JSON string
         """
         import json
+
         return json.dumps(self.format_dict(config), indent=2)
 
-    def format_dict(self, config: MCPConfig) -> Dict[str, Any]:
+    def format_dict(self, config: MCPConfig) -> dict[str, Any]:
         """Format MCPConfig into Claude-specific dictionary structure.
 
         Args:
@@ -40,7 +41,7 @@ class ClaudeFormatter(BaseFormatter):
             }
             if server.metadata:
                 tools[server_name]["metadata"] = server.metadata
-        
+
         return {
             "version": config.version,
             "tools": tools,

@@ -1,7 +1,7 @@
 """Abstract base formatter for MCP configurations."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 from mcp_config_converter.models import MCPConfig
 
@@ -22,7 +22,7 @@ class BaseFormatter(ABC):
         pass
 
     @abstractmethod
-    def format_dict(self, config: MCPConfig) -> Dict[str, Any]:
+    def format_dict(self, config: MCPConfig) -> dict[str, Any]:
         """Format MCPConfig into provider-specific dictionary structure.
 
         Args:

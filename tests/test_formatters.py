@@ -1,15 +1,16 @@
 """Tests for configuration formatters."""
 
-import pytest
 import json
 
-from mcp_config_converter.models import MCPConfig, MCPServer
+import pytest
+
 from mcp_config_converter.formatters import (
     ClaudeFormatter,
     GeminiFormatter,
-    VSCodeFormatter,
     OpenCodeFormatter,
+    VSCodeFormatter,
 )
+from mcp_config_converter.models import MCPConfig, MCPServer
 
 
 @pytest.fixture
@@ -31,7 +32,7 @@ def sample_config():
 class TestClaudeFormatter:
     """Tests for Claude formatter."""
 
-    def test_format_dict(self, sample_config):
+    def test_format_dict(self, sample_config) -> None:
         """Test formatting to dictionary."""
         formatter = ClaudeFormatter()
         result = formatter.format_dict(sample_config)
@@ -39,7 +40,7 @@ class TestClaudeFormatter:
         assert "tools" in result
         assert "example" in result["tools"]
 
-    def test_format_string(self, sample_config):
+    def test_format_string(self, sample_config) -> None:
         """Test formatting to JSON string."""
         formatter = ClaudeFormatter()
         result = formatter.format(sample_config)
@@ -51,7 +52,7 @@ class TestClaudeFormatter:
 class TestGeminiFormatter:
     """Tests for Gemini formatter."""
 
-    def test_format_dict(self, sample_config):
+    def test_format_dict(self, sample_config) -> None:
         """Test formatting to dictionary."""
         formatter = GeminiFormatter()
         result = formatter.format_dict(sample_config)
@@ -63,7 +64,7 @@ class TestGeminiFormatter:
 class TestVSCodeFormatter:
     """Tests for VS Code formatter."""
 
-    def test_format_dict(self, sample_config):
+    def test_format_dict(self, sample_config) -> None:
         """Test formatting to dictionary."""
         formatter = VSCodeFormatter()
         result = formatter.format_dict(sample_config)
@@ -74,7 +75,7 @@ class TestVSCodeFormatter:
 class TestOpenCodeFormatter:
     """Tests for OpenCode formatter."""
 
-    def test_format_dict(self, sample_config):
+    def test_format_dict(self, sample_config) -> None:
         """Test formatting to dictionary."""
         formatter = OpenCodeFormatter()
         result = formatter.format_dict(sample_config)
