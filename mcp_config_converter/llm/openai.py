@@ -1,19 +1,26 @@
 """OpenAI compatible LLM provider."""
 
-import os
+from typing import Any
 
 try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None
 
+from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
+@ProviderRegistry.register_provider("openai")
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI compatible LLM provider."""
 
-    def __init__(self, api_key: str | None = None, model: str = "gpt-4-turbo", base_url: str | None = None, **kwargs):
+    PROVIDER_NAME = "openai"
+    ENV_VAR_API_KEY = "OPENAI_API_KEY"
+    DEFAULT_MODEL = "gpt-4-turbo"
+    REQUIRES_API_KEY = True
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str | None = None, **kwargs: Any):
         """Initialize OpenAI provider.
 
         Args:
@@ -22,29 +29,25 @@ class OpenAIProvider(BaseLLMProvider):
             base_url: Base URL for custom endpoints
             **kwargs: Additional arguments
         """
-        if api_key is None:
-            api_key = os.getenv("OPENAI_API_KEY")
-
-        super().__init__(api_key=api_key, **kwargs)
-        self.model = model
+        super().__init__(api_key=api_key, model=model, **kwargs)
         self.base_url = base_url
-        self.client = None
-        self._initialize_client()
+        self._client = None
 
-    def _initialize_client(self) -> None:
-        """Initialize OpenAI client."""
-        if OpenAI is None:
-            raise ImportError("openai is required. Install with: pip install openai")
+    def _create_client(self) -> Any:
+        """Create OpenAI client."""
+        try:
+            if OpenAI is None:
+                return None
 
-        if self.api_key:
-            if self.base_url:
-                self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-            else:
-                self.client = OpenAI(api_key=self.api_key)
-        else:
-            self.client = OpenAI()
+            if self.api_key:
+                if self.base_url:
+                    return OpenAI(api_key=self.api_key, base_url=self.base_url)
+                return OpenAI(api_key=self.api_key)
+            return OpenAI()
+        except Exception:
+            return None
 
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using OpenAI.
 
         Args:
@@ -54,19 +57,13 @@ class OpenAIProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self.client is None:
-            raise RuntimeError("Client not initialized")
+        if self._client is None:
+            self._client = self._create_client()
+            if self._client is None:
+                raise RuntimeError("OpenAI client not available")
 
         max_tokens = kwargs.get("max_tokens", 1024)
 
-        response = self.client.chat.completions.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
+        response = self._client.chat.completions.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
 
         return response.choices[0].message.content or ""
-
-    def validate_config(self) -> bool:
-        """Validate OpenAI configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        return self.client is not None and (self.api_key is not None or os.getenv("OPENAI_API_KEY") is not None)

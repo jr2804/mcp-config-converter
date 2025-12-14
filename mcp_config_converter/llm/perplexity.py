@@ -1,6 +1,7 @@
 """Perplexity LLM provider implementations."""
 
 import os
+from typing import Any
 
 try:
     from openai import OpenAI
@@ -12,14 +13,20 @@ try:
 except ImportError:
     PerplexityClient = None
 
+from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
-from mcp_config_converter.llm.openai import OpenAIProvider
 
 
-class PerplexityOpenAIProvider(OpenAIProvider):
+@ProviderRegistry.register_provider("perplexity-openai")
+class PerplexityOpenAIProvider(BaseLLMProvider):
     """Perplexity LLM provider using OpenAI-compatible API."""
 
-    def __init__(self, api_key: str | None = None, model: str = "llama-3-70b-instruct", base_url: str = "https://api.perplexity.ai", **kwargs):
+    PROVIDER_NAME = "perplexity-openai"
+    ENV_VAR_API_KEY = "PERPLEXITY_API_KEY"
+    DEFAULT_MODEL = "sonar"
+    REQUIRES_API_KEY = True
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str = "https://api.perplexity.ai", **kwargs: Any):
         """Initialize Perplexity OpenAI-compatible provider.
 
         Args:
@@ -28,10 +35,21 @@ class PerplexityOpenAIProvider(OpenAIProvider):
             base_url: Perplexity API base URL
             **kwargs: Additional arguments
         """
-        if api_key is None:
-            api_key = os.getenv("PERPLEXITY_API_KEY")
+        super().__init__(api_key=api_key, model=model, **kwargs)
+        self.base_url = base_url
+        self._client = None
 
-        super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
+    def _create_client(self) -> Any:
+        """Create Perplexity OpenAI client."""
+        try:
+            if OpenAI is None:
+                return None
+
+            if self.api_key:
+                return OpenAI(api_key=self.api_key, base_url=self.base_url)
+            return OpenAI(base_url=self.base_url)
+        except Exception:
+            return None
 
     def validate_config(self) -> bool:
         """Validate Perplexity OpenAI configuration.
@@ -39,22 +57,25 @@ class PerplexityOpenAIProvider(OpenAIProvider):
         Returns:
             True if configuration is valid
         """
-        # Check if OpenAI is available
         if OpenAI is None:
             return False
 
-        # Check API key
         if not self.api_key and not os.getenv("PERPLEXITY_API_KEY"):
             return False
 
-        # Check client initialization
-        return self.client is not None
+        return self._client is not None
 
 
+@ProviderRegistry.register_provider("perplexity-sdk")
 class PerplexitySDKProvider(BaseLLMProvider):
     """Perplexity LLM provider using proprietary SDK."""
 
-    def __init__(self, api_key: str | None = None, model: str = "llama-3-70b-instruct", **kwargs):
+    PROVIDER_NAME = "perplexity-sdk"
+    ENV_VAR_API_KEY = "PERPLEXITY_API_KEY"
+    DEFAULT_MODEL = "llama-3-70b-instruct"
+    REQUIRES_API_KEY = True
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
         """Initialize Perplexity SDK provider.
 
         Args:
@@ -62,27 +83,23 @@ class PerplexitySDKProvider(BaseLLMProvider):
             model: Model to use (default: llama-3-70b-instruct)
             **kwargs: Additional arguments
         """
-        if api_key is None:
-            api_key = os.getenv("PERPLEXITY_API_KEY")
+        super().__init__(api_key=api_key, model=model, **kwargs)
+        self._client = None
 
-        self.api_key = api_key
-        self.model = model
-        self.kwargs = kwargs
-        self.client = None
-        self._initialize_client()
+    def _create_client(self) -> Any:
+        """Create Perplexity SDK client."""
+        try:
+            if PerplexityClient is None:
+                return None
 
-    def _initialize_client(self) -> None:
-        """Initialize Perplexity SDK client."""
-        if PerplexityClient is None:
-            raise ImportError("perplexity is required. Install with: pip install perplexity")
+            if not self.api_key:
+                return None
 
-        if not self.api_key:
-            raise ValueError("Perplexity API key is required")
+            return PerplexityClient(api_key=self.api_key)
+        except Exception:
+            return None
 
-        # Initialize Perplexity client
-        self.client = PerplexityClient(api_key=self.api_key)
-
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Perplexity SDK.
 
         Args:
@@ -92,24 +109,10 @@ class PerplexitySDKProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self.client is None:
-            raise RuntimeError("Client not initialized")
+        if self._client is None:
+            self._client = self._create_client()
+            if self._client is None:
+                raise RuntimeError("Perplexity SDK client not available")
 
-        # Use Perplexity SDK for generation
-        response = self.client.chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
-
+        response = self._client.chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
         return response.choices[0].message.content or ""
-
-    def validate_config(self) -> bool:
-        """Validate Perplexity SDK configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        if PerplexityClient is None:
-            return False
-
-        if not self.api_key and not os.getenv("PERPLEXITY_API_KEY"):
-            return False
-
-        return self.client is not None

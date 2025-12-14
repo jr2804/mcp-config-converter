@@ -1,6 +1,5 @@
 """Tests for configuration parsers."""
 
-
 import pytest
 
 from mcp_config_converter.models import MCPConfig

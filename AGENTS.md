@@ -1,153 +1,113 @@
-# AGENTS.md - Guidelines for Coding Agents
+# Agents and LLM Providers
 
-## Project Overview
+## llm-check Command
 
-The MCP Config Converter is a Python-based tool designed to convert Model Context Protocol (MCP) configurations between different formats and providers. The project aims to address the fragmented ecosystem of MCP configurations across various LLM providers and development environments.
+The `llm-check` command provides a comprehensive overview of all available LLM providers and their status. It displays a tabular view showing provider information, availability, and authentication status.
 
-### Key Components
+### Usage
 
-- **Parsers**: Handle input formats (JSON, YAML, TOML)
-- **Formatters**: Generate provider-specific output (Claude, Gemini, VS Code, OpenCode)
-- **LLM Providers**: AI-assisted conversion with multiple providers (OpenAI, Ollama, DeepSeek, SambaNova, Perplexity, OpenRouter)
-- **Models**: Pydantic models for MCP configuration validation
-- **CLI**: Command-line interface built with Typer and Rich
+```bash
+mcp-config-converter llm-check [OPTIONS]
+```
 
-## Development Guidelines
+### Options
 
-### Code Style
+- `--llm-base-url`: Base URL for custom OpenAI-compatible providers
+- `--llm-provider-type`: Provider type for custom OpenAI-compatible providers
+- `--llm-model`: Model name for custom OpenAI-compatible providers
 
-- Follow Python best practices and PEP 8 guidelines
-- Use type hints consistently
-- Maintain consistent code formatting using the project's configured tools
-- Keep functions focused and single-purpose
+### Output Format
 
-### Testing
+The command displays a table with the following columns:
+- Provider: Name of the LLM provider
+- Model: Currently configured or default model
+- Availability: Status of provider (green checkmark if OK, red cross if failed)
+- Authentication: Status of authentication (green checkmark if OK, red cross if failed, yellow "n/a" if not applicable)
 
-- Write comprehensive tests for new features
-- Ensure existing tests continue to pass
-- Test edge cases and error conditions
-- Use the existing test structure in the `tests/` directory
+If `--llm-base-url`, `--llm-provider-type`, and `--llm-model` are all provided, a row for "Custom OpenAI-Provider" will be included.
 
-### Documentation
+### Available Providers
 
-- Update README.md for significant changes
-- Add docstrings to new functions and classes
-- Keep documentation concise and focused
+The llm-check command automatically discovers and checks all registered providers:
 
-### Version Control
+- Claude (Anthropic)
+- DeepSeek
+- Gemini (Google)
+- Ollama (Local)
+- OpenAI
+- OpenRouter
+- Perplexity (OpenAI-compatible and SDK)
+- SambaNova (OpenAI-compatible and SDK)
 
-- Use meaningful commit messages
-- Follow the existing commit message style
-- Keep commits focused on specific changes
+Custom providers can also be checked by specifying `--llm-provider-type`, `--llm-base-url`, and `--llm-model`.
+
+## Project Management
+
+This project must only be managed and run via "uv" ... no usage of "python <script>" or "python -m <module>". Always use "uv run <script.py>" or "uv run -m <module>".
+
+### Installation and Execution
+
+- To run the CLI: `uv run mcp-config-converter <command> [OPTIONS]`
+- To run a Python script: `uv run script.py`
+- To run a module: `uv run -m module_name`
+
+### Dependency Management
+
+Use "uv add" instead of "pip install" for managing project dependencies:
+
+- To add a new dependency: `uv add <package-name>`
+- To add a dependency with extras: `uv add <package-name>[extra1,extra2]`
+- To add a dev dependency: `uv add --dev <package-name>`
+- To install all dependencies from pyproject.toml: `uv sync`
+
+This ensures consistency with the project's uv-based dependency management and maintains proper lock file synchronization.
+
+## llm-check Command
+
+The `llm-check` command provides a comprehensive overview of all available LLM providers and their status. It displays a tabular view showing provider information, availability, and authentication status.
+
+### Usage
+
+```bash
+mcp-config-converter llm-check [OPTIONS]
+```
+
+### Options
+
+- `--llm-base-url`: Base URL for custom OpenAI-compatible providers
+- `--llm-provider-type`: Provider type for custom OpenAI-compatible providers
+- `--llm-model`: Model name for custom OpenAI-compatible providers
+
+### Output Format
+
+The command displays a table with the following columns:
+- Provider: Name of the LLM provider
+- Model: Currently configured or default model
+- Availability: Status of provider (green checkmark if OK, red cross if failed)
+- Authentication: Status of authentication (green checkmark if OK, red cross if failed, yellow "n/a" if not applicable)
+
+If `--llm-base-url`, `--llm-provider-type`, and `--llm-model` are all provided, a row for "Custom OpenAI-Provider" will be included.
 
 ### Dependencies
 
-- Use existing project dependencies when possible
-- Add new dependencies only when necessary
-- Update pyproject.toml for new dependencies
+1. **OpenAI SDK**: Already available in project
+2. **Optional Dependencies**: Available as dependency groups in `pyproject.toml`:
+   - `anthropic`: For Claude provider support
+   - `sambanova`: For SambaNova SDK provider
+   - `perplexity`: For Perplexity SDK provider
+   - `openrouter`: For OpenRouter SDK provider
+   - `ollama`: For Ollama provider
+   - `all`: All optional dependencies
 
-## Common Tasks
+### Dependency Management:
 
-### Adding a New Parser
-
-1. Create a new parser file in `parsers/` directory
-2. Implement the `BaseParser` interface
-3. Add tests in `tests/test_parsers.py`
-4. Update the CLI to support the new format
-
-### Adding a New Formatter
-
-1. Create a new formatter file in `formatters/` directory
-2. Implement the `BaseFormatter` interface
-3. Add tests in `tests/test_formatters.py`
-4. Update the CLI to support the new provider
-
-### Adding a New LLM Provider
-
-1. Create a new provider file in `llm/` directory
-2. Implement the `BaseLLMProvider` interface or extend an existing provider (e.g., `OpenAIProvider` for OpenAI-compatible APIs)
-3. For providers with multiple SDK options, create separate classes (e.g., `ProviderOpenAIProvider` and `ProviderSDKProvider`)
-4. Add tests for the new provider
-5. Update `llm/__init__.py` to export the new provider class
-6. Make SDK dependencies optional in `pyproject.toml`
-
-### Available LLM Providers
-
-The project supports the following LLM providers for AI-assisted configuration conversion:
-
-#### OpenAI-Compatible Providers:
-- **OpenAI**: Standard OpenAI API with GPT models
-- **DeepSeek**: DeepSeek API using OpenAI-compatible interface
-- **SambaNovaOpenAI**: SambaNova API using OpenAI-compatible interface
-- **PerplexityOpenAI**: Perplexity API using OpenAI-compatible interface
-
-#### Proprietary SDK Providers:
-- **SambaNovaSDK**: SambaNova API using proprietary SDK
-- **PerplexitySDK**: Perplexity API using proprietary SDK
-- **OpenRouter**: OpenRouter API using proprietary SDK
-
-#### Local/Other Providers:
-- **Ollama**: Local Ollama models
-- **ClaudeProvider**: Anthropic Claude API (if implemented)
-- **GeminiProvider**: Google Gemini API (if implemented)
-
-#### Provider Configuration:
-- Each provider supports API key via environment variable (e.g., `DEEPSEEK_API_KEY`, `PERPLEXITY_API_KEY`)
-- Default models are configured for each provider
-- Users can override models via `--model` CLI parameter
-- OpenAI-compatible providers require `base_url` parameter where applicable
-
-### Running Tests
-
-```bash
-pytest tests/
-```
-
-### Running Linters
-
-```bash
-ruff check
-```
-
-### Building the Project
-
-```bash
-pip install -e .
-```
-
-## Project Structure
-
-```
-mcp-config-converter/
-├── mcp_config_converter/
-│   ├── cli.py              # Command-line interface
-│   ├── models.py           # Pydantic models for MCP configs
-│   ├── transformers.py     # Configuration transformation logic
-│   ├── parsers/            # Format-specific parsers
-│   ├── formatters/         # Provider-specific formatters
-│   └── utils.py            # Utility functions
-└── tests/                  # Test suite
-```
-
-## Important Files
-
-- `pyproject.toml`: Project configuration and dependencies
-- `README.md`: Main project documentation
-- `cli.py`: Entry point for the command-line interface
-- `models.py`: Core data models for MCP configurations
-
-## Best Practices
-
-1. **Error Handling**: Implement proper error handling for file operations and data validation
-2. **Logging**: Use appropriate logging for debugging and user feedback
-3. **Performance**: Consider performance implications for large configuration files
-4. **Security**: Never expose sensitive information in logs or error messages
-5. **Compatibility**: Ensure backward compatibility when making changes
-
-## Getting Help
-
-For questions about the project or specific implementation details, refer to:
-- The README.md file for general information
-- Existing code in the relevant modules
-- Test files for usage examples
-- Project documentation in the docs/ directory (if available)
+1. **Optional Dependencies**: SDK dependencies are optional and can be installed via extras
+2. **Installation Examples**:
+   ```bash
+   pip install mcp-config-converter[anthropic]    # Claude support
+   pip install mcp-config-converter[sambanova]   # SambaNova support
+   pip install mcp-config-converter[all]            # All dependencies
+   ```
+3. **Graceful Degradation**: Handle missing dependencies gracefully
+4. **Import Error Handling**: Provide clear error messages
+5. **Test Coverage**: Test both with and without dependencies

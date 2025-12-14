@@ -1,19 +1,26 @@
 """OpenRouter LLM provider using proprietary SDK."""
 
-import os
+from typing import Any
 
 try:
     from openrouter import OpenRouter as OpenRouterClient
 except ImportError:
     OpenRouterClient = None
 
+from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
+@ProviderRegistry.register_provider("openrouter")
 class OpenRouterProvider(BaseLLMProvider):
     """OpenRouter LLM provider using proprietary SDK."""
 
-    def __init__(self, api_key: str | None = None, model: str = "openai/gpt-4", **kwargs):
+    PROVIDER_NAME = "openrouter"
+    ENV_VAR_API_KEY = "OPENROUTER_API_KEY"
+    DEFAULT_MODEL = "openai/gpt-4"
+    REQUIRES_API_KEY = True
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
         """Initialize OpenRouter provider.
 
         Args:
@@ -21,27 +28,23 @@ class OpenRouterProvider(BaseLLMProvider):
             model: Model to use (default: openai/gpt-4)
             **kwargs: Additional arguments
         """
-        if api_key is None:
-            api_key = os.getenv("OPENROUTER_API_KEY")
+        super().__init__(api_key=api_key, model=model, **kwargs)
+        self._client = None
 
-        self.api_key = api_key
-        self.model = model
-        self.kwargs = kwargs
-        self.client = None
-        self._initialize_client()
+    def _create_client(self) -> Any:
+        """Create OpenRouter client."""
+        try:
+            if OpenRouterClient is None:
+                return None
 
-    def _initialize_client(self) -> None:
-        """Initialize OpenRouter client."""
-        if OpenRouterClient is None:
-            raise ImportError("openrouter is required. Install with: pip install openrouter")
+            if not self.api_key:
+                return None
 
-        if not self.api_key:
-            raise ValueError("OpenRouter API key is required")
+            return OpenRouterClient(api_key=self.api_key)
+        except Exception:
+            return None
 
-        # Initialize OpenRouter client
-        self.client = OpenRouterClient(api_key=self.api_key)
-
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using OpenRouter SDK.
 
         Args:
@@ -51,24 +54,10 @@ class OpenRouterProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self.client is None:
-            raise RuntimeError("Client not initialized")
+        if self._client is None:
+            self._client = self._create_client()
+            if self._client is None:
+                raise RuntimeError("OpenRouter client not available")
 
-        # Use OpenRouter SDK for generation
-        response = self.client.chat.send(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
-
+        response = self._client.chat.send(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
         return response.choices[0].message.content or ""
-
-    def validate_config(self) -> bool:
-        """Validate OpenRouter configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        if OpenRouterClient is None:
-            return False
-
-        if not self.api_key and not os.getenv("OPENROUTER_API_KEY"):
-            return False
-
-        return self.client is not None

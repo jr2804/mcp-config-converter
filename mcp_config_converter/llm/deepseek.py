@@ -1,19 +1,26 @@
 """DeepSeek LLM provider using OpenAI-compatible API."""
 
-import os
+from typing import Any
 
 try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None
 
-from mcp_config_converter.llm.openai import OpenAIProvider
+from mcp_config_converter.llm import ProviderRegistry
+from mcp_config_converter.llm.base import BaseLLMProvider
 
 
-class DeepSeekProvider(OpenAIProvider):
+@ProviderRegistry.register_provider("deepseek")
+class DeepSeekProvider(BaseLLMProvider):
     """DeepSeek LLM provider using OpenAI-compatible API."""
 
-    def __init__(self, api_key: str | None = None, model: str = "deepseek-chat", base_url: str = "https://api.deepseek.com", **kwargs):
+    PROVIDER_NAME = "deepseek"
+    ENV_VAR_API_KEY = "DEEPSEEK_API_KEY"
+    DEFAULT_MODEL = "deepseek-chat"
+    REQUIRES_API_KEY = True
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str = "https://api.deepseek.com", **kwargs: Any):
         """Initialize DeepSeek provider.
 
         Args:
@@ -22,24 +29,18 @@ class DeepSeekProvider(OpenAIProvider):
             base_url: DeepSeek API base URL (default: https://api.deepseek.com)
             **kwargs: Additional arguments
         """
-        if api_key is None:
-            api_key = os.getenv("DEEPSEEK_API_KEY")
+        super().__init__(api_key=api_key, model=model, **kwargs)
+        self.base_url = base_url
+        self._client = None
 
-        super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
+    def _create_client(self) -> Any:
+        """Create DeepSeek client."""
+        try:
+            if OpenAI is None:
+                return None
 
-    def validate_config(self) -> bool:
-        """Validate DeepSeek configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        # Check if OpenAI is available
-        if OpenAI is None:
-            return False
-
-        # Check API key
-        if not self.api_key and not os.getenv("DEEPSEEK_API_KEY"):
-            return False
-
-        # Check client initialization
-        return self.client is not None
+            if self.api_key:
+                return OpenAI(api_key=self.api_key, base_url=self.base_url)
+            return OpenAI(base_url=self.base_url)
+        except Exception:
+            return None

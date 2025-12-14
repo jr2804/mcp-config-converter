@@ -1,18 +1,26 @@
 """Local Ollama LLM provider."""
 
+from typing import Any
 
 try:
     import ollama
 except ImportError:
     ollama = None
 
+from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
+@ProviderRegistry.register_provider("ollama")
 class OllamaProvider(BaseLLMProvider):
     """Local Ollama LLM provider."""
 
-    def __init__(self, model: str = "llama2", base_url: str = "http://localhost:11434", **kwargs):
+    PROVIDER_NAME = "ollama"
+    ENV_VAR_API_KEY = None  # No API key required
+    DEFAULT_MODEL = "llama2"
+    REQUIRES_API_KEY = False
+
+    def __init__(self, model: str | None = None, base_url: str = "http://localhost:11434", **kwargs: Any):
         """Initialize Ollama provider.
 
         Args:
@@ -20,11 +28,18 @@ class OllamaProvider(BaseLLMProvider):
             base_url: Ollama API base URL
             **kwargs: Additional arguments
         """
-        super().__init__(**kwargs)
-        self.model = model
+        super().__init__(model=model, **kwargs)
         self.base_url = base_url
+        self._client = None
 
-    def generate(self, prompt: str, **kwargs) -> str:
+    def _create_client(self) -> Any:
+        """Create Ollama client."""
+        try:
+            return ollama
+        except Exception:
+            return None
+
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Ollama.
 
         Args:
@@ -34,25 +49,10 @@ class OllamaProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if ollama is None:
-            raise ImportError("ollama is required. Install with: pip install ollama")
+        if self._client is None:
+            self._client = self._create_client()
+            if self._client is None:
+                raise RuntimeError("Ollama client not available")
 
-        response = ollama.generate(model=self.model, prompt=prompt, stream=False)
-
+        response = self._client.generate(model=self.model, prompt=prompt, stream=False)
         return response.get("response", "")
-
-    def validate_config(self) -> bool:
-        """Validate Ollama configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        if ollama is None:
-            return False
-
-        try:
-            # Try to list models to validate connection
-            models = ollama.list()
-            return bool(models)
-        except Exception:
-            return False

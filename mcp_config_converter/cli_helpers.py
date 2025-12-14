@@ -171,3 +171,109 @@ def validate_output_action(action: str) -> bool:
     """
     valid_actions = ["overwrite", "skip", "merge"]
     return action.lower() in valid_actions
+
+
+def create_llm_provider(
+    provider_type: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
+) -> Any:
+    """Create an LLM provider based on configuration.
+
+    Args:
+        provider_type: LLM provider type ('openai', 'anthropic', or specific provider name)
+        base_url: Custom base URL for the provider
+        api_key: API key for the provider
+        model: Model name to use
+
+    Returns:
+        An instance of BaseLLMProvider or None if no provider specified
+
+    Raises:
+        ValueError: If provider_type is invalid or configuration is incomplete
+        ImportError: If required dependencies are not installed
+    """
+    if not provider_type:
+        return None
+
+    provider_type = provider_type.lower()
+
+    # Handle custom OpenAI-compatible providers
+    if provider_type == "openai":
+        try:
+            from mcp_config_converter.llm.openai import OpenAIProvider
+
+            return OpenAIProvider(
+                api_key=api_key,
+                model=model or "gpt-4-turbo",
+                base_url=base_url,
+            )
+        except ImportError as e:
+            raise ImportError(f"OpenAI provider requires 'openai' package: {e}")
+
+    # Handle custom Anthropic-compatible providers
+    elif provider_type == "anthropic":
+        try:
+            from mcp_config_converter.llm.claude import ClaudeProvider
+
+            # Note: Anthropic API doesn't support custom base_url in the same way as OpenAI
+            # We'll create a standard ClaudeProvider for now
+            return ClaudeProvider(
+                api_key=api_key,
+                model=model or "claude-3-5-sonnet-20241022",
+            )
+        except ImportError as e:
+            raise ImportError(f"Anthropic provider requires 'anthropic' package: {e}")
+
+    # Handle specific provider names
+    else:
+        # Try to import the specific provider
+        try:
+            if provider_type == "deepseek":
+                from mcp_config_converter.llm.deepseek import DeepSeekProvider
+
+                return DeepSeekProvider(
+                    api_key=api_key,
+                    model=model or "deepseek-chat",
+                    base_url=base_url,
+                )
+            elif provider_type == "ollama":
+                from mcp_config_converter.llm.ollama import OllamaProvider
+
+                return OllamaProvider(
+                    model=model or "llama2",
+                    base_url=base_url,
+                )
+            elif provider_type == "openrouter":
+                from mcp_config_converter.llm.openrouter import OpenRouterProvider
+
+                return OpenRouterProvider(
+                    api_key=api_key,
+                    model=model or "openai/gpt-4",
+                )
+            elif provider_type == "sambanova":
+                # Try OpenAI-compatible first, fall back to SDK
+                if base_url:
+                    from mcp_config_converter.llm.sambanova import SambaNovaOpenAIProvider
+
+                    return SambaNovaOpenAIProvider(
+                        api_key=api_key,
+                        model=model or "Meta-Llama-3.3-70B-Instruct",
+                        base_url=base_url,
+                    )
+                else:
+                    raise ValueError("SambaNova requires base_url to be specified")
+            elif provider_type == "perplexity":
+                # Try OpenAI-compatible first
+                from mcp_config_converter.llm.perplexity import PerplexityOpenAIProvider
+
+                return PerplexityOpenAIProvider(
+                    api_key=api_key,
+                    model=model or "llama-3-70b-instruct",
+                    base_url=base_url or "https://api.perplexity.ai",
+                )
+            else:
+                raise ValueError(f"Unknown provider type: {provider_type}")
+        except ImportError as e:
+            raise ImportError(f"Provider '{provider_type}' requires additional dependencies: {e}")

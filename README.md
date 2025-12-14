@@ -41,6 +41,30 @@ This project was created to address the challenges developers face when working 
 pip install mcp-config-converter
 ```
 
+### Optional Dependencies
+
+For specific LLM providers, install with optional dependencies:
+
+```bash
+# Install with Anthropic Claude support
+pip install mcp-config-converter[anthropic]
+
+# Install with SambaNova support
+pip install mcp-config-converter[sambanova]
+
+# Install with Perplexity support
+pip install mcp-config-converter[perplexity]
+
+# Install with OpenRouter support
+pip install mcp-config-converter[openrouter]
+
+# Install with Ollama support
+pip install mcp-config-converter[ollama]
+
+# Install with all optional dependencies
+pip install mcp-config-converter[all]
+```
+
 ## Quick Start
 
 ```bash
@@ -52,6 +76,15 @@ mcp-config-converter validate config.json
 
 # Initialize a new MCP configuration
 mcp-config-converter init
+
+# Use custom LLM provider for AI-assisted conversion
+mcp-config-converter --llm-provider-type openai --llm-model gpt-4-turbo convert config.yaml --provider claude
+
+# Use Anthropic-compatible API
+mcp-config-converter --llm-provider-type anthropic --llm-api-key YOUR_API_KEY validate config.json
+
+# Use custom OpenAI-compatible endpoint
+mcp-config-converter --llm-provider-type openai --llm-base-url https://api.example.com/v1 --llm-model custom-model init
 ```
 
 ## Use Cases

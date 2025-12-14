@@ -1,42 +1,50 @@
 """Google Gemini LLM provider."""
 
-import os
+from typing import Any
 
 try:
     import google.generativeai as genai
 except ImportError:
     genai = None
 
+from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
+@ProviderRegistry.register_provider("gemini")
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini LLM provider."""
 
-    def __init__(self, api_key: str | None = None, model: str = "gemini-1.5-pro", **kwargs):
+    PROVIDER_NAME = "gemini"
+    ENV_VAR_API_KEY = ["GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"]
+    DEFAULT_MODEL = "gemini-2.5-flash"
+    REQUIRES_API_KEY = True
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
         """Initialize Gemini provider.
 
         Args:
-            api_key: Google API key (defaults to GOOGLE_API_KEY env var)
+            api_key: Google API key (defaults to GEMINI_API_KEY, GOOGLE_API_KEY, or GOOGLE_GENERATIVE_AI_API_KEY env var)
             model: Model to use
             **kwargs: Additional arguments
         """
-        if api_key is None:
-            api_key = os.getenv("GOOGLE_API_KEY")
+        super().__init__(api_key=api_key, model=model, **kwargs)
+        self._client = None
 
-        super().__init__(api_key=api_key, **kwargs)
-        self.model = model
-        self._initialize_client()
+    def _create_client(self) -> Any:
+        """Create Gemini client."""
+        try:
+            if genai is None:
+                return None
 
-    def _initialize_client(self) -> None:
-        """Initialize Gemini client."""
-        if genai is None:
-            raise ImportError("google-generativeai is required. Install with: pip install google-generativeai")
+            if self.api_key:
+                genai.configure(api_key=self.api_key)
+                return genai.GenerativeModel(self.model)
+            return None
+        except Exception:
+            return None
 
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
-
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Gemini.
 
         Args:
@@ -46,18 +54,13 @@ class GeminiProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if genai is None:
-            raise RuntimeError("google-generativeai not installed")
+        if self._client is None:
+            self._client = self._create_client()
+            if self._client is None:
+                raise RuntimeError("Gemini client not available")
 
-        model = genai.GenerativeModel(self.model)
-        response = model.generate_content(prompt)
-
-        return response.text
-
-    def validate_config(self) -> bool:
-        """Validate Gemini configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        return self.api_key is not None or os.getenv("GOOGLE_API_KEY") is not None
+        try:
+            response = self._client.generate_content(prompt)
+            return response.text or ""
+        except Exception:
+            return ""

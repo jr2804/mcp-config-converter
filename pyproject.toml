@@ -56,3 +56,32 @@ dev = [
     "memorygraphmcp[ladybugdb]>=0.11.12",
     "rust-just>=1.45.0",
 ]
+
+# Optional dependencies for LLM providers
+[project.optional-dependencies]
+anthropic = [
+    "anthropic",
+]
+sambanova = [
+    "sambanova",
+]
+perplexity = [
+    "perplexityai",
+]
+openrouter = [
+    "openrouter",
+]
+ollama = [
+    "ollama",
+]
+gemini = [
+    "google-generativeai>=0.8.0",
+]
+all = [
+    "anthropic",
+    "sambanova",
+    "perplexityai",
+    "openrouter",
+    "ollama",
+    "google-generativeai>=0.8.0",
+]
