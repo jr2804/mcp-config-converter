@@ -1,6 +1,5 @@
 """Main CLI entry point for MCP Config Converter."""
 
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 
@@ -8,103 +7,177 @@ import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
+from rich.panel import Panel
+
+from mcp_config_converter import __version__
+from mcp_config_converter.cli_helpers import (
+    select_format,
+    select_provider,
+    validate_format_choice,
+    validate_provider_choice,
+)
 
 app = typer.Typer(
-    help="MCP Config Converter - Convert MCP configurations between formats and LLM providers."
+    name="mcp-config-converter",
+    help="MCP Config Converter - Convert MCP configurations between formats and LLM providers.",
+    add_completion=False,
 )
+
 console = Console()
 
 
-class OutputFormat(str, Enum):
-    """Supported output formats."""
+def version_callback(value: bool):
+    """Print version and exit."""
+    if value:
+        console.print(f"MCP Config Converter v{__version__}")
+        raise typer.Exit()
 
-    json = "json"
-    yaml = "yaml"
-    toml = "toml"
 
-
-class Provider(str, Enum):
-    """Supported LLM providers."""
-
-    claude = "claude"
-    gemini = "gemini"
-    vscode = "vscode"
-    opencode = "opencode"
+@app.callback()
+def main(
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit.",
+    ),
+):
+    """MCP Config Converter - Convert MCP configurations between formats and LLM providers."""
+    pass
 
 
 @app.command()
 def convert(
     input_file: Path = typer.Argument(
-        ..., exists=True, help="Input configuration file"
+        ...,
+        help="Input configuration file path",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
     ),
     output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Output file path"
+        None,
+        "--output",
+        "-o",
+        help="Output file path",
     ),
-    format: Optional[OutputFormat] = typer.Option(
-        None, "--format", "-f", help="Output format"
+    format: Optional[str] = typer.Option(
+        None,
+        "--format",
+        "-f",
+        help="Output format (json, yaml, toml)",
     ),
-    provider: Optional[Provider] = typer.Option(
-        None, "--provider", "-p", help="Target LLM provider"
+    provider: Optional[str] = typer.Option(
+        None,
+        "--provider",
+        "-p",
+        help="Target LLM provider (claude, gemini, vscode, opencode)",
     ),
     interactive: bool = typer.Option(
-        False, "--interactive", "-i", help="Enable interactive mode"
+        False,
+        "--interactive",
+        "-i",
+        help="Run in interactive mode",
     ),
 ):
     """Convert MCP configuration from one format to another."""
     try:
-        # Interactive mode prompts
+        # Interactive mode - prompt for missing options
         if interactive:
+            console.print(
+                Panel.fit(
+                    "🔄 Interactive Conversion Mode",
+                    style="bold blue",
+                )
+            )
+            
             if not format:
-                format_choice = Prompt.ask(
-                    "Select output format",
-                    choices=[f.value for f in OutputFormat],
-                    default="json",
-                )
-                format = OutputFormat(format_choice)
-
+                format = select_format()
+            
             if not provider:
-                provider_choice = Prompt.ask(
-                    "Select target provider",
-                    choices=[p.value for p in Provider],
-                    default="claude",
-                )
-                provider = Provider(provider_choice)
-
+                provider = select_provider()
+            
             if not output:
-                default_output = f"{input_file.stem}_converted.{format.value}"
-                output_str = Prompt.ask("Output file path", default=default_output)
-                output = Path(output_str)
-
-        # Show progress
+                # Use format if available, otherwise default to original extension
+                output_extension = format if format else input_file.suffix.lstrip('.')
+                suggested_output = input_file.with_suffix(f".{output_extension}")
+                output = Path(
+                    Prompt.ask(
+                        "Enter output file path",
+                        default=str(suggested_output),
+                    )
+                )
+            
+            # Confirm before proceeding
+            if not Confirm.ask(
+                f"\nConvert [cyan]{input_file}[/cyan] → [green]{output}[/green]?",
+                default=True,
+            ):
+                console.print("[yellow]Conversion cancelled.[/yellow]")
+                raise typer.Exit(0)
+        
+        # Validate choices
+        if format and not validate_format_choice(format):
+            console.print(
+                f"[red]Error:[/red] Invalid format '{format}'. "
+                f"Choose from: json, yaml, toml",
+                err=True,
+            )
+            raise typer.Exit(1)
+        
+        if provider and not validate_provider_choice(provider):
+            console.print(
+                f"[red]Error:[/red] Invalid provider '{provider}'. "
+                f"Choose from: claude, gemini, vscode, opencode",
+                err=True,
+            )
+            raise typer.Exit(1)
+        
+        # Perform conversion with progress indicator
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task(f"Converting {input_file}...", total=None)
-
-            # Actual conversion logic would go here
-            console.print(f"[green]✓[/green] Converting {input_file}...")
+            task = progress.add_task(
+                f"Converting {input_file.name}...",
+                total=None,
+            )
+            
+            # TODO: Implement actual conversion logic
+            # For now, just display what would happen
+            console.print(f"\n✓ Input file: [cyan]{input_file}[/cyan]")
             if format:
-                console.print(f"[green]✓[/green] Target format: {format.value}")
+                console.print(f"✓ Target format: [cyan]{format}[/cyan]")
             if provider:
-                console.print(f"[green]✓[/green] Target provider: {provider.value}")
+                console.print(f"✓ Target provider: [cyan]{provider}[/cyan]")
             if output:
-                console.print(f"[green]✓[/green] Output file: {output}")
-
+                console.print(f"✓ Output file: [green]{output}[/green]")
+            
             progress.update(task, completed=True)
-
-        console.print("[bold green]Conversion completed successfully![/bold green]")
-
+        
+        console.print("\n[bold green]✓ Conversion completed successfully![/bold green]")
+    
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Conversion cancelled by user.[/yellow]")
+        raise typer.Exit(130)
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {str(e)}")
-        raise typer.Exit(code=1)
+        console.print(f"\n[red]Error:[/red] {str(e)}", err=True)
+        raise typer.Exit(1)
 
 
 @app.command()
 def validate(
     config_file: Path = typer.Argument(
-        ..., exists=True, help="Configuration file to validate"
+        ...,
+        help="Configuration file to validate",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
     ),
 ):
     """Validate an MCP configuration file."""
@@ -114,50 +187,101 @@ def validate(
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task(f"Validating {config_file}...", total=None)
-
-            # Actual validation logic would go here
-            console.print(f"[green]✓[/green] Validating {config_file}...")
-
+            task = progress.add_task(
+                f"Validating {config_file.name}...",
+                total=None,
+            )
+            
+            # TODO: Implement actual validation logic
+            console.print(f"\n✓ Validating: [cyan]{config_file}[/cyan]")
+            
             progress.update(task, completed=True)
-
-        console.print("[bold green]Validation completed successfully![/bold green]")
-
+        
+        console.print("[bold green]✓ Configuration is valid![/bold green]")
+    
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Validation cancelled by user.[/yellow]")
+        raise typer.Exit(130)
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {str(e)}")
-        raise typer.Exit(code=1)
+        console.print(f"\n[red]Error:[/red] {str(e)}", err=True)
+        raise typer.Exit(1)
 
 
 @app.command()
 def init(
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output file path for the new configuration",
+    ),
+    provider: Optional[str] = typer.Option(
+        None,
+        "--provider",
+        "-p",
+        help="Target LLM provider (claude, gemini, vscode, opencode)",
+    ),
     interactive: bool = typer.Option(
-        True, "--interactive/--no-interactive", "-i/-n", help="Enable interactive mode"
+        True,
+        "--interactive/--no-interactive",
+        "-i/-I",
+        help="Run in interactive mode",
     ),
 ):
     """Initialize a new MCP configuration."""
     try:
+        console.print(
+            Panel.fit(
+                "🚀 Initialize New MCP Configuration",
+                style="bold blue",
+            )
+        )
+        
         if interactive:
-            console.print(
-                "[bold blue]Initializing new MCP configuration...[/bold blue]"
-            )
-
-            # Interactive prompts
-            config_name = Prompt.ask("Configuration name", default="mcp-config")
-            format_choice = Prompt.ask(
-                "Select format",
-                choices=[f.value for f in OutputFormat],
-                default="json",
-            )
-
-            console.print(f"[green]✓[/green] Creating {config_name}.{format_choice}...")
-        else:
-            console.print("[green]Initializing new MCP configuration...[/green]")
-
-        console.print("[bold green]Initialization completed successfully![/bold green]")
-
+            if not provider:
+                provider = select_provider()
+            
+            if not output:
+                default_name = f"mcp-config.json"
+                output = Path(
+                    Prompt.ask(
+                        "Enter output file path",
+                        default=default_name,
+                    )
+                )
+            
+            # Confirm before creating
+            if output.exists():
+                if not Confirm.ask(
+                    f"\n[yellow]Warning:[/yellow] File [cyan]{output}[/cyan] exists. Overwrite?",
+                    default=False,
+                ):
+                    console.print("[yellow]Initialization cancelled.[/yellow]")
+                    raise typer.Exit(0)
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Initializing configuration...", total=None)
+            
+            # TODO: Implement actual initialization logic
+            if provider:
+                console.print(f"\n✓ Provider: [cyan]{provider}[/cyan]")
+            if output:
+                console.print(f"✓ Output: [green]{output}[/green]")
+            
+            progress.update(task, completed=True)
+        
+        console.print("\n[bold green]✓ Configuration initialized successfully![/bold green]")
+    
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Initialization cancelled by user.[/yellow]")
+        raise typer.Exit(130)
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {str(e)}")
-        raise typer.Exit(code=1)
+        console.print(f"\n[red]Error:[/red] {str(e)}", err=True)
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

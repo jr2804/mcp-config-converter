@@ -1,7 +1,7 @@
 """Pydantic models for MCP configuration."""
 
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MCPServer(BaseModel):
@@ -15,14 +15,9 @@ class MCPServer(BaseModel):
 
 class MCPConfig(BaseModel):
     """Root MCP configuration model."""
-    version: str = Field(default="1.0", description="Configuration version")
-    servers: Dict[str, MCPServer] = Field(default_factory=dict, description="MCP servers")
-    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Global metadata")
-
-    class Config:
-        """Pydantic config."""
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "version": "1.0",
                 "servers": {
@@ -34,3 +29,7 @@ class MCPConfig(BaseModel):
                 }
             }
         }
+    )
+    version: str = Field(default="1.0", description="Configuration version")
+    servers: Dict[str, MCPServer] = Field(default_factory=dict, description="MCP servers")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Global metadata")
