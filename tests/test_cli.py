@@ -39,6 +39,6 @@ class TestCLI:
     def test_init_command(self, runner) -> None:
         """Test init command."""
         # Use non-interactive mode to avoid prompts
-        result = runner.invoke(app, ["init"])
+        result = runner.invoke(app, ["init", "--no-interactive"])
         assert result.exit_code == 0
-        assert "initialized" in result.stdout.lower() or "✓" in result.stdout
+        assert "initialized" in result.stdout.lower()

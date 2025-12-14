@@ -30,7 +30,7 @@ This project was created to address the challenges developers face when working 
 ## Key Features
 
 - 🔄 **Multi-format Support**: Parse and generate JSON, YAML, and TOML configurations
-- 🎯 **Provider-specific Formatting**: Output configurations optimized for Claude, Gemini, VS Code, and OpenCode
+- 🎯 **Provider-specific Formatting**: Output configurations optimized for Claude, Gemini, VS Code, OpenCode, and AI-assisted conversion with multiple LLM providers (OpenAI, Ollama, DeepSeek, SambaNova, Perplexity, OpenRouter)
 - ✅ **Validation**: Validate MCP configurations against the protocol schema
 - 🎨 **Rich CLI Experience**: User-friendly command-line interface with colorful output powered by Rich and Typer
 - 🔧 **Extensible Architecture**: Easy to add support for new formats and providers

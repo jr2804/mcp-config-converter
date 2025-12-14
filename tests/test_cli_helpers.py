@@ -1,6 +1,5 @@
 """Tests for CLI helper utilities."""
 
-
 from typing import Never
 
 import pytest
@@ -18,13 +17,13 @@ class TestValidation:
 
     def test_validate_format_choice_valid(self) -> None:
         """Test format validation with valid choices."""
-        assert validate_format_choice("json") is True
-        assert validate_format_choice("yaml") is True
-        assert validate_format_choice("toml") is True
+        assert validate_format_choice("claude") is True
+        assert validate_format_choice("gemini") is True
+        assert validate_format_choice("vscode") is True
 
     def test_validate_format_choice_invalid(self) -> None:
         """Test format validation with invalid choices."""
-        assert validate_format_choice("xml") is False
+        assert validate_format_choice("json") is False  # Not a provider format
         assert validate_format_choice("invalid") is False
         assert validate_format_choice("") is False
 

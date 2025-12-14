@@ -134,22 +134,16 @@ def convert(
         # Validate choices
         if format and not validate_format_choice(format):
             valid_formats = ", ".join(list(PROVIDER_DEFAULT_OUTPUT_FILES.keys()))
-            console.print(
-                f"[red]Error:[/red] Invalid format '{format}'. Choose from: {valid_formats}"
-            )
+            console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: {valid_formats}")
             raise typer.Exit(1)
 
         if provider and not validate_provider_choice(provider):
-            console.print(
-                f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: claude, gemini, vscode, opencode"
-            )
+            console.print(f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: claude, gemini, vscode, opencode")
             raise typer.Exit(1)
 
         # Validate output action
         if not validate_output_action(output_action):
-            console.print(
-                "[red]Error:[/red] Invalid output action. Choose from: overwrite, skip, merge"
-            )
+            console.print("[red]Error:[/red] Invalid output action. Choose from: overwrite, skip, merge")
             raise typer.Exit(1)
 
         # Determine output file if not specified but format is
@@ -177,7 +171,8 @@ def convert(
                         console.print(f"[blue]Merging with existing file: {output} (action: merge)[/blue]")
                         # For now, implement basic merge by reading existing file and updating with new values
                         import json
-                        existing_content = output.read_text(encoding='utf-8')
+
+                        existing_content = output.read_text(encoding="utf-8")
                         existing_data = json.loads(existing_content)
                         new_data = json.loads(result)
 
@@ -190,7 +185,7 @@ def convert(
                 # Write the result to output file
                 if output:
                     output.parent.mkdir(parents=True, exist_ok=True)  # Create directories if needed
-                    output.write_text(result, encoding='utf-8')
+                    output.write_text(result, encoding="utf-8")
 
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
@@ -282,12 +277,17 @@ def init(
 ) -> None:
     """Initialize a new MCP configuration."""
     try:
-        console.print(
-            Panel.fit(
-                "Initialize New MCP Configuration",
-                style="bold blue",
+        import sys
+
+        if sys.platform == "win32":
+            console.print("\n[bold blue]Initialize New MCP Configuration[/bold blue]")
+        else:
+            console.print(
+                Panel.fit(
+                    "Initialize New MCP Configuration",
+                    style="bold blue",
+                )
             )
-        )
 
         if interactive:
             if not provider:
@@ -310,11 +310,10 @@ def init(
                 console.print("[yellow]Initialization cancelled.[/yellow]")
                 raise typer.Exit(0)
 
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
+        # Use a simpler spinner for Windows to avoid Unicode encoding issues
+        import sys
+
+        def run_initialization(progress):
             task = progress.add_task("Initializing configuration...", total=None)
 
             # TODO: Implement actual initialization logic
@@ -325,7 +324,23 @@ def init(
 
             progress.update(task, completed=True)
 
-        console.print("\n[bold green][green]SUCCESS[/green] Configuration initialized successfully![/bold green]")
+        if sys.platform == "win32":
+            from rich.progress import Progress, TextColumn
+
+            with Progress(
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                run_initialization(progress)
+        else:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                run_initialization(progress)
+
+        console.print("\n[bold green]Configuration initialized successfully![/bold green]")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Initialization cancelled by user.[/yellow]")

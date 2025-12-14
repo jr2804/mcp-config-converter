@@ -8,6 +8,7 @@ The MCP Config Converter is a Python-based tool designed to convert Model Contex
 
 - **Parsers**: Handle input formats (JSON, YAML, TOML)
 - **Formatters**: Generate provider-specific output (Claude, Gemini, VS Code, OpenCode)
+- **LLM Providers**: AI-assisted conversion with multiple providers (OpenAI, Ollama, DeepSeek, SambaNova, Perplexity, OpenRouter)
 - **Models**: Pydantic models for MCP configuration validation
 - **CLI**: Command-line interface built with Typer and Rich
 
@@ -60,6 +61,41 @@ The MCP Config Converter is a Python-based tool designed to convert Model Contex
 2. Implement the `BaseFormatter` interface
 3. Add tests in `tests/test_formatters.py`
 4. Update the CLI to support the new provider
+
+### Adding a New LLM Provider
+
+1. Create a new provider file in `llm/` directory
+2. Implement the `BaseLLMProvider` interface or extend an existing provider (e.g., `OpenAIProvider` for OpenAI-compatible APIs)
+3. For providers with multiple SDK options, create separate classes (e.g., `ProviderOpenAIProvider` and `ProviderSDKProvider`)
+4. Add tests for the new provider
+5. Update `llm/__init__.py` to export the new provider class
+6. Make SDK dependencies optional in `pyproject.toml`
+
+### Available LLM Providers
+
+The project supports the following LLM providers for AI-assisted configuration conversion:
+
+#### OpenAI-Compatible Providers:
+- **OpenAI**: Standard OpenAI API with GPT models
+- **DeepSeek**: DeepSeek API using OpenAI-compatible interface
+- **SambaNovaOpenAI**: SambaNova API using OpenAI-compatible interface
+- **PerplexityOpenAI**: Perplexity API using OpenAI-compatible interface
+
+#### Proprietary SDK Providers:
+- **SambaNovaSDK**: SambaNova API using proprietary SDK
+- **PerplexitySDK**: Perplexity API using proprietary SDK
+- **OpenRouter**: OpenRouter API using proprietary SDK
+
+#### Local/Other Providers:
+- **Ollama**: Local Ollama models
+- **ClaudeProvider**: Anthropic Claude API (if implemented)
+- **GeminiProvider**: Google Gemini API (if implemented)
+
+#### Provider Configuration:
+- Each provider supports API key via environment variable (e.g., `DEEPSEEK_API_KEY`, `PERPLEXITY_API_KEY`)
+- Default models are configured for each provider
+- Users can override models via `--model` CLI parameter
+- OpenAI-compatible providers require `base_url` parameter where applicable
 
 ### Running Tests
 
