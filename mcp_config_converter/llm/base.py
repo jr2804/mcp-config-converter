@@ -14,7 +14,7 @@ class BaseLLMProvider(ABC):
     # Class variables for provider metadata
     PROVIDER_NAME: ClassVar[str]
     ENV_VAR_API_KEY: ClassVar[str | list[str] | None] = None
-    DEFAULT_MODEL: ClassVar[str] = "default-model"
+    DEFAULT_MODEL: ClassVar[str | None] = None
     REQUIRES_API_KEY: ClassVar[bool] = True
 
     def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):

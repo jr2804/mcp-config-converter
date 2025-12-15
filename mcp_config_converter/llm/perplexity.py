@@ -15,10 +15,11 @@ except ImportError:
 
 from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
+from mcp_config_converter.llm.openai import OpenAIProvider
 
 
 @ProviderRegistry.register_provider("perplexity-openai")
-class PerplexityOpenAIProvider(BaseLLMProvider):
+class PerplexityOpenAIProvider(OpenAIProvider):
     """Perplexity LLM provider using OpenAI-compatible API."""
 
     PROVIDER_NAME = "perplexity-openai"
@@ -26,44 +27,17 @@ class PerplexityOpenAIProvider(BaseLLMProvider):
     DEFAULT_MODEL = "sonar"
     REQUIRES_API_KEY = True
 
-    def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str = "https://api.perplexity.ai", **kwargs: Any):
+    def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
         """Initialize Perplexity OpenAI-compatible provider.
 
         Args:
             api_key: Perplexity API key (defaults to PERPLEXITY_API_KEY env var)
-            model: Model to use (default: llama-3-70b-instruct)
+            model: Model to use (default: sonar)
             base_url: Perplexity API base URL
             **kwargs: Additional arguments
         """
-        super().__init__(api_key=api_key, model=model, **kwargs)
-        self.base_url = base_url
-        self._client = None
-
-    def _create_client(self) -> Any:
-        """Create Perplexity OpenAI client."""
-        try:
-            if OpenAI is None:
-                return None
-
-            if self.api_key:
-                return OpenAI(api_key=self.api_key, base_url=self.base_url)
-            return OpenAI(base_url=self.base_url)
-        except Exception:
-            return None
-
-    def validate_config(self) -> bool:
-        """Validate Perplexity OpenAI configuration.
-
-        Returns:
-            True if configuration is valid
-        """
-        if OpenAI is None:
-            return False
-
-        if not self.api_key and not os.getenv("PERPLEXITY_API_KEY"):
-            return False
-
-        return self._client is not None
+        base_url: str = os.getenv("PERPLEXITY_API_BASE_URL", "https://api.perplexity.ai")
+        super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
 
 
 @ProviderRegistry.register_provider("perplexity-sdk")
@@ -72,7 +46,7 @@ class PerplexitySDKProvider(BaseLLMProvider):
 
     PROVIDER_NAME = "perplexity-sdk"
     ENV_VAR_API_KEY = "PERPLEXITY_API_KEY"
-    DEFAULT_MODEL = "llama-3-70b-instruct"
+    DEFAULT_MODEL = "sonar"
     REQUIRES_API_KEY = True
 
     def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):

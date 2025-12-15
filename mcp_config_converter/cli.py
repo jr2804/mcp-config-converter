@@ -1,5 +1,7 @@
 """Main CLI entry point for MCP Config Converter."""
 
+import json
+import sys
 from pathlib import Path
 
 import typer
@@ -7,16 +9,27 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
+from rich.table import Table
 
 from mcp_config_converter import __version__
 from mcp_config_converter.cli_helpers import (
     PROVIDER_DEFAULT_OUTPUT_FILES,
+    create_llm_provider,
     select_format,
     select_provider,
     validate_format_choice,
     validate_output_action,
     validate_provider_choice,
 )
+from mcp_config_converter.llm import ProviderRegistry
+
+# Optional imports for llm-check command
+try:
+    from openai import OpenAI  # noqa: F401
+
+    _OPENAI_AVAILABLE = True
+except ImportError:
+    _OPENAI_AVAILABLE = False
 
 app = typer.Typer(
     name="mcp-config-converter",
@@ -131,8 +144,6 @@ def convert(
         # Create LLM provider if configured
         if llm_config.get("provider_type"):
             try:
-                from mcp_config_converter.cli_helpers import create_llm_provider
-
                 create_llm_provider(
                     provider_type=llm_config.get("provider_type"),
                     base_url=llm_config.get("base_url"),
@@ -220,7 +231,6 @@ def convert(
                     elif output_action.lower() == "merge":
                         console.print(f"[blue]Merging with existing file: {output} (action: merge)[/blue]")
                         # For now, implement basic merge by reading existing file and updating with new values
-                        import json
 
                         existing_content = output.read_text(encoding="utf-8")
                         existing_data = json.loads(existing_content)
@@ -288,8 +298,6 @@ def validate(
         # Create LLM provider if configured
         if llm_config.get("provider_type"):
             try:
-                from mcp_config_converter.cli_helpers import create_llm_provider
-
                 create_llm_provider(
                     provider_type=llm_config.get("provider_type"),
                     base_url=llm_config.get("base_url"),
@@ -349,8 +357,6 @@ def init(
 ) -> None:
     """Initialize a new MCP configuration."""
     try:
-        import sys
-
         # Get LLM configuration from context
         llm_config = {}
         if hasattr(ctx, "obj") and ctx.obj:
@@ -359,8 +365,6 @@ def init(
         # Create LLM provider if configured
         if llm_config.get("provider_type"):
             try:
-                from mcp_config_converter.cli_helpers import create_llm_provider
-
                 create_llm_provider(
                     provider_type=llm_config.get("provider_type"),
                     base_url=llm_config.get("base_url"),
@@ -403,7 +407,6 @@ def init(
                 raise typer.Exit(0)
 
         # Use a simpler spinner for Windows to avoid Unicode encoding issues
-        import sys
 
         def run_initialization(progress) -> None:
             task = progress.add_task("Initializing configuration...", total=None)
@@ -417,8 +420,6 @@ def init(
             progress.update(task, completed=True)
 
         if sys.platform == "win32":
-            from rich.progress import Progress, TextColumn
-
             with Progress(
                 TextColumn("[progress.description]{task.description}"),
                 console=console,
@@ -463,9 +464,6 @@ def llm_check(
 ) -> None:
     """Check the status of all LLM providers."""
     try:
-        from rich.table import Table
-        from mcp_config_converter.llm import ProviderRegistry
-
         # Create the table
         table = Table(title="LLM Provider Status", show_header=True, header_style="bold blue")
         table.add_column("Provider", style="dim")
@@ -501,7 +499,7 @@ def llm_check(
                 # Check authentication status
                 authenticated = provider_instance.validate_config()
 
-            except Exception:
+            except Exception as e:
                 # Provider instantiation or validation failed
                 available = False
                 authenticated = False
@@ -526,10 +524,7 @@ def llm_check(
         if llm_base_url and llm_provider_type and llm_model:
             custom_available = False
             custom_auth = False
-            try:
-                # Check if OpenAI SDK is available
-                from openai import OpenAI  # noqa: F401
-
+            if _OPENAI_AVAILABLE:
                 custom_available = True
 
                 # Try to create custom provider using the registry
@@ -548,9 +543,6 @@ def llm_check(
                             custom_auth = False
                 except Exception:
                     custom_auth = False
-            except ImportError:
-                custom_available = False
-                custom_auth = False
 
             table.add_row(
                 f"Custom {llm_provider_type.title()}",

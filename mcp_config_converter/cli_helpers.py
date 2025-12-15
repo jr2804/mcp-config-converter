@@ -199,7 +199,21 @@ def create_llm_provider(
 
     provider_type = provider_type.lower()
 
-    # Handle custom OpenAI-compatible providers
+    # First try to get provider from registry (for registered providers)
+    from mcp_config_converter.llm import ProviderRegistry
+
+    try:
+        return ProviderRegistry.create_provider(
+            provider_type,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+        )
+    except ValueError:
+        # Provider not found in registry, try dynamic creation
+        pass
+
+    # Handle dynamic provider creation for custom OpenAI/Anthropic compatible endpoints
     if provider_type == "openai":
         try:
             from mcp_config_converter.llm.openai import OpenAIProvider
@@ -212,7 +226,6 @@ def create_llm_provider(
         except ImportError as e:
             raise ImportError(f"OpenAI provider requires 'openai' package: {e}")
 
-    # Handle custom Anthropic-compatible providers
     elif provider_type == "anthropic":
         try:
             from mcp_config_converter.llm.claude import ClaudeProvider
@@ -226,54 +239,6 @@ def create_llm_provider(
         except ImportError as e:
             raise ImportError(f"Anthropic provider requires 'anthropic' package: {e}")
 
-    # Handle specific provider names
     else:
-        # Try to import the specific provider
-        try:
-            if provider_type == "deepseek":
-                from mcp_config_converter.llm.deepseek import DeepSeekProvider
-
-                return DeepSeekProvider(
-                    api_key=api_key,
-                    model=model or "deepseek-chat",
-                    base_url=base_url,
-                )
-            elif provider_type == "ollama":
-                from mcp_config_converter.llm.ollama import OllamaProvider
-
-                return OllamaProvider(
-                    model=model or "llama2",
-                    base_url=base_url,
-                )
-            elif provider_type == "openrouter":
-                from mcp_config_converter.llm.openrouter import OpenRouterProvider
-
-                return OpenRouterProvider(
-                    api_key=api_key,
-                    model=model or "openai/gpt-4",
-                )
-            elif provider_type == "sambanova":
-                # Try OpenAI-compatible first, fall back to SDK
-                if base_url:
-                    from mcp_config_converter.llm.sambanova import SambaNovaOpenAIProvider
-
-                    return SambaNovaOpenAIProvider(
-                        api_key=api_key,
-                        model=model or "Meta-Llama-3.3-70B-Instruct",
-                        base_url=base_url,
-                    )
-                else:
-                    raise ValueError("SambaNova requires base_url to be specified")
-            elif provider_type == "perplexity":
-                # Try OpenAI-compatible first
-                from mcp_config_converter.llm.perplexity import PerplexityOpenAIProvider
-
-                return PerplexityOpenAIProvider(
-                    api_key=api_key,
-                    model=model or "llama-3-70b-instruct",
-                    base_url=base_url or "https://api.perplexity.ai",
-                )
-            else:
-                raise ValueError(f"Unknown provider type: {provider_type}")
-        except ImportError as e:
-            raise ImportError(f"Provider '{provider_type}' requires additional dependencies: {e}")
+        # Unknown provider type
+        raise ValueError(f"Unknown provider type: {provider_type}. Available providers: {', '.join(ProviderRegistry.list_providers())}")

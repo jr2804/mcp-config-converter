@@ -1,18 +1,14 @@
 """DeepSeek LLM provider using OpenAI-compatible API."""
 
+import os
 from typing import Any
 
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
-
 from mcp_config_converter.llm import ProviderRegistry
-from mcp_config_converter.llm.base import BaseLLMProvider
+from mcp_config_converter.llm.openai import OpenAIProvider
 
 
 @ProviderRegistry.register_provider("deepseek")
-class DeepSeekProvider(BaseLLMProvider):
+class DeepSeekProvider(OpenAIProvider):
     """DeepSeek LLM provider using OpenAI-compatible API."""
 
     PROVIDER_NAME = "deepseek"
@@ -20,7 +16,7 @@ class DeepSeekProvider(BaseLLMProvider):
     DEFAULT_MODEL = "deepseek-chat"
     REQUIRES_API_KEY = True
 
-    def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str = "https://api.deepseek.com", **kwargs: Any):
+    def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
         """Initialize DeepSeek provider.
 
         Args:
@@ -29,18 +25,5 @@ class DeepSeekProvider(BaseLLMProvider):
             base_url: DeepSeek API base URL (default: https://api.deepseek.com)
             **kwargs: Additional arguments
         """
-        super().__init__(api_key=api_key, model=model, **kwargs)
-        self.base_url = base_url
-        self._client = None
-
-    def _create_client(self) -> Any:
-        """Create DeepSeek client."""
-        try:
-            if OpenAI is None:
-                return None
-
-            if self.api_key:
-                return OpenAI(api_key=self.api_key, base_url=self.base_url)
-            return OpenAI(base_url=self.base_url)
-        except Exception:
-            return None
+        base_url = os.getenv("DEEPSEEK_API_BASE_URL", "https://api.deepseek.com")
+        super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
