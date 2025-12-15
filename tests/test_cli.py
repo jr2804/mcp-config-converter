@@ -3,7 +3,7 @@
 import pytest
 from typer.testing import CliRunner
 
-from mcp_config_converter.cli import app
+from mcp_config_converter.cli.main import app
 
 
 @pytest.fixture

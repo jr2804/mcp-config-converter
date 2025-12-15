@@ -4,7 +4,7 @@ from typing import Never
 
 import pytest
 
-from mcp_config_converter.cli_helpers import (
+from mcp_config_converter.cli.utils import (
     get_provider_config,
     retry_with_backoff,
     validate_format_choice,

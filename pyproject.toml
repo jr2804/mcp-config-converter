@@ -19,7 +19,7 @@ requires = ["hatchling", "uv-build"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-mcp-config-converter = "mcp_config_converter.cli:app"
+mcp-config-converter = "mcp_config_converter.cli.main:app"
 
 [tool.isort]
 profile = "black"
