@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "llm-check (Debug)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter.cli",
+            "args": [
+                "llm-check"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {}
+        }
+    ]
+}
