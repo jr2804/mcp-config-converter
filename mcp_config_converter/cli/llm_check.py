@@ -4,7 +4,7 @@ import typer
 from rich.table import Table
 
 from mcp_config_converter.cli import arguments
-from mcp_config_converter.cli.utils import console
+from mcp_config_converter.cli.utils import configure_llm_provider, console
 from mcp_config_converter.llm import ProviderRegistry
 
 try:
@@ -20,8 +20,24 @@ def llm_check(
     llm_base_url: str | None = arguments.llm_base_url_option(),
     llm_provider_type: str | None = arguments.llm_provider_type_option(),
     llm_model: str | None = arguments.llm_model_option(),
+    preferred_provider: str = arguments.preferred_provider_option(),
+    verbose: bool = False,
 ) -> None:
     try:
+        # Show preferred provider selection info if verbose
+        if verbose:
+            preferred_provider = preferred_provider  # Use the parameter directly
+            if preferred_provider == "auto":
+                try:
+                    from mcp_config_converter.cli.utils import select_auto_provider
+
+                    auto_provider = select_auto_provider()
+                    console.print(f"[blue]Auto-selected LLM provider: {auto_provider}[/blue]")
+                except ValueError as e:
+                    console.print(f"[yellow]Warning: {e}[/yellow]")
+            else:
+                console.print(f"[blue]Using preferred LLM provider: {preferred_provider}[/blue]")
+
         table = Table(title="LLM Provider Status", show_header=True, header_style="bold blue")
         table.add_column("Provider", style="dim")
         table.add_column("Model", style="dim")

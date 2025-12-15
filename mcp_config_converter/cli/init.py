@@ -8,6 +8,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
 
+from mcp_config_converter.cli import arguments
 from mcp_config_converter.cli.utils import CliPrompt, configure_llm_provider, console
 
 
@@ -16,11 +17,14 @@ def init(
     output: Path | None = None,
     provider: str | None = None,
     interactive: bool = True,
+    preferred_provider: str = arguments.preferred_provider_option(),
+    verbose: bool = False,
 ) -> None:
     """Initialize a new MCP configuration."""
 
     try:
-        configure_llm_provider(ctx)
+        verbose = ctx.obj.get("verbose", False)
+        configure_llm_provider(ctx, verbose=verbose)
 
         if sys.platform == "win32":
             console.print("\n[bold blue]Initialize New MCP Configuration[/bold blue]")

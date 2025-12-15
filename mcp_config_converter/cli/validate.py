@@ -9,11 +9,17 @@ from mcp_config_converter.cli import arguments
 from mcp_config_converter.cli.utils import configure_llm_provider, console
 
 
-def validate(ctx: typer.Context, config_file: Path | None = None) -> None:
+def validate(
+    ctx: typer.Context,
+    config_file: Path | None = None,
+    preferred_provider: str = arguments.preferred_provider_option(),
+    verbose: bool = False,
+) -> None:
     """Validate an MCP configuration file."""
 
     try:
-        configure_llm_provider(ctx)
+        verbose = ctx.obj.get("verbose", False)
+        configure_llm_provider(ctx, verbose=verbose)
 
         if config_file is None:
             config_file = arguments.config_file_argument()

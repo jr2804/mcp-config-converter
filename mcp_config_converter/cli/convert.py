@@ -52,6 +52,8 @@ def convert(
     provider: str | None = None,
     interactive: bool = False,
     output_action: str | None = None,
+    preferred_provider: str = arguments.preferred_provider_option(),
+    verbose: bool = False,
 ) -> None:
     """Convert an MCP configuration file to a supported format.
 
@@ -65,7 +67,8 @@ def convert(
         output_action: Action when output file exists
     """
     try:
-        configure_llm_provider(ctx)
+        verbose = ctx.obj.get("verbose", False)
+        configure_llm_provider(ctx, verbose=verbose)
 
         # Handle default values
         if input_file is None:

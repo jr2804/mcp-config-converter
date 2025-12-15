@@ -10,7 +10,7 @@ console = Console()
 
 app = typer.Typer(
     name="mcp-config-converter",
-    help="MCP Config Converter - Convert MCP configurations between formats and LLM providers.",
+    help="MCP Config Converter - Convert MCP configurations between formats and LLM providers with automatic provider selection.",
     add_completion=False,
 )
 
@@ -36,6 +36,8 @@ def main(
     llm_provider_type: str | None = arguments.llm_provider_type_option(),
     llm_api_key: str | None = arguments.llm_api_key_option(),
     llm_model: str | None = arguments.llm_model_option(),
+    preferred_provider: str = arguments.preferred_provider_option(),
+    verbose: bool = typer.Option(False, "--verbose", help="Verbose output"),
 ) -> None:
     if ctx.obj is None:
         ctx.obj = {}
@@ -46,6 +48,8 @@ def main(
         "api_key": llm_api_key,
         "model": llm_model,
     }
+    ctx.obj["preferred_provider"] = preferred_provider
+    ctx.obj["verbose"] = verbose
 
 
 typer.run = app

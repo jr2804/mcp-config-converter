@@ -103,3 +103,13 @@ def llm_model_option() -> str | None:
         "--llm-model",
         help="Model name for the configured LLM provider",
     )
+
+
+def preferred_provider_option() -> str:
+    return typer.Option(
+        "auto",
+        "--preferred-provider",
+        "-pp",
+        help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)",
+        case_sensitive=False,
+    )

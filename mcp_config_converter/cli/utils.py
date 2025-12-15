@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from mcp_config_converter.cli import constants, registry
+from mcp_config_converter.llm import ProviderRegistry
 
 T = TypeVar("T")
 console = Console()
@@ -26,23 +27,81 @@ def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
     return ctx.obj.get("llm_config", {})
 
 
-def configure_llm_provider(ctx: typer.Context | None) -> None:
+def select_auto_provider() -> str:
+    """Select the first fully configured LLM provider automatically using ProviderRegistry order.
+
+    Returns:
+        Provider name if found
+
+    Raises:
+        ValueError: If no providers are configured
+    """
+    providers = ProviderRegistry.list_providers()
+
+    for provider_name in providers:
+        try:
+            provider_class = ProviderRegistry.get_provider(provider_name)
+            if provider_class is None:
+                continue
+
+            # Create instance to check configuration
+            provider_instance = provider_class()
+            if provider_instance.validate_config():
+                return provider_name
+        except Exception:
+            continue
+
+    raise ValueError("No fully configured LLM providers found. Please configure at least one provider with API keys and required dependencies.")
+
+
+def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> None:
     llm_config = get_context_llm_config(ctx)
     provider_type = llm_config.get("provider_type")
 
+    # Check for preferred provider selection
+    preferred_provider = ctx.obj.get("preferred_provider", "auto") if ctx else "auto"
+
+    if preferred_provider == "auto":
+        try:
+            auto_provider = select_auto_provider()
+            provider_type = auto_provider
+            if verbose:
+                console.print(f"[blue]Auto-selected LLM provider: {provider_type}[/blue]")
+        except ValueError as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    elif preferred_provider != "auto":
+        # Validate that the preferred provider exists
+        if preferred_provider not in ProviderRegistry.list_providers():
+            available_providers = ", ".join(ProviderRegistry.list_providers())
+            console.print(f"[red]Error: Unknown provider '{preferred_provider}'. Available providers: {available_providers}[/red]")
+            raise typer.Exit(1)
+
+        provider_type = preferred_provider
+        if verbose:
+            console.print(f"[blue]Using preferred LLM provider: {provider_type}[/blue]")
+
     if not provider_type:
-        return
+        # This should not happen with auto-selection, but keep as fallback
+        console.print("[red]Error: No LLM provider specified or auto-selected[/red]")
+        raise typer.Exit(1)
 
     try:
-        registry.create_llm_provider(
+        created_provider = registry.create_llm_provider(
             provider_type=provider_type,
             base_url=llm_config.get("base_url"),
             api_key=llm_config.get("api_key"),
             model=llm_config.get("model"),
         )
-        console.print(f"[blue]Using LLM provider: {provider_type}[/blue]")
+        if created_provider is not None:
+            if verbose:
+                console.print(f"[blue]Using LLM provider: {provider_type}[/blue]")
+        else:
+            if verbose:
+                console.print(f"[yellow]Warning: Could not create LLM provider: {provider_type}[/yellow]")
     except (ImportError, ValueError) as exc:
         console.print(f"[yellow]Warning: Could not create LLM provider: {exc}[/yellow]")
+        raise typer.Exit(1)
 
 
 class OutputAction(str, Enum):
@@ -116,7 +175,9 @@ def retry_with_backoff(
 
 
 def validate_provider_choice(provider: str) -> bool:
-    return provider in constants.SUPPORTED_PROVIDERS
+    if provider == "auto":
+        return True
+    return provider in constants.SUPPORTED_PROVIDERS or provider in ProviderRegistry.list_providers()
 
 
 def validate_format_choice(format_choice: str) -> bool:
