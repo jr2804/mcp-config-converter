@@ -45,15 +45,6 @@ def format_option() -> str | None:
     )
 
 
-def provider_option() -> str | None:
-    return typer.Option(
-        None,
-        "--provider",
-        "-p",
-        help="Target LLM provider (claude, gemini, vscode, opencode)",
-    )
-
-
 def interactive_option() -> bool:
     return typer.Option(
         False,
@@ -112,4 +103,29 @@ def preferred_provider_option() -> str:
         "-pp",
         help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)",
         case_sensitive=False,
+    )
+
+
+def input_content_option() -> str | None:
+    return typer.Option(
+        None,
+        "--input-content",
+        "-c",
+        help="Raw input configuration content (alternative to input file)",
+    )
+
+
+def encode_toon_option() -> bool:
+    return typer.Option(
+        True,
+        "--encode-toon/--no-encode-toon",
+        help="Encode JSON input to TOON format for LLM processing",
+    )
+
+
+def decode_toon_option() -> bool:
+    return typer.Option(
+        True,
+        "--decode-toon/--no-decode-toon",
+        help="Decode TOON output from LLM back to JSON format",
     )

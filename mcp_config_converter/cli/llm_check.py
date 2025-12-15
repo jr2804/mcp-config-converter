@@ -23,6 +23,12 @@ def llm_check(
     preferred_provider: str = arguments.preferred_provider_option(),
     verbose: bool = False,
 ) -> None:
+    """Check the status of all available LLM providers.
+
+    This command provides a comprehensive overview of all registered LLM providers,
+    displaying their availability, authentication status, and configuration details
+    in a tabular format. Use --verbose to see preferred provider selection details.
+    """
     try:
         # Show preferred provider selection info if verbose
         if verbose:

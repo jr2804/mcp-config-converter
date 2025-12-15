@@ -14,84 +14,63 @@ from mcp_config_converter.cli.utils import (
     console,
     validate_format_choice,
     validate_output_action,
-    validate_provider_choice,
 )
+from mcp_config_converter.transformers import ConfigTransformer
 
 PROVIDER_DEFAULT_OUTPUT_FILES = constants.PROVIDER_DEFAULT_OUTPUT_FILES
 
 
-def get_input_file_argument() -> Path:
-    return arguments.input_file_argument()
-
-
-def get_output_option() -> Path | None:
-    return arguments.output_option()
-
-
-def get_format_option() -> str | None:
-    return arguments.format_option()
-
-
-def get_provider_option() -> str | None:
-    return arguments.provider_option()
-
-
-def get_interactive_option() -> bool:
-    return arguments.interactive_option()
-
-
-def get_output_action_option() -> str:
-    return arguments.output_action_option()
+# Argument definitions are now inline in the function signature
 
 
 def convert(
     ctx: typer.Context,
-    input_file: Path | None = None,
-    output: Path | None = None,
-    format: str | None = None,
-    provider: str | None = None,
-    interactive: bool = False,
-    output_action: str | None = None,
-    preferred_provider: str = arguments.preferred_provider_option(),
-    verbose: bool = False,
+    input_file: Path | None = typer.Argument(None, help="Input configuration file path"),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Output file path"),
+    format: str | None = typer.Option(None, "--format", "-f", help="Target provider format (claude, gemini, vscode, opencode)"),
+    interactive: bool = typer.Option(False, "--interactive", "-i", help="Run in interactive mode"),
+    output_action: str = typer.Option(
+        "overwrite", "--output-action", "-a", help="Action when output file exists: overwrite, skip, or merge", case_sensitive=False
+    ),
+    preferred_provider: str = typer.Option(
+        "auto", "--preferred-provider", "-pp", help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)", case_sensitive=False
+    ),
+    input_content: str | None = typer.Option(None, "--input-content", "-c", help="Raw input configuration content (alternative to input file)"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
 ) -> None:
-    """Convert an MCP configuration file to a supported format.
+    """Convert an MCP configuration file to a supported format using LLM.
 
     Args:
         ctx: Typer context
         input_file: Input file path
         output: Output file path
-        format: Output format
-        provider: Target LLM provider
+        format: Target provider format (claude, gemini, vscode, opencode)
         interactive: Run in interactive mode
         output_action: Action when output file exists
+        preferred_provider: Preferred LLM provider for conversion
+        input_content: Raw input configuration content
+        verbose: Verbose output
     """
     try:
-        verbose = ctx.obj.get("verbose", False)
-        configure_llm_provider(ctx, verbose=verbose)
+        # Validate input source
+        if input_file is None and input_content is None:
+            console.print("[red]Error: Either input file or --input-content must be provided[/red]")
+            raise typer.Exit(1)
 
-        # Handle default values
-        if input_file is None:
-            input_file = get_input_file_argument()
-        if output is None:
-            output = get_output_option()
-        if format is None:
-            format = get_format_option()
-        if provider is None:
-            provider = get_provider_option()
-        if interactive is False:
-            interactive = get_interactive_option()
-        if output_action is None:
-            output_action = get_output_action_option()
+        # Handle input source (file or content)
+        if input_content is not None:
+            # Using raw content input
+            actual_input_file = None
+        else:
+            # Using file input
+            actual_input_file = input_file
+            input_content = None
 
         if interactive:
             console.print(Panel.fit("Interactive Conversion Mode", style="bold blue"))
 
             if not format:
                 format = CliPrompt.select_format()
-
-            if not provider:
-                provider = CliPrompt.select_provider()
 
             if not output:
                 if format and format in PROVIDER_DEFAULT_OUTPUT_FILES:
@@ -113,8 +92,8 @@ def convert(
             console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: {valid_formats}")
             raise typer.Exit(1)
 
-        if provider and not validate_provider_choice(provider):
-            console.print(f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: claude, gemini, vscode, opencode")
+        if format and not validate_format_choice(format):
+            console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: claude, gemini, vscode, opencode")
             raise typer.Exit(1)
 
         if not validate_output_action(output_action):
@@ -122,13 +101,20 @@ def convert(
             raise typer.Exit(1)
 
         if not output and format:
-            output = PROVIDER_DEFAULT_OUTPUT_FILES.get(format, input_file.with_suffix(".mcp.json"))
+            default_suffix = input_file.with_suffix(".mcp.json") if input_file else Path("input.mcp.json")
+            output = PROVIDER_DEFAULT_OUTPUT_FILES.get(format, default_suffix)
 
-        console.print(f"[blue]Converting {input_file.name}...[/blue]")
+        input_desc = actual_input_file.name if actual_input_file else "raw input"
+        console.print(f"[blue]Converting {input_desc}...[/blue]")
 
         try:
             if format:
-                result = ConfigTransformer.transform(str(input_file), None, format)
+                result = ConfigTransformer.transform(
+                    input_file=str(actual_input_file) if actual_input_file else None,
+                    input_content=input_content,
+                    provider=format,
+                    llm_provider=ctx.obj.get("preferred_provider", "auto"),
+                )
 
                 if output and output.exists():
                     match output_action.lower():
@@ -152,16 +138,24 @@ def convert(
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
+                    if verbose:
+                        console.print("\n[bold blue]Converted Configuration:[/bold blue]")
+                        console.print(result)
                 else:
-                    console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] Input file: [cyan]{actual_input_file or 'raw input'}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
                     console.print("[green]SUCCESS[/green] Output: [green]No output file specified (result generated)[/green]")
+                    console.print("\n[bold blue]Converted Configuration:[/bold blue]")
+                    console.print(result)
             else:
                 console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
-                if provider:
-                    console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                if format:
+                    console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
                 if output:
                     console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
+                    if verbose:
+                        console.print("\n[bold blue]Converted Configuration:[/bold blue]")
+                        console.print(result)
         except Exception as exc:
             console.print(f"[red]Error during conversion:[/red] {str(exc)}")
             raise typer.Exit(1)
@@ -175,28 +169,20 @@ def convert(
         console.print(f"\n[red]Error:[/red] {str(exc)}")
         raise typer.Exit(1)
 
-        # Handle default values
-        if input_file is None:
-            input_file = get_input_file_argument()
-        if output is None:
-            output = get_output_option()
-        if format is None:
-            format = get_format_option()
-        if provider is None:
-            provider = get_provider_option()
-        if interactive is False:
-            interactive = get_interactive_option()
-        if output_action is None:
-            output_action = get_output_action_option()
+        # Handle input source (file or content)
+        if input_content is not None:
+            # Using raw content input
+            actual_input_file = None
+        else:
+            # Using file input
+            actual_input_file = input_file
+            input_content = None
 
         if interactive:
             console.print(Panel.fit("Interactive Conversion Mode", style="bold blue"))
 
             if not format:
                 format = CliPrompt.select_format()
-
-            if not provider:
-                provider = CliPrompt.select_provider()
 
             if not output:
                 if format and format in PROVIDER_DEFAULT_OUTPUT_FILES:
@@ -218,8 +204,8 @@ def convert(
             console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: {valid_formats}")
             raise typer.Exit(1)
 
-        if provider and not validate_provider_choice(provider):
-            console.print(f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: claude, gemini, vscode, opencode")
+        if format and not validate_format_choice(format):
+            console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: claude, gemini, vscode, opencode")
             raise typer.Exit(1)
 
         if not validate_output_action(output_action):
@@ -227,13 +213,20 @@ def convert(
             raise typer.Exit(1)
 
         if not output and format:
-            output = PROVIDER_DEFAULT_OUTPUT_FILES.get(format, input_file.with_suffix(".mcp.json"))
+            default_suffix = input_file.with_suffix(".mcp.json") if input_file else Path("input.mcp.json")
+            output = PROVIDER_DEFAULT_OUTPUT_FILES.get(format, default_suffix)
 
-        console.print(f"[blue]Converting {input_file.name}...[/blue]")
+        input_desc = actual_input_file.name if actual_input_file else "raw input"
+        console.print(f"[blue]Converting {input_desc}...[/blue]")
 
         try:
             if format:
-                result = ConfigTransformer.transform(str(input_file), None, format)
+                result = ConfigTransformer.transform(
+                    input_file=str(actual_input_file) if actual_input_file else None,
+                    input_content=input_content,
+                    provider=format,
+                    llm_provider=ctx.obj.get("preferred_provider", "auto"),
+                )
 
                 if output and output.exists():
                     match output_action.lower():
@@ -257,16 +250,24 @@ def convert(
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
+                    if verbose:
+                        console.print("\n[bold blue]Converted Configuration:[/bold blue]")
+                        console.print(result)
                 else:
-                    console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] Input file: [cyan]{actual_input_file or 'raw input'}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
                     console.print("[green]SUCCESS[/green] Output: [green]No output file specified (result generated)[/green]")
+                    console.print("\n[bold blue]Converted Configuration:[/bold blue]")
+                    console.print(result)
             else:
                 console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
-                if provider:
-                    console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                if format:
+                    console.print(f"[green]SUCCESS[/green] Target format: [cyan]{format}[/cyan]")
                 if output:
                     console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
+                    if verbose:
+                        console.print("\n[bold blue]Converted Configuration:[/bold blue]")
+                        console.print(result)
         except Exception as exc:
             console.print(f"[red]Error during conversion:[/red] {str(exc)}")
             raise typer.Exit(1)
