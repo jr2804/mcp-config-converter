@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from enum import Enum
 from functools import wraps
 from typing import Any, TypeVar
 
@@ -10,11 +9,32 @@ import typer
 from rich.console import Console
 from rich.prompt import Prompt
 
-from mcp_config_converter.cli import constants, registry
+from mcp_config_converter.cli import registry
+from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
 from mcp_config_converter.llm import ProviderRegistry
+from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
 console = Console()
+
+
+class CliPrompt:
+    @staticmethod
+    def select_provider(providers: list[str] | None = None, default: str = ProviderConfig.CLAUDE.value) -> str:
+        if providers is None:
+            providers = list(SUPPORTED_PROVIDERS)
+        return Prompt.ask("Select target LLM provider", choices=providers, default=default)
+
+    @staticmethod
+    def select_format(formats: list[str] | None = None) -> str:
+        if formats is None:
+            formats = list(PROVIDER_DEFAULT_OUTPUT_FILES.keys())
+
+        return Prompt.ask(
+            "Select target output format (provider type)",
+            choices=formats,
+            default=formats[0],
+        )
 
 
 def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
@@ -48,7 +68,7 @@ def select_auto_provider() -> str:
             provider_instance = provider_class()
             if provider_instance.validate_config():
                 return provider_name
-        except Exception:
+        except Exception:  # noqa: S112
             continue
 
     raise ValueError("No fully configured LLM providers found. Please configure at least one provider with API keys and required dependencies.")
@@ -93,54 +113,15 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
             api_key=llm_config.get("api_key"),
             model=llm_config.get("model"),
         )
+
         if created_provider is not None:
             if verbose:
                 console.print(f"[blue]Using LLM provider: {provider_type}[/blue]")
-        else:
-            if verbose:
-                console.print(f"[yellow]Warning: Could not create LLM provider: {provider_type}[/yellow]")
+        elif verbose:
+            console.print(f"[yellow]Warning: Could not create LLM provider: {provider_type}[/yellow]")
     except (ImportError, ValueError) as exc:
         console.print(f"[yellow]Warning: Could not create LLM provider: {exc}[/yellow]")
         raise typer.Exit(1)
-
-
-class OutputAction(str, Enum):
-    OVERWRITE = "overwrite"
-    SKIP = "skip"
-    MERGE = "merge"
-
-
-class ValidationError(ValueError):
-    pass
-
-
-class ProviderConfig(str, Enum):
-    CLAUDE = "claude"
-    GEMINI = "gemini"
-    MISTRAL = "mistral"
-    VSCODE = "vscode"
-    OPENCODE = "opencode"
-
-
-class CliPrompt:
-    @staticmethod
-    def select_provider(providers: list[str] | None = None, default: str = ProviderConfig.CLAUDE.value) -> str:
-        if providers is None:
-            providers = constants.SUPPORTED_PROVIDERS
-        return Prompt.ask("Select target LLM provider", choices=providers, default=default)
-
-    @staticmethod
-    def select_format(formats: list[str] | None = None, default: str = constants.VALID_FORMATS[0]) -> str:
-        if formats is None:
-            formats = constants.VALID_FORMATS
-        return Prompt.ask(
-            "Select target output format (provider type)",
-            choices=formats,
-            default=default,
-        )
-
-
-# Mapping of provider types to their default output filenames is in constants.PROVIDER_DEFAULT_OUTPUT_FILES
 
 
 def retry_with_backoff(
@@ -177,38 +158,12 @@ def retry_with_backoff(
 def validate_provider_choice(provider: str) -> bool:
     if provider == "auto":
         return True
-    return provider in constants.SUPPORTED_PROVIDERS or provider in ProviderRegistry.list_providers()
+    return provider in SUPPORTED_PROVIDERS or provider in ProviderRegistry.list_providers()
 
 
 def validate_format_choice(format_choice: str) -> bool:
-    return format_choice in constants.VALID_FORMATS
+    return format_choice in PROVIDER_DEFAULT_OUTPUT_FILES
 
 
 def validate_output_action(action: str) -> bool:
-    return action.lower() in constants.VALID_OUTPUT_ACTIONS
-
-
-def get_provider_config(provider: str) -> dict[str, Any]:
-    configs = {
-        ProviderConfig.CLAUDE.value: {
-            "name": "Claude",
-            "api_base": "https://api.anthropic.com",
-        },
-        ProviderConfig.GEMINI.value: {
-            "name": "Gemini",
-            "api_base": "https://generativelanguage.googleapis.com",
-        },
-        ProviderConfig.MISTRAL.value: {
-            "name": "Mistral",
-            "api_base": "https://api.mistral.ai",
-        },
-        ProviderConfig.VSCODE.value: {
-            "name": "VS Code",
-            "type": "editor_plugin",
-        },
-        ProviderConfig.OPENCODE.value: {
-            "name": "OpenCode",
-            "type": "editor_plugin",
-        },
-    }
-    return configs.get(provider, {})
+    return action.lower() in VALID_OUTPUT_ACTIONS

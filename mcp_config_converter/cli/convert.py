@@ -7,20 +7,14 @@ import typer
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
-from mcp_config_converter.cli import arguments, constants
+from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS
 from mcp_config_converter.cli.utils import (
     CliPrompt,
-    configure_llm_provider,
     console,
     validate_format_choice,
     validate_output_action,
 )
 from mcp_config_converter.transformers import ConfigTransformer
-
-PROVIDER_DEFAULT_OUTPUT_FILES = constants.PROVIDER_DEFAULT_OUTPUT_FILES
-
-
-# Argument definitions are now inline in the function signature
 
 
 def convert(
@@ -36,6 +30,8 @@ def convert(
         "auto", "--preferred-provider", "-pp", help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)", case_sensitive=False
     ),
     input_content: str | None = typer.Option(None, "--input-content", "-c", help="Raw input configuration content (alternative to input file)"),
+    encode_toon: bool = typer.Option(True, "--encode-toon/--no-encode-toon", help="Encode JSON input to TOON format for LLM processing"),
+    decode_toon: bool = typer.Option(True, "--decode-toon/--no-decode-toon", help="Decode TOON output from LLM back to JSON format"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
 ) -> None:
     """Convert an MCP configuration file to a supported format using LLM.
@@ -49,6 +45,8 @@ def convert(
         output_action: Action when output file exists
         preferred_provider: Preferred LLM provider for conversion
         input_content: Raw input configuration content
+        encode_toon: Whether to encode JSON input to TOON format
+        decode_toon: Whether to decode TOON output back to JSON
         verbose: Verbose output
     """
     try:
@@ -73,11 +71,7 @@ def convert(
                 format = CliPrompt.select_format()
 
             if not output:
-                if format and format in PROVIDER_DEFAULT_OUTPUT_FILES:
-                    suggested_output = PROVIDER_DEFAULT_OUTPUT_FILES[format]
-                else:
-                    suggested_output = input_file.with_suffix(".mcp.json")
-
+                suggested_output = PROVIDER_DEFAULT_OUTPUT_FILES.get(format)
                 output = Path(Prompt.ask("Enter output file path", default=str(suggested_output)))
 
             if not Confirm.ask(
@@ -88,12 +82,8 @@ def convert(
                 raise typer.Exit(0)
 
         if format and not validate_format_choice(format):
-            valid_formats = ", ".join(PROVIDER_DEFAULT_OUTPUT_FILES.keys())
+            valid_formats = ", ".join(SUPPORTED_PROVIDERS)
             console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: {valid_formats}")
-            raise typer.Exit(1)
-
-        if format and not validate_format_choice(format):
-            console.print(f"[red]Error:[/red] Invalid format '{format}'. Choose from: claude, gemini, vscode, opencode")
             raise typer.Exit(1)
 
         if not validate_output_action(output_action):
@@ -113,7 +103,9 @@ def convert(
                     input_file=str(actual_input_file) if actual_input_file else None,
                     input_content=input_content,
                     provider=format,
-                    llm_provider=ctx.obj.get("preferred_provider", "auto"),
+                    llm_provider=preferred_provider,
+                    encode_toon=encode_toon,
+                    decode_toon=decode_toon,
                 )
 
                 if output and output.exists():
@@ -168,7 +160,7 @@ def convert(
     except Exception as exc:
         console.print(f"\n[red]Error:[/red] {str(exc)}")
         raise typer.Exit(1)
-
+        """
         # Handle input source (file or content)
         if input_content is not None:
             # Using raw content input
@@ -225,7 +217,9 @@ def convert(
                     input_file=str(actual_input_file) if actual_input_file else None,
                     input_content=input_content,
                     provider=format,
-                    llm_provider=ctx.obj.get("preferred_provider", "auto"),
+                    llm_provider=preferred_provider,
+                    encode_toon=encode_toon,
+                    decode_toon=decode_toon,
                 )
 
                 if output and output.exists():
@@ -273,10 +267,4 @@ def convert(
             raise typer.Exit(1)
 
         console.print("\n[bold green]SUCCESS Conversion completed successfully![/bold green]")
-
-    except KeyboardInterrupt:
-        console.print("\n[yellow]Conversion cancelled by user.[/yellow]")
-        raise typer.Exit(130)
-    except Exception as exc:
-        console.print(f"\n[red]Error:[/red] {str(exc)}")
-        raise typer.Exit(1)
+    """

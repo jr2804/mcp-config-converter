@@ -4,7 +4,57 @@ import os
 from pathlib import Path
 from typing import Any
 
+import orjson
+import toml
+import toon_format
+import yaml
 from rich.prompt import Confirm, Prompt
+
+from mcp_config_converter.types import ConfigFormat
+
+
+def determine_config_format(cfg: str) -> ConfigFormat:
+    # Empty or whitespace-only strings are TEXT, not config
+    if not cfg or cfg.isspace():
+        return ConfigFormat.TEXT
+
+    # Try JSON first (strictest format)
+    try:
+        json_result = orjson.loads(cfg)
+        # JSON strings are valid JSON but not config structures
+        # Config files should be objects (dict) or arrays (list)
+        if isinstance(json_result, (dict, list)):
+            return ConfigFormat.JSON
+    except orjson.JSONDecodeError:
+        pass
+
+    # Try TOML (also strict, always returns dict for valid TOML)
+    try:
+        toml.loads(cfg)
+        return ConfigFormat.TOML
+    except toml.TomlDecodeError:
+        pass
+
+    # Try TOON (specific format, subset of YAML-like syntax)
+    try:
+        toon_result = toon_format.decode(cfg)
+        # TOON can parse plain text as string - config should be dict/list
+        if isinstance(toon_result, (dict, list)):
+            return ConfigFormat.TOON
+    except toon_format.ToonDecodeError:
+        pass
+
+    # Try YAML (lenient - returns strings for plain text)
+    try:
+        yaml_result = yaml.safe_load(cfg)
+        # YAML can parse plain text as string - config should be dict/list
+        if isinstance(yaml_result, (dict, list)):
+            return ConfigFormat.YAML
+    except yaml.YAMLError:
+        pass
+
+    # Default to TEXT
+    return ConfigFormat.TEXT
 
 
 def get_env_variable(name: str, default: str | None = None) -> str | None:

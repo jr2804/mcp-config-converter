@@ -12,6 +12,8 @@ dependencies = [
     "pyyaml>=6.0",
     "toml>=0.10.0",
     "openai>=2.11.0",
+    "toon-format",
+    "orjson>=3.11.5",
 ]
 
 [build-system]
@@ -27,6 +29,9 @@ line_length = 160
 
 [tool.uv]
 package = true
+
+[tool.uv.sources]
+toon-format = { git = "https://github.com/toon-format/toon-python.git" }
 
 [tool.undersort]
 # Method visibility ordering: public (no underscore), protected (single underscore), private (double underscore)
