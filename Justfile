@@ -30,3 +30,7 @@ format:
 # Build the project
 build:
     uv build .
+
+# LLM overview
+check-llm:
+    @uv run -m mcp_config_converter llm-check

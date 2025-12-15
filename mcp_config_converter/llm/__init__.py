@@ -74,6 +74,7 @@ from .base import BaseLLMProvider
 from .claude import ClaudeProvider
 from .deepseek import DeepSeekProvider
 from .gemini import GeminiProvider
+from .mistral import MistralProvider
 from .ollama import OllamaProvider
 from .openai import OpenAIProvider
 from .openrouter import OpenRouterProvider
@@ -84,6 +85,7 @@ __all__ = [
     "ClaudeProvider",
     "DeepSeekProvider",
     "GeminiProvider",
+    "MistralProvider",
     "OllamaProvider",
     "OpenAIProvider",
     "OpenRouterProvider",

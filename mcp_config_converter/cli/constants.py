@@ -13,6 +13,7 @@ PROVIDER_DEFAULT_OUTPUT_FILES: dict[str, Path] = {
 SUPPORTED_PROVIDERS: list[str] = [
     "claude",
     "gemini",
+    "mistral",
     "vscode",
     "opencode",
 ]

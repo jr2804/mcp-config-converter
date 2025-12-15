@@ -31,6 +31,7 @@ class TestValidation:
         """Test provider validation with valid choices."""
         assert validate_provider_choice("claude") is True
         assert validate_provider_choice("gemini") is True
+        assert validate_provider_choice("mistral") is True
         assert validate_provider_choice("vscode") is True
         assert validate_provider_choice("opencode") is True
 
@@ -61,6 +62,12 @@ class TestProviderConfig:
         config = get_provider_config("vscode")
         assert config["name"] == "VS Code"
         assert config["type"] == "editor_plugin"
+
+    def test_get_provider_config_mistral(self) -> None:
+        """Test getting Mistral provider config."""
+        config = get_provider_config("mistral")
+        assert config["name"] == "Mistral"
+        assert config["api_base"] == "https://api.mistral.ai"
 
     def test_get_provider_config_invalid(self) -> None:
         """Test getting config for invalid provider."""

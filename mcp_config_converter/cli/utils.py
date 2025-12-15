@@ -58,6 +58,7 @@ class ValidationError(ValueError):
 class ProviderConfig(str, Enum):
     CLAUDE = "claude"
     GEMINI = "gemini"
+    MISTRAL = "mistral"
     VSCODE = "vscode"
     OPENCODE = "opencode"
 
@@ -135,6 +136,10 @@ def get_provider_config(provider: str) -> dict[str, Any]:
         ProviderConfig.GEMINI.value: {
             "name": "Gemini",
             "api_base": "https://generativelanguage.googleapis.com",
+        },
+        ProviderConfig.MISTRAL.value: {
+            "name": "Mistral",
+            "api_base": "https://api.mistral.ai",
         },
         ProviderConfig.VSCODE.value: {
             "name": "VS Code",

@@ -33,6 +33,7 @@ The llm-check command automatically discovers and checks all registered provider
 - Claude (Anthropic)
 - DeepSeek
 - Gemini (Google)
+- Mistral
 - Ollama (Local)
 - OpenAI
 - OpenRouter
