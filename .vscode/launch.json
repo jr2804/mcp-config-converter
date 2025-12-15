@@ -5,7 +5,7 @@
             "name": "llm-check (Debug)",
             "type": "debugpy",
             "request": "launch",
-            "module": "mcp_config_converter.cli",
+            "module": "mcp_config_converter",
             "args": [
                 "llm-check"
             ],
