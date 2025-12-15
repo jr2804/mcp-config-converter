@@ -4,11 +4,6 @@ import os
 from typing import Any
 
 try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
-
-try:
     import sambanova
 except ImportError:
     sambanova = None

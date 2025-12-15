@@ -17,7 +17,7 @@ class OpenAIProvider(BaseLLMProvider):
 
     PROVIDER_NAME = "openai"
     ENV_VAR_API_KEY = "OPENAI_API_KEY"
-    DEFAULT_MODEL = "gpt-4-turbo"
+    DEFAULT_MODEL = "gpt-oss-20b"
     REQUIRES_API_KEY = True
 
     def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str | None = None, **kwargs: Any):
@@ -43,7 +43,9 @@ class OpenAIProvider(BaseLLMProvider):
                 if self.base_url:
                     return OpenAI(api_key=self.api_key, base_url=self.base_url)
                 return OpenAI(api_key=self.api_key)
-            return OpenAI()
+
+            # a valid OpenAI client needs at least an api_key
+            return None
         except Exception:
             return None
 
