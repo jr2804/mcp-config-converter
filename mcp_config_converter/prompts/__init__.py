@@ -1,10 +1,13 @@
 """LLM prompt templates for MCP configuration conversion."""
 
-from mcp_config_converter.prompts.base import BasePromptTemplate, PromptRegistry
-from mcp_config_converter.prompts.conversion import MCPConversionPrompt
+from mcp_config_converter.prompts.conversion import (
+    build_conversion_prompt,
+    parse_conversion_output,
+    validate_conversion_output,
+)
 
 __all__ = [
-    "BasePromptTemplate",
-    "MCPConversionPrompt",
-    "PromptRegistry",
+    "build_conversion_prompt",
+    "parse_conversion_output",
+    "validate_conversion_output",
 ]

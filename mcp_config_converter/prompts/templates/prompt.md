@@ -14,3 +14,21 @@
 - Free text input → Parse natural language descriptions of MCP servers
 - Mixed formats → Use best judgment to identify server components
 - Invalid input → Provide clear error message with conversion suggestions
+
+INPUT CONFIGURATION:
+```
+{input_config}
+```
+
+TARGET SPECIFICATION:
+{provider_spec}
+
+OUTPUT FORMAT: Provide an output format that is suitable for {target_provider} in pure text format (leave out Markdown intro/outro)
+
+# OUTPUT INSTRUCTIONS
+
+1. Convert the input configuration to {target_provider} format
+2. Output ONLY the converted configuration in {output_format} format
+3. Do NOT include explanations, comments, or additional text
+4. Ensure the output can be directly parsed as {output_format} and decoded to valid JSON
+5. If conversion fails, output a JSON object with an "error" field explaining the issue
