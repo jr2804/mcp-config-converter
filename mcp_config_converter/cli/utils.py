@@ -6,16 +6,15 @@ from functools import wraps
 from typing import Any, TypeVar
 
 import typer
-from rich.console import Console
 from rich.prompt import Prompt
 
-from mcp_config_converter.cli import registry
+from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
+from mcp_config_converter.cli.registry import create_llm_provider
 from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
-console = Console()
 
 
 class CliPrompt:
@@ -107,7 +106,7 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
         raise typer.Exit(1)
 
     try:
-        created_provider = registry.create_llm_provider(
+        created_provider = create_llm_provider(
             provider_type=provider_type,
             base_url=llm_config.get("base_url"),
             api_key=llm_config.get("api_key"),

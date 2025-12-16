@@ -8,22 +8,25 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm, Prompt
 
-from mcp_config_converter.cli import arguments
+from mcp_config_converter.cli import app, arguments
 from mcp_config_converter.cli.utils import CliPrompt, configure_llm_provider, console
 
 
+@app.command(name="init")
 def init(
     ctx: typer.Context,
-    output: Path | None = None,
-    provider: str | None = None,
-    interactive: bool = True,
-    preferred_provider: str = arguments.preferred_provider_option(),
-    verbose: bool = False,
+    output: Path | None = arguments.OutputOpt,
+    provider: str | None = arguments.InitProviderOpt,
+    interactive: bool = arguments.InteractiveOpt,
+    llm_base_url: str | None = arguments.LlmBaseUrlOpt,
+    llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
+    llm_api_key: str | None = arguments.LlmApiKeyOpt,
+    llm_model: str | None = arguments.LlmModelOpt,
+    preferred_provider: str = arguments.PreferredProviderOpt,
+    verbose: bool = arguments.VerboseOpt,
 ) -> None:
     """Initialize a new MCP configuration."""
-
     try:
-        verbose = ctx.obj.get("verbose", False)
         configure_llm_provider(ctx, verbose=verbose)
 
         if sys.platform == "win32":

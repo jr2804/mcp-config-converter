@@ -5,24 +5,28 @@ from pathlib import Path
 import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from mcp_config_converter.cli import arguments
+from mcp_config_converter.cli import app, arguments
 from mcp_config_converter.cli.utils import configure_llm_provider, console
 
 
+@app.command(name="validate")
 def validate(
     ctx: typer.Context,
-    config_file: Path | None = None,
-    preferred_provider: str = arguments.preferred_provider_option(),
-    verbose: bool = False,
+    config_file: Path | None = arguments.ConfigFileArg,
+    llm_base_url: str | None = arguments.LlmBaseUrlOpt,
+    llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
+    llm_api_key: str | None = arguments.LlmApiKeyOpt,
+    llm_model: str | None = arguments.LlmModelOpt,
+    preferred_provider: str = arguments.PreferredProviderOpt,
+    verbose: bool = arguments.VerboseOpt,
 ) -> None:
     """Validate an MCP configuration file."""
-
     try:
-        verbose = ctx.obj.get("verbose", False)
         configure_llm_provider(ctx, verbose=verbose)
 
         if config_file is None:
-            config_file = arguments.config_file_argument()
+            console.print("[red]Error:[/red] Configuration file is required.")
+            raise typer.Exit(1)
 
         with Progress(
             SpinnerColumn(),

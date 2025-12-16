@@ -3,8 +3,8 @@ from __future__ import annotations
 import typer
 from rich.table import Table
 
-from mcp_config_converter.cli import arguments
-from mcp_config_converter.cli.utils import configure_llm_provider, console
+from mcp_config_converter.cli import app, arguments, console
+from mcp_config_converter.cli.utils import select_auto_provider
 from mcp_config_converter.llm import ProviderRegistry
 
 try:
@@ -15,13 +15,15 @@ except ImportError:
     _OPENAI_AVAILABLE = False
 
 
+@app.command(name="llm-check")
 def llm_check(
     ctx: typer.Context,
-    llm_base_url: str | None = arguments.llm_base_url_option(),
-    llm_provider_type: str | None = arguments.llm_provider_type_option(),
-    llm_model: str | None = arguments.llm_model_option(),
-    preferred_provider: str = arguments.preferred_provider_option(),
-    verbose: bool = False,
+    llm_base_url: str | None = arguments.LlmBaseUrlOpt,
+    llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
+    llm_api_key: str | None = arguments.LlmApiKeyOpt,
+    llm_model: str | None = arguments.LlmModelOpt,
+    preferred_provider: str = arguments.PreferredProviderOpt,
+    verbose: bool = arguments.VerboseOpt,
 ) -> None:
     """Check the status of all available LLM providers.
 
@@ -35,8 +37,6 @@ def llm_check(
             preferred_provider = preferred_provider  # Use the parameter directly
             if preferred_provider == "auto":
                 try:
-                    from mcp_config_converter.cli.utils import select_auto_provider
-
                     auto_provider = select_auto_provider()
                     console.print(f"[blue]Auto-selected LLM provider: {auto_provider}[/blue]")
                 except ValueError as e:
