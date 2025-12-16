@@ -4,11 +4,6 @@ import os
 from typing import Any
 
 try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
-
-try:
     from perplexity import Client as PerplexityClient
 except ImportError:
     PerplexityClient = None
@@ -18,7 +13,7 @@ from mcp_config_converter.llm.base import BaseLLMProvider
 from mcp_config_converter.llm.openai import OpenAIProvider
 
 
-@ProviderRegistry.register_provider("perplexity-openai")
+@ProviderRegistry.register_provider("perplexity-openai", cost=10)
 class PerplexityOpenAIProvider(OpenAIProvider):
     """Perplexity LLM provider using OpenAI-compatible API."""
 
@@ -40,7 +35,7 @@ class PerplexityOpenAIProvider(OpenAIProvider):
         super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
 
 
-@ProviderRegistry.register_provider("perplexity-sdk")
+@ProviderRegistry.register_provider("perplexity-sdk", cost=11)
 class PerplexitySDKProvider(BaseLLMProvider):
     """Perplexity LLM provider using proprietary SDK."""
 

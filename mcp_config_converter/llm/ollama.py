@@ -11,7 +11,7 @@ from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
-@ProviderRegistry.register_provider("ollama")
+@ProviderRegistry.register_provider("ollama", cost=1)
 class OllamaProvider(BaseLLMProvider):
     """Local Ollama LLM provider."""
 

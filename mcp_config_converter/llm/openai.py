@@ -2,16 +2,13 @@
 
 from typing import Any
 
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
+from openai import OpenAI
 
 from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
-@ProviderRegistry.register_provider("openai")
+@ProviderRegistry.register_provider("openai", cost=15)
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI compatible LLM provider."""
 
@@ -37,19 +34,13 @@ class OpenAIProvider(BaseLLMProvider):
 
     def _create_client(self) -> Any:
         """Create OpenAI client."""
-        try:
-            if OpenAI is None:
-                return None
+        if self.api_key:
+            if self.base_url:
+                return OpenAI(api_key=self.api_key, base_url=self.base_url)
+            return OpenAI(api_key=self.api_key)
 
-            if self.api_key:
-                if self.base_url:
-                    return OpenAI(api_key=self.api_key, base_url=self.base_url)
-                return OpenAI(api_key=self.api_key)
-
-            # a valid OpenAI client needs at least an api_key
-            return None
-        except Exception:
-            return None
+        # a valid OpenAI client needs at least an api_key
+        return None
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using OpenAI.

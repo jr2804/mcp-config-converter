@@ -13,7 +13,7 @@ from mcp_config_converter.llm.base import BaseLLMProvider
 from mcp_config_converter.llm.openai import OpenAIProvider
 
 
-@ProviderRegistry.register_provider("sambanova-openai")
+@ProviderRegistry.register_provider("sambanova-openai", cost=16)
 class SambaNovaOpenAIProvider(OpenAIProvider):
     """SambaNova LLM provider using OpenAI-compatible API."""
 
@@ -35,7 +35,7 @@ class SambaNovaOpenAIProvider(OpenAIProvider):
         super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
 
 
-@ProviderRegistry.register_provider("sambanova-sdk")
+@ProviderRegistry.register_provider("sambanova-sdk", cost=17)
 class SambaNovaSDKProvider(BaseLLMProvider):
     """SambaNova LLM provider using proprietary SDK."""
 

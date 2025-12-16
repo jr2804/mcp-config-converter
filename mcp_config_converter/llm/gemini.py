@@ -11,7 +11,7 @@ from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
-@ProviderRegistry.register_provider("gemini")
+@ProviderRegistry.register_provider("gemini", cost=12)
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini LLM provider."""
 

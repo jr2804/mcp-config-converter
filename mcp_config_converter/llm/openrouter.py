@@ -11,7 +11,7 @@ from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
-@ProviderRegistry.register_provider("openrouter")
+@ProviderRegistry.register_provider("openrouter", cost=18)
 class OpenRouterProvider(BaseLLMProvider):
     """OpenRouter LLM provider using proprietary SDK."""
 

@@ -12,7 +12,7 @@ from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 
 
-@ProviderRegistry.register_provider("mistral")
+@ProviderRegistry.register_provider("mistral", cost=25)
 class MistralProvider(BaseLLMProvider):
     """Mistral AI LLM provider."""
 
