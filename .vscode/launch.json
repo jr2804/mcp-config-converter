@@ -13,6 +13,22 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {}
+        },
+        {
+            "name": "convert",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter",
+            "args": [
+                "convert",
+                ".vscode/mcp.json",
+                "-f",
+                "opencode",
+                "-pp",
+                "auto"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
         }
     ]
 }
