@@ -1,18 +1,15 @@
-from __future__ import annotations
+"""LLM provider check command."""
+
+from typing import Any
 
 import typer
+from rich.console import Console
 from rich.table import Table
 
-from mcp_config_converter.cli import app, arguments, console
-from mcp_config_converter.cli.utils import select_auto_provider
+from mcp_config_converter.cli import app, arguments
 from mcp_config_converter.llm import ProviderRegistry
 
-try:
-    from openai import OpenAI  # noqa: F401
-
-    _OPENAI_AVAILABLE = True
-except ImportError:
-    _OPENAI_AVAILABLE = False
+console = Console()
 
 
 @app.command(name="llm-check")
@@ -22,98 +19,126 @@ def llm_check(
     llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
-    preferred_provider: str = arguments.PreferredProviderOpt,
     verbose: bool = arguments.VerboseOpt,
 ) -> None:
-    """Check the status of all available LLM providers.
+    """Check LLM provider availability and configuration.
 
-    This command provides a comprehensive overview of all registered LLM providers,
-    displaying their availability, authentication status, and configuration details
-    in a tabular format. Use --verbose to see preferred provider selection details.
+    Args:
+        ctx: Typer context
+        llm_base_url: Custom base URL for LLM provider
+        llm_provider_type: LLM provider type
+        llm_api_key: API key for LLM provider
+        llm_model: Model name for LLM provider
+        verbose: Verbose output
     """
     try:
-        # Show preferred provider selection info if verbose
-        if verbose:
-            preferred_provider = preferred_provider  # Use the parameter directly
-            if preferred_provider == "auto":
-                try:
-                    auto_provider = select_auto_provider()
-                    console.print(f"[blue]Auto-selected LLM provider: {auto_provider}[/blue]")
-                except ValueError as e:
-                    console.print(f"[yellow]Warning: {e}[/yellow]")
-            else:
-                console.print(f"[blue]Using preferred LLM provider: {preferred_provider}[/blue]")
+        console.print("[bold blue]LLM Provider Status Check[/bold blue]\n")
 
-        table = Table(title="LLM Provider Status", show_header=True, header_style="bold blue")
-        table.add_column("Provider", style="dim")
-        table.add_column("Model", style="dim")
-        table.add_column("Availability", justify="center")
-        table.add_column("Authentication", justify="center")
+        # Check for custom provider configuration
+        custom_provider_args = {}
+        if llm_base_url:
+            custom_provider_args["base_url"] = llm_base_url
+        if llm_api_key:
+            custom_provider_args["api_key"] = llm_api_key
+        if llm_model:
+            custom_provider_args["model"] = llm_model
+        if llm_provider_type:
+            custom_provider_args["provider_type"] = llm_provider_type
 
-        providers = ProviderRegistry.list_providers()
+        # Create table
+        table = Table(title="LLM Provider Status", show_header=True, header_style="bold magenta")
+        table.add_column("Provider", style="cyan", no_wrap=True)
+        table.add_column("Model", style="green")
+        table.add_column("Availability", style="yellow")
+        table.add_column("Authentication", style="yellow")
+        table.add_column("Cost", style="blue")
 
-        for provider_name in providers:
-            provider_class = ProviderRegistry.get_provider(provider_name)
+        # Collect all provider data for sorting
+        provider_data = []
 
-            if provider_class is None:
+        # Check all registered providers
+        for provider_name in ProviderRegistry.list_providers():
+            provider_info = ProviderRegistry.get_provider_info(provider_name)
+            if not provider_info:
                 continue
 
-            provider_display_name = getattr(provider_class, "PROVIDER_NAME", provider_name)
-            default_model = getattr(provider_class, "DEFAULT_MODEL", "default")
-            requires_api_key = getattr(provider_class, "REQUIRES_API_KEY", True)
-
-            available = False
-            authenticated = False
-
             try:
-                provider_instance = ProviderRegistry.create_provider(provider_name)
-                available = provider_instance._create_client() is not None
-                authenticated = provider_instance.validate_config()
+                # Try to create provider instance
+                provider = provider_info.provider_class()
+                availability = "OK"
+                model = provider.model or "default"
+
+                # Check authentication
+                authentication = "OK" if provider.validate_config() else "Failed"
+
             except Exception:
-                available = False
-                authenticated = False
+                availability = "Failed"
+                authentication = "n/a"
+                model = "n/a"
 
-            availability_status = "[green]ok[/green]" if available else "[red]failed[/red]"
-            if not requires_api_key:
-                auth_status = "[yellow]n/a[/yellow]" if available else "[red]failed[/red]"
-            else:
-                auth_status = "[green]ok[/green]" if authenticated else "[red]failed[/red]"
-
-            table.add_row(
-                provider_display_name,
-                default_model,
-                availability_status,
-                auth_status,
+            provider_data.append(
+                {
+                    "name": provider_name,
+                    "model": model,
+                    "availability": availability,
+                    "authentication": authentication,
+                    "cost": provider_info.cost,
+                    "is_custom": False,
+                }
             )
 
-        if llm_base_url and llm_provider_type and llm_model:
-            custom_available = False
-            custom_auth = False
-            if _OPENAI_AVAILABLE:
-                custom_available = True
-                try:
-                    custom_provider = ProviderRegistry.create_provider(
-                        llm_provider_type,
-                        base_url=llm_base_url,
-                        model=llm_model,
-                    )
-                    custom_auth = custom_provider.validate_config()
-                except Exception:
-                    custom_available = False
-                    custom_auth = False
+        # Check custom provider if configured
+        if custom_provider_args:
+            try:
+                # Try to create custom provider
+                custom_provider = ProviderRegistry.create_provider("custom", **custom_provider_args)
+                availability = "OK"
+                model = custom_provider.model or "custom"
+                authentication = "OK" if custom_provider.validate_config() else "Failed"
+                provider_data.append(
+                    {
+                        "name": "custom",
+                        "model": model,
+                        "availability": availability,
+                        "authentication": authentication,
+                        "cost": -1,  # Custom providers always have cost -1 (always selected)
+                        "is_custom": True,
+                    }
+                )
+            except Exception:
+                provider_data.append({"name": "custom", "model": "n/a", "availability": "Failed", "authentication": "Failed", "cost": -1, "is_custom": True})
 
+        # Sort by cost (increasing)
+        provider_data.sort(key=lambda x: x["cost"])
+
+        # Add sorted data to table
+        for data in provider_data:
             table.add_row(
-                f"Custom {llm_provider_type.title()}",
-                llm_model,
-                "[green]ok[/green]" if custom_available else "[red]failed[/red]",
-                "[green]ok[/green]" if custom_auth else "[red]failed[/red]",
+                data["name"],
+                data["model"],
+                data["availability"],
+                data["authentication"],
+                str(data["cost"]),
             )
 
         console.print(table)
 
+        # Check auto-selection
+        if verbose:
+            console.print("\n[bold blue]Auto-selection Test:[/bold blue]")
+            try:
+                best_provider = ProviderRegistry.select_best_provider()
+                console.print(f"[green]Auto-selected LLM provider: {best_provider.PROVIDER_NAME}[/green]")
+                console.print(f"[green]Model: {best_provider.model or 'default'}[/green]")
+                console.print(f"[green]Cost: {ProviderRegistry.get_provider_info(best_provider.PROVIDER_NAME).cost}[/green]")
+            except Exception as e:
+                console.print(f"[red]Auto-selection failed: {str(e)}[/red]")
+
+        console.print("\n[bold green]LLM provider check completed.[/bold green]")
+
     except KeyboardInterrupt:
         console.print("\n[yellow]LLM check cancelled by user.[/yellow]")
         raise typer.Exit(130)
-    except Exception as exc:
-        console.print(f"\n[red]Error:[/red] {str(exc)}")
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {str(e)}")
         raise typer.Exit(1)

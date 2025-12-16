@@ -51,7 +51,7 @@ method_type_order = ["instance", "class", "static"]
 [dependency-groups]
 dev = [
     "pytest>=7.0",
-	"isort",
+    "isort",
     "ruff",
     "ty",
     "undersort",

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp_config_converter.llm import ProviderRegistry
-from mcp_config_converter.llm.openai import OpenAIProvider
 from mcp_config_converter.llm.claude import ClaudeProvider
+from mcp_config_converter.llm.openai import OpenAIProvider
+
+logger = logging.getLogger(__name__)
 
 
 def create_llm_provider(
@@ -40,8 +43,8 @@ def create_llm_provider(
             model=model,
             base_url=base_url,
         )
-    except ValueError:
-        pass
+    except ValueError as e:
+        logger.debug(f"ProviderRegistry failed for {provider_type}: {e}")
 
     if provider_type == "openai":
         try:
@@ -61,5 +64,13 @@ def create_llm_provider(
             )
         except ImportError as e:
             raise ImportError(f"Anthropic provider requires 'anthropic' package: {e}")
+
+    # Fallback for dynamic custom providers if not registered but args provided
+    if base_url:
+        try:
+            # Assuming OpenAI compatible for custom base_url
+            return OpenAIProvider(api_key=api_key, model=model or "default-model", base_url=base_url)
+        except Exception as e:
+            logger.debug(f"Custom provider creation failed: {e}")
 
     raise ValueError(f"Unknown provider type: {provider_type}. Available providers: {', '.join(ProviderRegistry.list_providers())}")

@@ -70,8 +70,3 @@ EncodeToonOpt = typer.Option(
     "--encode-toon/--no-encode-toon",
     help="Encode JSON input to TOON format for LLM processing",
 )
-DecodeToonOpt = typer.Option(
-    True,
-    "--decode-toon/--no-decode-toon",
-    help="Decode TOON output from LLM back to JSON format",
-)

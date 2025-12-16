@@ -57,6 +57,42 @@ def determine_config_format(cfg: str) -> ConfigFormat:
     return ConfigFormat.TEXT
 
 
+def parse_config_string(content: str) -> dict[str, Any] | list[Any] | None:
+    """Parse configuration string into a Python object.
+
+    Tries to parse as JSON, then TOML, then YAML.
+    Returns None if parsing fails or result is not a container type.
+    """
+    if not content or content.isspace():
+        return None
+
+    # Try JSON
+    try:
+        json_result = orjson.loads(content)
+        if isinstance(json_result, (dict, list)):
+            return json_result
+    except orjson.JSONDecodeError:
+        pass
+
+    # Try TOML
+    try:
+        toml_result = toml.loads(content)
+        if isinstance(toml_result, dict):  # TOML always returns dict
+            return toml_result
+    except toml.TomlDecodeError:
+        pass
+
+    # Try YAML
+    try:
+        yaml_result = yaml.safe_load(content)
+        if isinstance(yaml_result, (dict, list)):
+            return yaml_result
+    except yaml.YAMLError:
+        pass
+
+    return None
+
+
 def get_env_variable(name: str, default: str | None = None) -> str | None:
     """Get environment variable safely.
 
@@ -127,6 +163,41 @@ def get_file_extension(file_path: Path) -> str:
     return Path(file_path).suffix.lstrip(".")
 
 
+def clean_llm_output(output: str) -> str:
+    """Clean LLM output by removing markdown code blocks and extra text.
+
+    Args:
+        output: Raw LLM output
+
+    Returns:
+        Cleaned output
+    """
+    # Remove markdown code blocks
+    if "```json" in output:
+        # Extract JSON from code block
+        start = output.find("```json") + 7
+        end = output.find("```", start)
+        if end > start:
+            return output[start:end].strip()
+
+    if "```yaml" in output:
+        # Extract YAML from code block
+        start = output.find("```yaml") + 7
+        end = output.find("```", start)
+        if end > start:
+            return output[start:end].strip()
+
+    if "```" in output:
+        # Generic code block extraction
+        start = output.find("```") + 3
+        end = output.find("```", start)
+        if end > start:
+            return output[start:end].strip()
+
+    # Return as-is if no code blocks found
+    return output.strip()
+
+
 def prompt_for_choice(message: str, choices: list[str], default: str | None = None) -> str:
     """Prompt user to select from a list of choices.
 
@@ -138,7 +209,8 @@ def prompt_for_choice(message: str, choices: list[str], default: str | None = No
     Returns:
         Selected choice
     """
-    return Prompt.ask(message, choices=choices, default=default)
+    res = Prompt.ask(message, choices=choices, default=default)
+    return str(res) if res is not None else ""
 
 
 def prompt_for_confirmation(message: str, default: bool = False) -> bool:
@@ -164,7 +236,8 @@ def prompt_for_text(message: str, default: str | None = None) -> str:
     Returns:
         User input
     """
-    return Prompt.ask(message, default=default)
+    res = Prompt.ask(message, default=default)
+    return str(res) if res is not None else ""
 
 
 def select_provider(default: str = "claude") -> str:

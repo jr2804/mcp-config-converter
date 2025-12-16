@@ -63,8 +63,7 @@ def build_conversion_prompt(target_provider: str, input_config: str, encode_toon
             with contextlib.suppress(Exception):
                 processed_input = encode(parsed_config)
 
-    # Load templates
-
+    # Load template
     system_prompt = _load_template("system.md")
 
     # Load and format main prompt template

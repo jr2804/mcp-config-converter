@@ -55,22 +55,7 @@ def select_auto_provider() -> str:
     Raises:
         ValueError: If no providers are configured
     """
-    providers = ProviderRegistry.list_providers()
-
-    for provider_name in providers:
-        try:
-            provider_class = ProviderRegistry.get_provider(provider_name)
-            if provider_class is None:
-                continue
-
-            # Create instance to check configuration
-            provider_instance = provider_class()
-            if provider_instance.validate_config():
-                return provider_name
-        except Exception:  # noqa: S112
-            continue
-
-    raise ValueError("No fully configured LLM providers found. Please configure at least one provider with API keys and required dependencies.")
+    return ProviderRegistry.select_best_provider()
 
 
 def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> None:
@@ -78,7 +63,7 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
     provider_type = llm_config.get("provider_type")
 
     # Check for preferred provider selection
-    preferred_provider = ctx.obj.get("preferred_provider", "auto") if ctx else "auto"
+    preferred_provider = ctx.obj.get("preferred_provider", "auto") if ctx and ctx.obj else "auto"
 
     if preferred_provider == "auto":
         try:
@@ -125,7 +110,7 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
 
 def retry_with_backoff(
     max_retries: int = 3, initial_delay: float = 1.0, backoff_factor: float = 2.0, exceptions: tuple[type[BaseException], ...] = (Exception,)
-) -> Callable[..., T]:
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
@@ -157,7 +142,7 @@ def retry_with_backoff(
 def validate_provider_choice(provider: str) -> bool:
     if provider == "auto":
         return True
-    return provider in SUPPORTED_PROVIDERS or provider in ProviderRegistry.list_providers()
+    return provider in SUPPORTED_PROVIDERS
 
 
 def validate_format_choice(format_choice: str) -> bool:
