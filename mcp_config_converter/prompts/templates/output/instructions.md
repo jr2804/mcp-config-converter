@@ -1,4 +1,5 @@
-OUTPUT INSTRUCTIONS:
+# OUTPUT INSTRUCTIONS
+
 1. Convert the input configuration to {target_provider} format
 2. Output ONLY the converted configuration in {output_format} format
 3. Do NOT include explanations, comments, or additional text
