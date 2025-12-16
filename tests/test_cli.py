@@ -36,9 +36,12 @@ class TestCLI:
         result = runner.invoke(app, ["validate", "config.json"])
         assert result.exit_code == 0
 
-    def test_init_command(self, runner) -> None:
+    def test_init_command(self, runner, monkeypatch) -> None:
         """Test init command."""
-        # Use non-interactive mode to avoid prompts
-        result = runner.invoke(app, ["init", "--no-interactive"])
+        # Mock configure_llm_provider to avoid needing actual API keys
+        monkeypatch.setattr("mcp_config_converter.cli.init.configure_llm_provider", lambda ctx, verbose=False: None)
+
+        # Default mode is non-interactive, no flag needed
+        result = runner.invoke(app, ["init"])
         assert result.exit_code == 0
         assert "initialized" in result.stdout.lower()

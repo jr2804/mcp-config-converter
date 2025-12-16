@@ -1,6 +1,5 @@
 """Tests for determine_config_format function."""
 
-import orjson
 import toon_format
 
 from mcp_config_converter.types import ConfigFormat

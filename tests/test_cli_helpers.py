@@ -5,7 +5,6 @@ from typing import Never
 import pytest
 
 from mcp_config_converter.cli.utils import (
-    get_provider_config,
     retry_with_backoff,
     validate_format_choice,
     validate_provider_choice,
@@ -40,39 +39,6 @@ class TestValidation:
         assert validate_provider_choice("openai") is False
         assert validate_provider_choice("invalid") is False
         assert validate_provider_choice("") is False
-
-
-class TestProviderConfig:
-    """Tests for provider configuration."""
-
-    def test_get_provider_config_claude(self) -> None:
-        """Test getting Claude provider config."""
-        config = get_provider_config("claude")
-        assert config["name"] == "Claude"
-        assert "api_base" in config
-
-    def test_get_provider_config_gemini(self) -> None:
-        """Test getting Gemini provider config."""
-        config = get_provider_config("gemini")
-        assert config["name"] == "Gemini"
-        assert "api_base" in config
-
-    def test_get_provider_config_vscode(self) -> None:
-        """Test getting VS Code provider config."""
-        config = get_provider_config("vscode")
-        assert config["name"] == "VS Code"
-        assert config["type"] == "editor_plugin"
-
-    def test_get_provider_config_mistral(self) -> None:
-        """Test getting Mistral provider config."""
-        config = get_provider_config("mistral")
-        assert config["name"] == "Mistral"
-        assert config["api_base"] == "https://api.mistral.ai"
-
-    def test_get_provider_config_invalid(self) -> None:
-        """Test getting config for invalid provider."""
-        config = get_provider_config("invalid")
-        assert config == {}
 
 
 class TestRetry:
