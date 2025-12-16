@@ -29,6 +29,8 @@ class OpenAIProvider(BaseLLMProvider):
             base_url: Base URL for custom endpoints
             **kwargs: Additional arguments
         """
+        # Ensure base_url is not in kwargs to avoid duplicate parameter error
+        kwargs.pop("base_url", None)
         super().__init__(api_key=api_key, model=model, **kwargs)
         self.base_url = base_url
         self._client = None
