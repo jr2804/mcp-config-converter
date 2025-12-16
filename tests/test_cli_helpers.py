@@ -14,19 +14,22 @@ from mcp_config_converter.cli.utils import (
 class TestValidation:
     """Tests for validation functions."""
 
-    def test_validate_format_choice_valid(self) -> None:
+    @staticmethod
+    def test_validate_format_choice_valid() -> None:
         """Test format validation with valid choices."""
         assert validate_format_choice("claude") is True
         assert validate_format_choice("gemini") is True
         assert validate_format_choice("vscode") is True
 
-    def test_validate_format_choice_invalid(self) -> None:
+    @staticmethod
+    def test_validate_format_choice_invalid() -> None:
         """Test format validation with invalid choices."""
         assert validate_format_choice("json") is False  # Not a provider format
         assert validate_format_choice("invalid") is False
         assert validate_format_choice("") is False
 
-    def test_validate_provider_choice_valid(self) -> None:
+    @staticmethod
+    def test_validate_provider_choice_valid() -> None:
         """Test provider validation with valid choices."""
         assert validate_provider_choice("claude") is True
         assert validate_provider_choice("gemini") is True
@@ -34,7 +37,8 @@ class TestValidation:
         assert validate_provider_choice("vscode") is True
         assert validate_provider_choice("opencode") is True
 
-    def test_validate_provider_choice_invalid(self) -> None:
+    @staticmethod
+    def test_validate_provider_choice_invalid() -> None:
         """Test provider validation with invalid choices."""
         assert validate_provider_choice("openai") is False
         assert validate_provider_choice("invalid") is False
@@ -44,7 +48,8 @@ class TestValidation:
 class TestRetry:
     """Tests for retry decorator."""
 
-    def test_retry_success_on_first_attempt(self) -> None:
+    @staticmethod
+    def test_retry_success_on_first_attempt() -> None:
         """Test retry decorator when function succeeds immediately."""
         call_count = 0
 
@@ -58,7 +63,8 @@ class TestRetry:
         assert result == "success"
         assert call_count == 1
 
-    def test_retry_success_after_failures(self) -> None:
+    @staticmethod
+    def test_retry_success_after_failures() -> None:
         """Test retry decorator when function succeeds after failures."""
         call_count = 0
 
@@ -74,7 +80,8 @@ class TestRetry:
         assert result == "success"
         assert call_count == 3
 
-    def test_retry_all_attempts_fail(self) -> None:
+    @staticmethod
+    def test_retry_all_attempts_fail() -> None:
         """Test retry decorator when all attempts fail."""
         call_count = 0
 
@@ -89,7 +96,8 @@ class TestRetry:
 
         assert call_count == 3  # Initial attempt + 2 retries
 
-    def test_retry_respects_exception_filter(self) -> None:
+    @staticmethod
+    def test_retry_respects_exception_filter() -> None:
         """Test retry decorator only catches specified exceptions."""
 
         @retry_with_backoff(max_retries=2, initial_delay=0.1, exceptions=(ValueError,))

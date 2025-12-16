@@ -8,8 +8,9 @@ from mcp_config_converter.prompts.conversion import _get_provider_specification
 class TestProviderSpecifications:
     """Test provider specification loading functionality."""
 
+    @staticmethod
     @pytest.mark.parametrize("provider", ["claude", "vscode", "gemini", "mistral", "opencode"])
-    def test_get_provider_specification_returns_markdown(self, provider) -> None:
+    def test_get_provider_specification_returns_markdown(provider: str) -> None:
         """Test that _get_provider_specification returns valid markdown content."""
         spec_content = _get_provider_specification(target_provider=provider)
 
@@ -20,12 +21,14 @@ class TestProviderSpecifications:
         # Basic markdown format validation
         assert "# " in spec_content, f"Provider {provider} specification should contain markdown headers"
 
-    def test_get_provider_specification_invalid_provider(self) -> None:
+    @staticmethod
+    def test_get_provider_specification_invalid_provider() -> None:
         """Test that invalid providers raise appropriate exceptions."""
         with pytest.raises(FileNotFoundError, match="Required specification file not found"):
             _get_provider_specification(target_provider="nonexistent")
 
-    def test_all_provider_specs_exist(self) -> None:
+    @staticmethod
+    def test_all_provider_specs_exist() -> None:
         """Test that all expected provider specification files exist."""
         expected_providers = ["claude", "vscode", "gemini", "mistral", "opencode"]
         for provider in expected_providers:
