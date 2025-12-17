@@ -65,16 +65,16 @@ def llm_check(
             try:
                 # Try to create provider instance
                 provider = provider_info.provider_class()
-                availability = "OK"
+                availability = "[bold green]OK[/bold green]"
                 model = provider.model or "default"
 
                 # Check authentication
-                authentication = "OK" if provider.validate_config() else "Failed"
+                authentication = "[bold green]OK[/bold green]" if provider.validate_config() else "[bold red]Failed[/bold red]"
 
             except Exception:
-                availability = "Failed"
-                authentication = "n/a"
-                model = "n/a"
+                availability = "[bold red]Failed[/bold red]"
+                authentication = "[bold red]Failed[/bold red]"
+                model = "[bold red]Failed[/bold red]"
 
             provider_data.append(
                 {
@@ -82,7 +82,7 @@ def llm_check(
                     "model": model,
                     "availability": availability,
                     "authentication": authentication,
-                    "cost": provider_info.cost,
+                    "cost": provider_info.cost if provider_info else 0,
                     "is_custom": False,
                 }
             )
@@ -92,9 +92,9 @@ def llm_check(
             try:
                 # Try to create custom provider
                 custom_provider = ProviderRegistry.create_provider("custom", **custom_provider_args)
-                availability = "OK"
+                availability = "[bold green]OK[/bold green]"
                 model = custom_provider.model or "custom"
-                authentication = "OK" if custom_provider.validate_config() else "Failed"
+                authentication = "[bold green]OK[/bold green]" if custom_provider.validate_config() else "[bold red]Failed[/bold red]"
                 provider_data.append(
                     {
                         "name": "custom",
@@ -106,7 +106,16 @@ def llm_check(
                     }
                 )
             except Exception:
-                provider_data.append({"name": "custom", "model": "n/a", "availability": "Failed", "authentication": "Failed", "cost": -1, "is_custom": True})
+                provider_data.append(
+                    {
+                        "name": "custom",
+                        "model": "[bold red]Failed[/bold red]",
+                        "availability": "[bold red]Failed[/bold red]",
+                        "authentication": "[bold red]Failed[/bold red]",
+                        "cost": -1,
+                        "is_custom": True,
+                    }
+                )
 
         # Sort by cost (increasing)
         provider_data.sort(key=lambda x: x["cost"])
