@@ -1,6 +1,5 @@
 """Perplexity LLM provider implementations."""
 
-import functools
 import os
 from typing import Any
 

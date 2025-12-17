@@ -1,6 +1,5 @@
 """Anthropic Claude LLM provider."""
 
-import functools
 from typing import Any
 
 try:

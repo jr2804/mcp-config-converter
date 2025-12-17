@@ -1,6 +1,5 @@
 """OpenAI compatible LLM provider."""
 
-import functools
 from typing import Any
 
 from openai import OpenAI
