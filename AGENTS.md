@@ -25,14 +25,27 @@ Use `uv add` for managing dependencies. This ensures consistency with the projec
 
 The `--preferred-provider` option allows automatic selection of LLM providers:
 
-- `auto` (default): Automatically selects the first fully configured provider from the registry.
+- `auto` (default): Automatically selects the lowest-cost available provider from the registry.
 - Specific provider name: Uses the specified provider if configured.
+
+**Cost Hierarchy** (lowest to highest cost):
+- Ollama: 1 (preferred local)
+- DeepSeek: 8
+- Perplexity: 10/11
+- Gemini: 12
+- OpenAI: 15
+- SambaNova: 16/17
+- OpenRouter: 18
+- Claude: 20
+- Mistral: 25
 
 The system selects the first provider that:
 
 1. Has required dependencies installed.
 2. Has valid API keys configured (if required).
 3. Can successfully create a client.
+
+**Custom Providers**: Create custom LLM providers using `--llm-base-url` and `--llm-provider-type`. They get cost `-1` and are always preferred in auto-selection.
 
 ### Available Providers
 
@@ -48,8 +61,6 @@ The `llm-check` command automatically discovers and checks all registered provid
 - Perplexity (OpenAI-compatible and SDK)
 - SambaNova (OpenAI-compatible and SDK)
 
-Custom providers can be checked by specifying `--llm-provider-type`, `--llm-base-url`, and `--llm-model`.
-
 ### `llm-check` Usage
 
 The command provides a comprehensive status overview.
@@ -58,7 +69,7 @@ The command provides a comprehensive status overview.
 uv run mcp-config-converter llm-check [OPTIONS]
 ```
 
-**Output Columns:** Provider, Model, Availability (Status OK/Failed), Authentication (Status OK/Failed/n/a).
+**Output Columns:** Provider, Model, Availability (Status OK/Failed), Authentication (Status OK/Failed/n/a), Cost (sorted by increasing cost).
 
 ### Optional Dependencies
 
@@ -78,6 +89,10 @@ uv add mcp-config-converter[anthropic]    # Claude support
 uv add mcp-config-converter[all]            # All dependencies
 ```
 
+### Provider Registry
+
+All providers register with `@ProviderRegistry.register_provider("name", cost=X)`. Custom providers can be created dynamically via `ProviderRegistry.create_provider()`.
+
 ## 3. Development Commands
 
 Standard project commands, run via `uv run`:
@@ -88,7 +103,25 @@ Standard project commands, run via `uv run`:
 - **Typecheck**: `uv run just typecheck`
 - **Build**: `uv run just build`
 
-## 4. Code Style
+## 4. Security Guidelines
+
+- **Input Validation**: Always validate user inputs before processing to prevent security vulnerabilities.
+- **Principle of Least Privilege**: Follow the principle of least privilege when dealing with permissions.
+- **Dependency Management**: Keep dependencies up to date to avoid security vulnerabilities.
+- **Configuration**: Use environment variables for configuration instead of hardcoding values.
+
+## 5. Testing Guidelines
+
+- **Write Tests**: Write tests for critical functionality to ensure code reliability.
+- **Test Coverage**: Focus on testing complex algorithms and business logic.
+
+## 6. Documentation Guidelines
+
+- **Document Complex Logic**: Document complex algorithms and business logic for future maintainability.
+- **Code Comments**: Use descriptive variable and function names for better code readability.
+- **Avoid Premature Optimization**: Make it work first, then optimize if needed.
+
+## 5. Code Style
 
 - **Imports**: Use absolute imports, group by stdlib, third-party, local; sort alphabetically.
 - **Formatting**: Ruff with `ruff.toml` (no line length limit, double quotes).
