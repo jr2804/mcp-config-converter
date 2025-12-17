@@ -15,7 +15,7 @@
             "env": {}
         },
         {
-            "name": "convert",
+            "name": "convert (auto)",
             "type": "debugpy",
             "request": "launch",
             "module": "mcp_config_converter",
@@ -26,6 +26,22 @@
                 "opencode",
                 "-pp",
                 "auto"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "convert (deepseek)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter",
+            "args": [
+                "convert",
+                ".vscode/mcp.json",
+                "-p",
+                "opencode",
+                "-pp",
+                "deepseek"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
