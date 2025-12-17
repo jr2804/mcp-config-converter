@@ -1,5 +1,6 @@
 """OpenRouter LLM provider using proprietary SDK."""
 
+import functools
 from typing import Any
 
 try:
@@ -29,20 +30,19 @@ class OpenRouterProvider(BaseLLMProvider):
             **kwargs: Additional arguments
         """
         super().__init__(api_key=api_key, model=model, **kwargs)
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create OpenRouter client."""
-        try:
-            if OpenRouterClient is None:
-                return None
+        if OpenRouterClient is None:
+            raise RuntimeError("OpenRouter client not available")
 
-            if not self.api_key:
-                return None
+        if not self.api_key:
+            raise RuntimeError("OpenRouter client requires API key")
 
-            return OpenRouterClient(api_key=self.api_key)
-        except Exception:
-            return None
+        if self._client is None:
+            self._client = OpenRouterClient(api_key=self.api_key)
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using OpenRouter SDK.
@@ -54,10 +54,18 @@ class OpenRouterProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("OpenRouter client not available")
-
-        response = self._client.chat.send(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
+        response = self._get_client().chat.send(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
         return response.choices[0].message.content or ""
+
+    @functools.cached_property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
+        try:
+            response = self._get_client().models.list()
+            return [model.id for model in response.data]
+        except Exception:
+            return None

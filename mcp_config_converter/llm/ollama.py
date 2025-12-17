@@ -1,11 +1,12 @@
 """Local Ollama LLM provider."""
 
+import functools
 from typing import Any
 
 try:
-    import ollama
+    from ollama import Client
 except ImportError:
-    ollama = None
+    Client = None
 
 from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
@@ -17,7 +18,7 @@ class OllamaProvider(BaseLLMProvider):
 
     PROVIDER_NAME = "ollama"
     ENV_VAR_API_KEY = None  # No API key required
-    DEFAULT_MODEL = "llama2"
+    DEFAULT_MODEL = None
     REQUIRES_API_KEY = False
 
     def __init__(self, model: str | None = None, base_url: str = "http://localhost:11434", **kwargs: Any):
@@ -30,14 +31,16 @@ class OllamaProvider(BaseLLMProvider):
         """
         super().__init__(model=model, **kwargs)
         self.base_url = base_url
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create Ollama client."""
-        try:
-            return ollama
-        except Exception:
-            return None
+        if Client is None:
+            raise RuntimeError("Ollama client not available")
+
+        if self._client is None:
+            self._client = Client(host=self.base_url)
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Ollama.
@@ -49,10 +52,18 @@ class OllamaProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("Ollama client not available")
-
-        response = self._client.generate(model=self.model, prompt=prompt, stream=False)
+        response = self._get_client().generate(model=self.model, prompt=prompt, stream=False)
         return response.get("response", "")
+
+    @functools.cached_property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
+        try:
+            response = self._get_client().list()
+            return [model["model"] for model in response["models"]]
+        except Exception:
+            return None

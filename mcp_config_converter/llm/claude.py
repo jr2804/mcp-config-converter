@@ -1,5 +1,6 @@
 """Anthropic Claude LLM provider."""
 
+import functools
 from typing import Any
 
 try:
@@ -29,19 +30,16 @@ class ClaudeProvider(BaseLLMProvider):
             **kwargs: Additional arguments
         """
         super().__init__(api_key=api_key, model=model, **kwargs)
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create Anthropic client."""
-        try:
-            if Anthropic is None:
-                return None
+        if Anthropic is None:
+            raise RuntimeError("Anthropic client not available")
 
-            if self.api_key:
-                return Anthropic(api_key=self.api_key)
-            return Anthropic()
-        except Exception:
-            return None
+        if self._client is None:
+            self._client = Anthropic(api_key=self.api_key) if self.api_key else Anthropic()
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Claude.
@@ -53,13 +51,21 @@ class ClaudeProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("Anthropic client not available")
-
         max_tokens = kwargs.get("max_tokens", 1024)
 
-        message = self._client.messages.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
+        message = self._get_client().messages.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
 
         return message.content[0].text
+
+    @property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
+        try:
+            response = self._get_client().models.list()
+            return [model.id for model in response.data]
+        except Exception:
+            return None

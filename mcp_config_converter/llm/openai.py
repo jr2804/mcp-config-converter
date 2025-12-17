@@ -1,5 +1,6 @@
 """OpenAI compatible LLM provider."""
 
+import functools
 from typing import Any
 
 from openai import OpenAI
@@ -30,17 +31,19 @@ class OpenAIProvider(BaseLLMProvider):
         kwargs.pop("base_url", None)
         super().__init__(api_key=api_key, model=model, **kwargs)
         self.base_url = base_url
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create OpenAI client."""
-        if self.api_key:
-            if self.base_url:
-                return OpenAI(api_key=self.api_key, base_url=self.base_url)
-            return OpenAI(api_key=self.api_key)
+        if not self.api_key:
+            raise RuntimeError("OpenAI client requires API key")
 
-        # a valid OpenAI client needs at least an api_key
-        return None
+        if self._client is None:
+            if self.base_url:
+                self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            else:
+                self._client = OpenAI(api_key=self.api_key)
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using OpenAI.
@@ -52,13 +55,21 @@ class OpenAIProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("OpenAI client not available")
-
         max_tokens = kwargs.get("max_tokens", 1024)
 
-        response = self._client.chat.completions.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
+        response = self._get_client().chat.completions.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
 
         return response.choices[0].message.content or ""
+
+    @property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
+        try:
+            response = self._get_client().models.list()
+            return [model.id for model in response.data]
+        except Exception:
+            return None

@@ -1,5 +1,6 @@
 """Perplexity LLM provider implementations."""
 
+import functools
 import os
 from typing import Any
 
@@ -34,6 +35,15 @@ class PerplexityOpenAIProvider(OpenAIProvider):
         base_url: str = os.getenv("PERPLEXITY_API_BASE_URL", "https://api.perplexity.ai")
         super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
 
+    @property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names
+        """
+        return ["sonar", "sonar-pro", "sonar-reasoning-pro"]
+
 
 @ProviderRegistry.register_provider("perplexity-sdk", cost=11)
 class PerplexitySDKProvider(BaseLLMProvider):
@@ -53,20 +63,19 @@ class PerplexitySDKProvider(BaseLLMProvider):
             **kwargs: Additional arguments
         """
         super().__init__(api_key=api_key, model=model, **kwargs)
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create Perplexity SDK client."""
-        try:
-            if PerplexityClient is None:
-                return None
+        if PerplexityClient is None:
+            raise RuntimeError("Perplexity SDK client not available")
 
-            if not self.api_key:
-                return None
+        if not self.api_key:
+            raise RuntimeError("Perplexity SDK client requires API key")
 
-            return PerplexityClient(api_key=self.api_key)
-        except Exception:
-            return None
+        if self._client is None:
+            self._client = PerplexityClient(api_key=self.api_key)
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Perplexity SDK.
@@ -78,10 +87,14 @@ class PerplexitySDKProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("Perplexity SDK client not available")
-
-        response = self._client.chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
+        response = self._get_client().chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
         return response.choices[0].message.content or ""
+
+    @property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names
+        """
+        return ["sonar", "sonar-pro", "sonar-reasoning-pro"]

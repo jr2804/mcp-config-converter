@@ -1,5 +1,6 @@
 """Mistral AI LLM provider."""
 
+import functools
 from typing import Any
 
 try:
@@ -30,19 +31,16 @@ class MistralProvider(BaseLLMProvider):
             **kwargs: Additional arguments
         """
         super().__init__(api_key=api_key, model=model, **kwargs)
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create Mistral client."""
-        try:
-            if Mistral is None:
-                return None
+        if Mistral is None:
+            raise RuntimeError("Mistral client not available")
 
-            if self.api_key:
-                return Mistral(api_key=self.api_key)
-            return Mistral()
-        except Exception:
-            return None
+        if self._client is None:
+            self._client = Mistral(api_key=self.api_key) if self.api_key else Mistral()
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Mistral.
@@ -54,14 +52,22 @@ class MistralProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("Mistral client not available")
-
         max_tokens = kwargs.get("max_tokens", 1024)
 
         messages = [UserMessage(role="user", content=prompt)]
-        chat_response = self._client.chat.complete(model=self.model, messages=messages, max_tokens=max_tokens)
+        chat_response = self._get_client().chat.complete(model=self.model, messages=messages, max_tokens=max_tokens)
 
         return chat_response.choices[0].message.content or ""
+
+    @functools.cached_property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
+        try:
+            response = self._get_client().models.list()
+            return [model.id for model in response.data]
+        except Exception:
+            return None

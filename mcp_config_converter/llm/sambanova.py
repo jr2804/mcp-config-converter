@@ -1,5 +1,6 @@
 """SambaNova LLM provider implementations."""
 
+import functools
 import os
 from typing import Any
 
@@ -19,7 +20,7 @@ class SambaNovaOpenAIProvider(OpenAIProvider):
 
     PROVIDER_NAME = "sambanova-openai"
     ENV_VAR_API_KEY = "SAMBANOVA_API_KEY"
-    DEFAULT_MODEL = "gpt-oss-120b-32k"
+    DEFAULT_MODEL = "gpt-oss-120b"
     REQUIRES_API_KEY = True
 
     def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
@@ -41,7 +42,7 @@ class SambaNovaSDKProvider(BaseLLMProvider):
 
     PROVIDER_NAME = "sambanova-sdk"
     ENV_VAR_API_KEY = "SAMBANOVA_API_KEY"
-    DEFAULT_MODEL = "gpt-oss-120b-32k"
+    DEFAULT_MODEL = "gpt-oss-120b"
     REQUIRES_API_KEY = True
 
     def __init__(self, api_key: str | None = None, model: str | None = None, **kwargs: Any):
@@ -55,13 +56,19 @@ class SambaNovaSDKProvider(BaseLLMProvider):
         super().__init__(api_key=api_key, model=model, **kwargs)
 
         self.base_url = os.getenv("SAMBANOVA_API_BASE_URL")
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create SambaNova SDK client."""
-        if (sambanova is not None) and (self.api_key is not None):
+        if sambanova is None:
+            raise RuntimeError("SambaNova SDK client not available")
+
+        if not self.api_key:
+            raise RuntimeError("SambaNova SDK client requires API key")
+
+        if self._client is None:
             self._client = sambanova.Client(base_url=self.base_url, api_key=self.api_key)
-            return self._client
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using SambaNova SDK.
@@ -73,8 +80,18 @@ class SambaNovaSDKProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            raise RuntimeError("SambaNova SDK client not available")
-
-        response = self._client.chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
+        response = self._get_client().chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
         return response.choices[0].message.content or ""
+
+    @functools.cached_property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
+        try:
+            response = self._get_client().models.list()
+            return [model.id for model in response.data]
+        except Exception:
+            return None

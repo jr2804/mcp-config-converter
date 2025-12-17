@@ -1,9 +1,10 @@
 """Google Gemini LLM provider."""
 
+import functools
 from typing import Any
 
 try:
-    import google.generativeai as genai
+    from google import genai
 except ImportError:
     genai = None
 
@@ -29,20 +30,16 @@ class GeminiProvider(BaseLLMProvider):
             **kwargs: Additional arguments
         """
         super().__init__(api_key=api_key, model=model, **kwargs)
-        self._client = None
 
-    def _create_client(self) -> Any:
+    def _get_client(self) -> Any:
         """Create Gemini client."""
-        try:
-            if genai is None:
-                return None
+        if genai is None:
+            raise RuntimeError("Gemini client not available")
 
-            if self.api_key:
-                genai.configure(api_key=self.api_key)
-                return genai.GenerativeModel(self.model)
-            return None
-        except Exception:
-            return None
+        if self._client is None:
+            self._client = genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
+
+        return self._client
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text using Gemini.
@@ -54,13 +51,18 @@ class GeminiProvider(BaseLLMProvider):
         Returns:
             Generated text
         """
-        if self._client is None:
-            self._client = self._create_client()
-            if self._client is None:
-                raise RuntimeError("Gemini client not available")
+        response = self._get_client().models.generate_content(model=self.model, contents=prompt)
+        return response.text
 
+    @functools.cached_property
+    def available_models(self) -> list[str] | None:
+        """Get the list of available models for this provider.
+
+        Returns:
+            List of available model names, or None if not available
+        """
         try:
-            response = self._client.generate_content(prompt)
-            return response.text or ""
+            models = self._get_client().models.list()
+            return [model.name.split("/")[-1] for model in models if (hasattr(model, "name") and model.name)]
         except Exception:
-            return ""
+            return None
