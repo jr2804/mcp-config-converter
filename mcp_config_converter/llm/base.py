@@ -26,6 +26,8 @@ class BaseLLMProvider(ABC):
             **kwargs: Additional provider-specific arguments
         """
         self.api_key = self._get_api_key(api_key)
+        self.kwargs = kwargs
+        self._client = None
 
         # Determine the model to use
         if model is not None:
@@ -35,9 +37,6 @@ class BaseLLMProvider(ABC):
         else:
             # Try to select the last available model
             self.model = self._select_last_available_model()
-
-        self.kwargs = kwargs
-        self._client = None
 
         logger.debug(f"Initializing {self.PROVIDER_NAME} provider with model: {self.model}")
         if self.api_key:

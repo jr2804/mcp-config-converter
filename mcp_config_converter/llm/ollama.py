@@ -29,8 +29,8 @@ class OllamaProvider(BaseLLMProvider):
             base_url: Ollama API base URL
             **kwargs: Additional arguments
         """
-        super().__init__(model=model, **kwargs)
         self.base_url = base_url
+        super().__init__(model=model, **kwargs)
 
     def _get_client(self) -> Any:
         """Create Ollama client."""
