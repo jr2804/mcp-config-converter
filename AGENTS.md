@@ -29,6 +29,7 @@ The `--preferred-provider` option allows automatic selection of LLM providers:
 - Specific provider name: Uses the specified provider if configured.
 
 **Cost Hierarchy** (lowest to highest cost):
+
 - Ollama: 1 (preferred local)
 - DeepSeek: 8
 - Perplexity: 10/11
@@ -91,7 +92,7 @@ uv add mcp-config-converter[all]            # All dependencies
 
 ### Provider Registry
 
-All providers register with `@ProviderRegistry.register_provider("name", cost=X)`. Custom providers can be created dynamically via `ProviderRegistry.create_provider()`.
+All providers register with `@register_provider("name", cost=X)`. Custom providers can be created dynamically via `create_provider()`.
 
 ## 3. Development Commands
 

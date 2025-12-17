@@ -4,11 +4,11 @@ from typing import Any
 
 from openai import OpenAI
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("openai", cost=15)
+@register_provider("openai", cost=15)
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI compatible LLM provider."""
 

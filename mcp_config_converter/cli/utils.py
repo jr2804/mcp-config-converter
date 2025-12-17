@@ -11,7 +11,7 @@ from rich.prompt import Prompt
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
 from mcp_config_converter.cli.registry import create_llm_provider
-from mcp_config_converter.llm import ProviderRegistry
+from mcp_config_converter.llm import list_providers, select_best_provider
 from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
@@ -47,7 +47,7 @@ def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
 
 
 def select_auto_provider() -> str:
-    """Select the first fully configured LLM provider automatically using ProviderRegistry order.
+    """Select the first fully configured LLM provider automatically using registry order.
 
     Returns:
         Provider name if found
@@ -55,7 +55,7 @@ def select_auto_provider() -> str:
     Raises:
         ValueError: If no providers are configured
     """
-    return ProviderRegistry.select_best_provider()
+    return select_best_provider()
 
 
 def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> None:
@@ -76,8 +76,8 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
             raise typer.Exit(1)
     elif preferred_provider != "auto":
         # Validate that the preferred provider exists
-        if preferred_provider not in ProviderRegistry.list_providers():
-            available_providers = ", ".join(ProviderRegistry.list_providers())
+        if preferred_provider not in list_providers():
+            available_providers = ", ".join(list_providers())
             console.print(f"[red]Error: Unknown provider '{preferred_provider}'. Available providers: {available_providers}[/red]")
             raise typer.Exit(1)
 

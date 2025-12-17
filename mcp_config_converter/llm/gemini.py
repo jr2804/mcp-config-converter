@@ -8,11 +8,11 @@ try:
 except ImportError:
     genai = None
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("gemini", cost=12)
+@register_provider("gemini", cost=12)
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini LLM provider."""
 

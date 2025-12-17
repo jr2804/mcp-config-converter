@@ -8,11 +8,11 @@ try:
 except ImportError:
     OpenRouterClient = None
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("openrouter", cost=18)
+@register_provider("openrouter", cost=18)
 class OpenRouterProvider(BaseLLMProvider):
     """OpenRouter LLM provider using proprietary SDK."""
 

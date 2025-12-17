@@ -16,7 +16,7 @@ from mcp_config_converter.cli.utils import (
     validate_format_choice,
     validate_output_action,
 )
-from mcp_config_converter.llm import ProviderRegistry
+from mcp_config_converter.llm import create_provider
 from mcp_config_converter.transformers import ConfigTransformer
 
 
@@ -120,11 +120,11 @@ def convert(
             # Use preferred_provider or create custom provider
             if llm_base_url and not preferred_provider:
                 # Create custom provider with base URL
-                llm_provider = ProviderRegistry.create_provider("custom", **llm_provider_kwargs)
+                llm_provider = create_provider("custom", **llm_provider_kwargs)
             else:
                 # Use preferred provider (or "auto" if not specified)
                 provider_name = preferred_provider if preferred_provider else "auto"
-                llm_provider = ProviderRegistry.create_provider(provider_name, **llm_provider_kwargs)
+                llm_provider = create_provider(provider_name, **llm_provider_kwargs)
 
             # Create transformer instance
             transformer = ConfigTransformer(llm_provider=llm_provider, encode_toon=encode_toon)

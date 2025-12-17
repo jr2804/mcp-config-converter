@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.llm import ProviderRegistry
+from mcp_config_converter.llm import create_provider, get_provider_info, list_providers, select_best_provider
 
 console = Console()
 
@@ -60,8 +60,8 @@ def llm_check(
         provider_data = []
 
         # Check all registered providers
-        for provider_name in ProviderRegistry.list_providers():
-            provider_info = ProviderRegistry.get_provider_info(provider_name)
+        for provider_name in list_providers():
+            provider_info = get_provider_info(provider_name)
             if not provider_info:
                 continue
 
@@ -94,7 +94,7 @@ def llm_check(
         if custom_provider_args:
             try:
                 # Try to create custom provider
-                custom_provider = ProviderRegistry.create_provider("custom", **custom_provider_args)
+                custom_provider = create_provider("custom", **custom_provider_args)
                 availability = "[bold green]OK[/bold green]"
                 model = custom_provider.model or "custom"
                 authentication = "[bold green]OK[/bold green]" if custom_provider.validate_config() else "[bold red]Failed[/bold red]"
@@ -139,10 +139,10 @@ def llm_check(
         if verbose:
             console.print("\n[bold blue]Auto-selection Test:[/bold blue]")
             try:
-                best_provider = ProviderRegistry.select_best_provider()
+                best_provider = select_best_provider()
                 console.print(f"[green]Auto-selected LLM provider: {best_provider.PROVIDER_NAME}[/green]")
                 console.print(f"[green]Model: {best_provider.model or 'default'}[/green]")
-                console.print(f"[green]Cost: {ProviderRegistry.get_provider_info(best_provider.PROVIDER_NAME).cost}[/green]")
+                console.print(f"[green]Cost: {get_provider_info(best_provider.PROVIDER_NAME).cost}[/green]")
             except Exception as e:
                 console.print(f"[red]Auto-selection failed: {str(e)}[/red]")
 

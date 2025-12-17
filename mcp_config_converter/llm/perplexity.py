@@ -8,12 +8,12 @@ try:
 except ImportError:
     PerplexityClient = None
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 from mcp_config_converter.llm.openai import OpenAIProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("perplexity-openai", cost=10)
+@register_provider("perplexity-openai", cost=10)
 class PerplexityOpenAIProvider(OpenAIProvider):
     """Perplexity LLM provider using OpenAI-compatible API."""
 
@@ -44,7 +44,7 @@ class PerplexityOpenAIProvider(OpenAIProvider):
         return ["sonar", "sonar-pro", "sonar-reasoning-pro"]
 
 
-@ProviderRegistry.register_provider("perplexity-sdk", cost=11)
+@register_provider("perplexity-sdk", cost=11)
 class PerplexitySDKProvider(BaseLLMProvider):
     """Perplexity LLM provider using proprietary SDK."""
 

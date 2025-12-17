@@ -3,11 +3,11 @@
 import os
 from typing import Any
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.openai import OpenAIProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("deepseek", cost=8)
+@register_provider("deepseek", cost=8)
 class DeepSeekProvider(OpenAIProvider):
     """DeepSeek LLM provider using OpenAI-compatible API."""
 

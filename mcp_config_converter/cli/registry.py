@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from mcp_config_converter.llm import ProviderRegistry
+from mcp_config_converter.llm import create_provider, list_providers
 from mcp_config_converter.llm.claude import ClaudeProvider
 from mcp_config_converter.llm.openai import OpenAIProvider
 
@@ -37,14 +37,14 @@ def create_llm_provider(
     provider_type = provider_type.lower()
 
     try:
-        return ProviderRegistry.create_provider(
+        return create_provider(
             provider_type,
             api_key=api_key,
             model=model,
             base_url=base_url,
         )
     except ValueError as e:
-        logger.debug(f"ProviderRegistry failed for {provider_type}: {e}")
+        logger.debug(f"Registry creation failed for {provider_type}: {e}")
 
     if provider_type == "openai":
         try:
@@ -73,4 +73,4 @@ def create_llm_provider(
         except Exception as e:
             logger.debug(f"Custom provider creation failed: {e}")
 
-    raise ValueError(f"Unknown provider type: {provider_type}. Available providers: {', '.join(ProviderRegistry.list_providers())}")
+    raise ValueError(f"Unknown provider type: {provider_type}. Available providers: {', '.join(list_providers())}")

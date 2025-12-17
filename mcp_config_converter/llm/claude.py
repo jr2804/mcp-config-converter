@@ -7,11 +7,11 @@ try:
 except ImportError:
     Anthropic = None
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("claude", cost=20)
+@register_provider("claude", cost=20)
 class ClaudeProvider(BaseLLMProvider):
     """Anthropic Claude LLM provider."""
 

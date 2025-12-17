@@ -9,12 +9,12 @@ try:
 except ImportError:
     sambanova = None
 
-from mcp_config_converter.llm import ProviderRegistry
 from mcp_config_converter.llm.base import BaseLLMProvider
 from mcp_config_converter.llm.openai import OpenAIProvider
+from mcp_config_converter.llm.registry import register_provider
 
 
-@ProviderRegistry.register_provider("sambanova-openai", cost=16)
+@register_provider("sambanova-openai", cost=16)
 class SambaNovaOpenAIProvider(OpenAIProvider):
     """SambaNova LLM provider using OpenAI-compatible API."""
 
@@ -36,7 +36,7 @@ class SambaNovaOpenAIProvider(OpenAIProvider):
         super().__init__(api_key=api_key, model=model, base_url=base_url, **kwargs)
 
 
-@ProviderRegistry.register_provider("sambanova-sdk", cost=17)
+@register_provider("sambanova-sdk", cost=17)
 class SambaNovaSDKProvider(BaseLLMProvider):
     """SambaNova LLM provider using proprietary SDK."""
 
