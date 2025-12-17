@@ -45,6 +45,29 @@
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
+        },
+        {
+            "name": "version",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter",
+            "args": [
+                "version"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "convert --version",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter",
+            "args": [
+                "convert",
+                "--version"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
         }
     ]
 }
