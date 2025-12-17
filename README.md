@@ -68,23 +68,18 @@ pip install mcp-config-converter[all]
 ## Quick Start
 
 ```bash
-# Convert a configuration file to Claude format
-mcp-config-converter convert config.yaml --provider claude -o claude_config.json
+# Convert an arbitrary MCP server configuration file `config.yaml` to Claude format via Ollama LLM provider
+mcp-config-converter convert config.yaml --provider claude -o claude_config.json --preferred-provider ollama
+
+# Convert configuration using custom LLM provider with Anthropic-compatible API
+mcp-config-converter convert config.yaml --llm-provider-type anthropic --llm-api-key YOUR_API_KEY --llm-base-url https://api.anthropic.com/v1 --llm-model claude-2
+
+# Convert configuration using custom LLM provider with OpenAI-compatible API
+mcp-config-converter convert config.yaml --llm-provider-type openai --llm-api-key YOUR_API_KEY --llm-base-url https://api.example.com/v1 --llm-model custom-model
 
 # Validate an MCP configuration
 mcp-config-converter validate config.json
 
-# Initialize a new MCP configuration
-mcp-config-converter init
-
-# Use custom LLM provider for AI-assisted conversion
-mcp-config-converter --llm-provider-type openai --llm-model gpt-4-turbo convert config.yaml --provider claude
-
-# Use Anthropic-compatible API
-mcp-config-converter --llm-provider-type anthropic --llm-api-key YOUR_API_KEY validate config.json
-
-# Use custom OpenAI-compatible endpoint
-mcp-config-converter --llm-provider-type openai --llm-base-url https://api.example.com/v1 --llm-model custom-model init
 ```
 
 ## Use Cases
