@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import typer
 
-from .constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
+from mcp_config_converter._version import version as _version
+from mcp_config_converter.cli import console
+from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, RichHelpPanel
+
+
+def version_callback(value: bool = True) -> None:
+    """Print version and exit."""
+    if value:
+        console.print(f"mcp-config-converter v{_version}")
+        raise typer.Exit()
+
 
 # Argument definitions
 InputFileArg = typer.Argument(None, help="Input configuration file path")
@@ -19,35 +29,39 @@ OutputActionOpt = typer.Option(
     help=f"Action when output file exists: {', '.join(VALID_OUTPUT_ACTIONS)}",
     case_sensitive=False,
 )
-InitProviderOpt = typer.Option(None, "--provider", "-p", help=f"Target provider type for initialization ({', '.join(SUPPORTED_PROVIDERS)})")
 
 # Common options with rich_help_panel grouping
-VerboseOpt = typer.Option(False, "--verbose", help="Verbose output", rich_help_panel="Other Options")
+VerboseOpt = typer.Option(False, "--verbose", help="Verbose output", rich_help_panel=RichHelpPanel.OTHER)
+VersionOpt = typer.Option(
+    "--version",
+    callback=version_callback,
+    is_eager=True,  # help="Show version and exit.", rich_help_panel=RichHelpPanel.OTHER
+)
 
 # LLM-specific options
 LlmBaseUrlOpt = typer.Option(
     None,
     "--llm-base-url",
     help="Custom base URL for LLM provider (for OpenAI/Anthropic compatible APIs)",
-    rich_help_panel="LLM Parameters",
+    rich_help_panel=RichHelpPanel.LLM,
 )
 LlmProviderTypeOpt = typer.Option(
     None,
     "--llm-provider-type",
     help="LLM provider type: 'openai' or 'anthropic' for custom providers",
-    rich_help_panel="LLM Parameters",
+    rich_help_panel=RichHelpPanel.LLM,
 )
 LlmApiKeyOpt = typer.Option(
     None,
     "--llm-api-key",
     help="API key for LLM provider (overrides environment variables)",
-    rich_help_panel="LLM Parameters",
+    rich_help_panel=RichHelpPanel.LLM,
 )
 LlmModelOpt = typer.Option(
     None,
     "--llm-model",
     help="Model name for the configured LLM provider",
-    rich_help_panel="LLM Parameters",
+    rich_help_panel=RichHelpPanel.LLM,
 )
 PreferredProviderOpt = typer.Option(
     "auto",
@@ -55,7 +69,7 @@ PreferredProviderOpt = typer.Option(
     "-pp",
     help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)",
     case_sensitive=False,
-    rich_help_panel="LLM Parameters",
+    rich_help_panel=RichHelpPanel.LLM,
 )
 
 # Conversion-specific options

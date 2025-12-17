@@ -15,6 +15,7 @@ lint:
     uv run ruff format --check
     uv run isort --check-only .
     uv run undersort --check .
+    uv run ty check
 
 # Lint the documentation
 lint-md:
@@ -29,7 +30,9 @@ format:
 
 # Build the project
 build:
-    uv build .
+    @uv run scripts/remove_version.py
+    uv build --clear --refresh .
+
 
 # LLM overview
 check-llm:

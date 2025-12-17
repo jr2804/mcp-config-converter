@@ -1,6 +1,8 @@
 """LLM provider check command."""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -20,6 +22,7 @@ def llm_check(
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
     verbose: bool = arguments.VerboseOpt,
+    version: Annotated[bool | None, arguments.VersionOpt] = None,
 ) -> None:
     """Check LLM provider availability and configuration.
 

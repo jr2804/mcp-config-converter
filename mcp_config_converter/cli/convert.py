@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS
+from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
 from mcp_config_converter.cli.utils import (
     CliPrompt,
     console,
@@ -35,6 +36,7 @@ def convert(
     llm_model: str | None = arguments.LlmModelOpt,
     preferred_provider: str = arguments.PreferredProviderOpt,
     verbose: bool = arguments.VerboseOpt,
+    version: Annotated[bool | None, arguments.VersionOpt] = None,
 ) -> None:
     """Convert an MCP configuration file to a supported format using LLM.
 
@@ -92,7 +94,8 @@ def convert(
             raise typer.Exit(1)
 
         if not validate_output_action(output_action):
-            console.print("[red]Error:[/red] Invalid output action. Choose from: overwrite, skip, merge")
+            valid_actions = ", ".join(VALID_OUTPUT_ACTIONS)
+            console.print(f"[red]Error:[/red] Invalid output action. Choose from: {valid_actions}")
             raise typer.Exit(1)
 
         if not output and provider:
@@ -128,11 +131,7 @@ def convert(
 
             if provider:
                 # Perform conversion
-                if actual_input_file:
-                    result = transformer.transform_file(actual_input_file, provider)
-                else:
-                    # input_content is guaranteed to be not None here due to earlier validation
-                    result = transformer.transform(input_content or "", provider)
+                result = transformer.transform_file(actual_input_file, provider) if actual_input_file else transformer.transform(input_content or "", provider)
 
                 # Handle output file actions
                 if output and output.exists():

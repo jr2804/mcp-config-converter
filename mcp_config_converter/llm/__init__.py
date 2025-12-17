@@ -6,6 +6,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+# Import base class for type hints
+from .base import BaseLLMProvider
+
+# Re-export all providers for backward compatibility
+from .claude import ClaudeProvider
+from .deepseek import DeepSeekProvider
+from .gemini import GeminiProvider
+from .mistral import MistralProvider
+from .ollama import OllamaProvider
+from .openai import OpenAIProvider
+from .openrouter import OpenRouterProvider
+from .perplexity import PerplexityOpenAIProvider, PerplexitySDKProvider
+from .sambanova import SambaNovaOpenAIProvider, SambaNovaSDKProvider
+
 logger = logging.getLogger(__name__)
 
 # Provider registry
@@ -128,8 +142,6 @@ class ProviderRegistry:
         if "base_url" not in kwargs:
             raise ValueError(f"Provider '{provider_name}' not found and no base_url provided for custom provider")
 
-        from .openai import OpenAIProvider  # Use OpenAI as base for custom providers
-
         # Create a custom provider class with the given name
         class CustomProvider(OpenAIProvider):
             PROVIDER_NAME = provider_name
@@ -159,20 +171,6 @@ class ProviderRegistry:
 
 # Auto-discover providers on import
 ProviderRegistry.auto_discover()
-
-# Import base class for type hints
-from .base import BaseLLMProvider
-
-# Re-export all providers for backward compatibility
-from .claude import ClaudeProvider
-from .deepseek import DeepSeekProvider
-from .gemini import GeminiProvider
-from .mistral import MistralProvider
-from .ollama import OllamaProvider
-from .openai import OpenAIProvider
-from .openrouter import OpenRouterProvider
-from .perplexity import PerplexityOpenAIProvider, PerplexitySDKProvider
-from .sambanova import SambaNovaOpenAIProvider, SambaNovaSDKProvider
 
 __all__ = [
     "ClaudeProvider",

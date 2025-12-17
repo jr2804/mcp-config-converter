@@ -37,3 +37,4 @@ test_*.yaml
 test_*.json
 test_*.toml
 uv.lock
+/mcp_config_converter/_version.py

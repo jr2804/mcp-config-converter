@@ -1,6 +1,6 @@
 [project]
 name = "mcp-config-converter"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A configuration converter for MCP (Model Context Protocol) with enhanced CLI experience"
 authors = [{name = "jr2804"}]
 readme = "README.md"
@@ -15,38 +15,6 @@ dependencies = [
     "toon-format",
     "orjson>=3.11.5",
 ]
-
-[build-system]
-requires = ["hatchling", "uv-build"]
-build-backend = "hatchling.build"
-
-[project.scripts]
-mcp-config-converter = "mcp_config_converter.cli.main:app"
-
-[tool.isort]
-profile = "black"
-line_length = 160
-
-[tool.uv]
-package = true
-
-[tool.uv.sources]
-toon-format = { git = "https://github.com/toon-format/toon-python.git" }
-
-[tool.undersort]
-# Method visibility ordering: public (no underscore), protected (single underscore), private (double underscore)
-# Customize the order by specifying: "public", "protected", "private"
-order = ["public", "protected", "private"]
-
-# Method type ordering within each visibility level (optional)
-# Options: "class" (classmethod), "static" (staticmethod), "instance" (regular methods)
-# Default order if not specified: ["instance", "class", "static"]
-method_type_order = ["instance", "class", "static"]
-
-# Exclude files/directories matching these patterns (optional)
-# Patterns support glob syntax (e.g., "tests/*", "migrations/*.py", "**/generated/*")
-# exclude = ["tests/*", "migrations/*.py"]
-
 
 [dependency-groups]
 dev = [
@@ -93,3 +61,65 @@ all = [
     "ollama",
     "mistralai",
 ]
+
+# ---- Scripts ----
+
+[project.scripts]
+mcp-config-converter = "mcp_config_converter.cli:app"
+
+# ---- Build system ----
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+
+[tool.hatch.build.hooks.version]
+path = "mcp_config_converter/_version.py"
+template = '''
+version: str = "{version}"
+'''
+
+[tool.hatch.build.targets.wheel]
+packages = ["mcp_config_converter"]
+
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+commit-length = 6
+#style = "pep440"
+style = "semver"
+bump = true
+
+[tool.uv-dynamic-versioning.substitution]
+# do not write back new version number to version file
+files = []
+
+# ---- Linter/formatter tools configurations ----
+[tool.isort]
+profile = "black"
+line_length = 160
+
+[tool.uv]
+package = true
+
+
+[tool.uv.sources]
+toon-format = { git = "https://github.com/toon-format/toon-python.git" }
+
+[tool.undersort]
+# Method visibility ordering: public (no underscore), protected (single underscore), private (double underscore)
+# Customize the order by specifying: "public", "protected", "private"
+order = ["public", "protected", "private"]
+
+# Method type ordering within each visibility level (optional)
+# Options: "class" (classmethod), "static" (staticmethod), "instance" (regular methods)
+# Default order if not specified: ["instance", "class", "static"]
+method_type_order = ["instance", "class", "static"]
+
+# Exclude files/directories matching these patterns (optional)
+# Patterns support glob syntax (e.g., "tests/*", "migrations/*.py", "**/generated/*")
+# exclude = ["tests/*", "migrations/*.py"]

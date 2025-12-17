@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -19,6 +20,7 @@ def validate(
     llm_model: str | None = arguments.LlmModelOpt,
     preferred_provider: str = arguments.PreferredProviderOpt,
     verbose: bool = arguments.VerboseOpt,
+    version: Annotated[bool | None, arguments.VersionOpt] = None,
 ) -> None:
     """Validate an MCP configuration file."""
     try:
