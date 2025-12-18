@@ -4,7 +4,7 @@ import functools
 from typing import Any
 
 try:
-    from ollama import Client
+    from ollama import Client, pull
 except ImportError:
     Client = None
 
@@ -32,6 +32,9 @@ class OllamaProvider(BaseLLMProvider):
         self.base_url = base_url
         super().__init__(model=model, **kwargs)
 
+        if self.model not in self.available_models:
+            pull(self.model)
+
     def _get_client(self) -> Any:
         """Create Ollama client."""
         if Client is None:
@@ -42,17 +45,18 @@ class OllamaProvider(BaseLLMProvider):
 
         return self._client
 
-    def generate(self, prompt: str, **kwargs: Any) -> str:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using Ollama.
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system prompt
             **kwargs: Additional generation parameters
 
         Returns:
             Generated text
         """
-        response = self._get_client().generate(model=self.model, prompt=prompt, stream=False)
+        response = self._get_client().generate(model=self.model, prompt=prompt, stream=False, system=system_prompt, **kwargs)
         return response.get("response", "")
 
     @functools.cached_property

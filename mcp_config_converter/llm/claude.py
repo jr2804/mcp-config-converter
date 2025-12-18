@@ -40,11 +40,12 @@ class ClaudeProvider(BaseLLMProvider):
 
         return self._client
 
-    def generate(self, prompt: str, **kwargs: Any) -> str:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using Claude.
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system instruction that guides generation
             **kwargs: Additional generation parameters
 
         Returns:
@@ -52,7 +53,12 @@ class ClaudeProvider(BaseLLMProvider):
         """
         max_tokens = kwargs.get("max_tokens", 1024)
 
-        message = self._get_client().messages.create(model=self.model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
+        messages: list[dict[str, str]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        message = self._get_client().messages.create(model=self.model, max_tokens=max_tokens, messages=messages)
 
         return message.content[0].text
 

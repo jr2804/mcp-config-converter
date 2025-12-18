@@ -42,11 +42,12 @@ class MistralProvider(BaseLLMProvider):
 
         return self._client
 
-    def generate(self, prompt: str, **kwargs: Any) -> str:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using Mistral.
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system instruction that guides generation
             **kwargs: Additional generation parameters
 
         Returns:
@@ -54,7 +55,10 @@ class MistralProvider(BaseLLMProvider):
         """
         max_tokens = kwargs.get("max_tokens", 1024)
 
-        messages = [UserMessage(role="user", content=prompt)]
+        messages: list[UserMessage] = []
+        if system_prompt:
+            messages.append(UserMessage(role="system", content=system_prompt))
+        messages.append(UserMessage(role="user", content=prompt))
         chat_response = self._get_client().chat.complete(model=self.model, messages=messages, max_tokens=max_tokens)
 
         return chat_response.choices[0].message.content or ""

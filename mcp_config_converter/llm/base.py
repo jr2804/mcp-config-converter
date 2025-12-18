@@ -113,11 +113,12 @@ class BaseLLMProvider(ABC):
         pass
 
     @abstractmethod
-    def generate(self, prompt: str, **kwargs: Any) -> str:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text from a prompt.
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system prompt
             **kwargs: Additional generation parameters
 
         Returns:

@@ -9,6 +9,8 @@ import toml
 import toon_format
 import yaml
 from rich.prompt import Confirm, Prompt
+import mistune
+from mistune.renderers.markdown import MarkdownRenderer
 
 from mcp_config_converter.types import ConfigFormat
 
@@ -172,27 +174,12 @@ def clean_llm_output(output: str) -> str:
     Returns:
         Cleaned output
     """
-    # Remove markdown code blocks
-    if "```json" in output:
-        # Extract JSON from code block
-        start = output.find("```json") + 7
-        end = output.find("```", start)
-        if end > start:
-            return output[start:end].strip()
-
-    if "```yaml" in output:
-        # Extract YAML from code block
-        start = output.find("```yaml") + 7
-        end = output.find("```", start)
-        if end > start:
-            return output[start:end].strip()
-
-    if "```" in output:
-        # Generic code block extraction
-        start = output.find("```") + 3
-        end = output.find("```", start)
-        if end > start:
-            return output[start:end].strip()
+    # sometimes, the output is wrapped in markdown code blocks
+    fmt_md = mistune.create_markdown(renderer=MarkdownRenderer())
+    _, state = fmt_md.parse(output)
+    for t in state.tokens:
+        if t["type"] == "block_code":
+            return t["raw"].strip()
 
     # Return as-is if no code blocks found
     return output.strip()

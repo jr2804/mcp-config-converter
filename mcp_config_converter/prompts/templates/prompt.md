@@ -1,33 +1,24 @@
-# CONVERSION RULES
+# CONVERSION TASK
 
-1. PRESERVE ALL SEMANTICS: Command paths, arguments, environment variables, and metadata must be preserved exactly
-2. SERVER IDENTIFIERS: Use server names as keys in the output structure
-3. ENVIRONMENT VARIABLES: Convert between different naming conventions if needed (e.g., env vs environment)
-4. ARGUMENTS: Maintain argument order and format
-5. METADATA: Preserve all metadata fields, even if not standard
-6. VALIDATION: Ensure commands exist (when possible) and arguments are reasonable
-7. ERROR HANDLING: If conversion is impossible, explain why and suggest alternatives
+Your task is to convert MCP server configurations between different formats used by various coding agents and development environments. Output ONLY the converted configuration in `{output_format}` format, without any additional text, markdown markups, HTML markups, formatting, or code blocks.
 
-## COMMON CONVERSION PATTERNS
+## INPUT CONFIGURATION
 
-- JSON/YAML/TOML/TOON input → Extract server definitions from any structure
-- Free text input → Parse natural language descriptions of MCP servers
-- Mixed formats → Use best judgment to identify server components
-- Invalid input → Provide clear error message with conversion suggestions
-
-INPUT CONFIGURATION:
+This is the input configuration to be converted to `{output_format}` format:
 
 ```
 {input_config}
 ```
 
-TARGET SPECIFICATION:
+## TARGET SPECIFICATION
+
 {provider_spec}
 
-## OUTPUT INSTRUCTIONS
+## COMMON CONVERSION PATTERNS
 
-1. If conversion fails, output a JSON object with an "error" field explaining the issue
-2. Convert the input configuration to {target_provider} format
-3. Do NOT include explanations, comments, or additional text!
-4. Output ONLY the converted configuration in {output_format} format, without any additional text, markdown markups, HTML markups, formatting, or code blocks - just plain text!
-5. Ensure the output can be directly parsed as {output_format} and decoded to valid JSON
+- Determine input format (JSON, YAML, TOML, TOON, Free Text, Mixed, etc.) to be interpreted.
+- For structured inputs, the root node name in the input needs to be identified (e.g., "mcp", "mcpServer", "servers", "mcp_servers", etc.).
+- For free text input/Mixed formats, parse natural language descriptions of MCP servers. Use best judgment to identify server components and their parameters.
+- Iterate over each server definition under the root node.
+- Map server properties from input format to target format according to the target specification. Note that key names and value options may differ between server types (in particular local/stdio vs remote/http) based on properties.
+- If the input is considered as invalid or incomplete, provide clear error message.

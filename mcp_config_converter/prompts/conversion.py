@@ -26,13 +26,21 @@ def _load_template(template_name: str) -> str:
         raise RuntimeError(f"Failed to load template {template_name}: {e}")
 
 
-def _get_provider_specification(target_provider: str) -> str:
+def _get_provider_specification(target_provider: str, shift_heading_levels: int = 2) -> str:
     """Get target provider specifications."""
     try:
         spec_file = importlib.resources.files("mcp_config_converter.specs").joinpath(f"{target_provider}.md")
         content = spec_file.read_text(encoding="utf-8")
         if not content.strip():
             raise ValueError(f"Specification file is empty: {target_provider}.md")
+
+        if shift_heading_levels > 0:
+            lines = content.splitlines()
+            for i, line in enumerate(lines[:]):
+                if line.startswith("#"):
+                    lines[i] = "#" * shift_heading_levels + line
+
+            content = "\n".join(lines)
 
         return content
     except FileNotFoundError:
@@ -41,7 +49,7 @@ def _get_provider_specification(target_provider: str) -> str:
         raise RuntimeError(f"Failed to load template for {target_provider}: {e}")
 
 
-def build_conversion_prompt(target_provider: str, input_config: str, encode_toon: bool = True) -> str:
+def build_conversion_prompt(target_provider: str, input_config: str, encode_toon: bool = True) -> tuple[str, str]:
     """Build the complete conversion prompt.
 
     Args:
@@ -74,24 +82,7 @@ def build_conversion_prompt(target_provider: str, input_config: str, encode_toon
         input_config=processed_input, target_provider=target_provider, output_format=output_format, provider_spec=provider_spec
     )
 
-    return f"{system_prompt}\n\n{formatted_prompt}"
-
-
-def validate_conversion_output(output: str) -> bool:
-    """Validate output based on format settings.
-
-    Args:
-        output: Raw LLM output string
-
-    Returns:
-        True if output is valid JSON
-    """
-    # Validate JSON output directly
-    try:
-        parsed = json.loads(output)
-        return isinstance(parsed, dict) and len(parsed) > 0
-    except Exception:
-        return False
+    return system_prompt, formatted_prompt
 
 
 def parse_conversion_output(output: str) -> str:

@@ -76,17 +76,23 @@ class PerplexitySDKProvider(BaseLLMProvider):
 
         return self._client
 
-    def generate(self, prompt: str, **kwargs: Any) -> str:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using Perplexity SDK.
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system instruction that guides generation
             **kwargs: Additional generation parameters
 
         Returns:
             Generated text
         """
-        response = self._get_client().chat.completions.create(model=self.model, messages=[{"role": "user", "content": prompt}], **kwargs)
+        messages: list[dict[str, str]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        response = self._get_client().chat.completions.create(model=self.model, messages=messages, **kwargs)
         return response.choices[0].message.content or ""
 
     @property

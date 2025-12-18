@@ -41,17 +41,22 @@ class GeminiProvider(BaseLLMProvider):
 
         return self._client
 
-    def generate(self, prompt: str, **kwargs: Any) -> str:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using Gemini.
 
         Args:
             prompt: Input prompt
+            system_prompt: Optional system instruction that guides generation
             **kwargs: Additional generation parameters
 
         Returns:
             Generated text
         """
-        response = self._get_client().models.generate_content(model=self.model, contents=prompt)
+        contents = prompt
+        if system_prompt:
+            contents = "\n\n".join([system_prompt, prompt])
+
+        response = self._get_client().models.generate_content(model=self.model, contents=contents)
         return response.text
 
     @functools.cached_property

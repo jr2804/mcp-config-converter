@@ -14,6 +14,7 @@ dependencies = [
     "openai>=2.11.0",
     "toon-format",
     "orjson>=3.11.5",
+    "mistune>=3.1.4",
 ]
 
 [dependency-groups]
@@ -28,6 +29,7 @@ dev = [
     "codespell>=2.4.1",
     "memorygraphmcp[ladybugdb]>=0.11.12",
     "rust-just>=1.45.0",
+    "mdformat>=1.0.0",
 ]
 
 # Optional dependencies for LLM providers

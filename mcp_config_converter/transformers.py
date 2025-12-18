@@ -3,10 +3,7 @@
 from pathlib import Path
 
 from mcp_config_converter.llm import BaseLLMProvider
-from mcp_config_converter.prompts import (
-    build_conversion_prompt,
-    validate_conversion_output,
-)
+from mcp_config_converter.prompts import build_conversion_prompt
 from mcp_config_converter.utils import clean_llm_output
 
 
@@ -69,7 +66,7 @@ class ConfigTransformer:
         """
         # Build prompt
         try:
-            prompt = build_conversion_prompt(
+            system_prompt, formatted_prompt = build_conversion_prompt(
                 target_provider=target_provider,
                 input_config=input_content,
                 encode_toon=self.encode_toon,
@@ -79,8 +76,12 @@ class ConfigTransformer:
 
         # Generate conversion using LLM
         try:
-            result = self.llm_provider.generate(prompt)
+            result = self.llm_provider.generate(formatted_prompt, system_prompt=system_prompt)
 
+            # Try to clean up the output (remove markdown code blocks, etc.)
+            result = clean_llm_output(result)
+
+            """
             # Validate output
             if not validate_conversion_output(result):
                 # Try to clean up the output (remove markdown code blocks, etc.)
@@ -89,7 +90,7 @@ class ConfigTransformer:
                 # Validate again
                 if not validate_conversion_output(result):
                     raise ValueError("LLM output validation failed")
-
+            """
             return result
 
         except Exception as e:
