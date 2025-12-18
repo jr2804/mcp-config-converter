@@ -35,6 +35,7 @@ The file contains two main sections: `servers` and `inputs`.
 ### Server Types
 
 #### Stdio Server
+
 ```json
 "my-local-server": {
   "type": "stdio",
@@ -46,6 +47,7 @@ The file contains two main sections: `servers` and `inputs`.
 ```
 
 #### HTTP/SSE Server
+
 ```json
 "my-remote-server": {
   "type": "http", // or "sse"

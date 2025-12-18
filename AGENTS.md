@@ -43,8 +43,8 @@ The `--preferred-provider` option allows automatic selection of LLM providers:
 The system selects the first provider that:
 
 1. Has required dependencies installed.
-2. Has valid API keys configured (if required).
-3. Can successfully create a client.
+1. Has valid API keys configured (if required).
+1. Can successfully create a client.
 
 **Custom Providers**: Create custom LLM providers using `--llm-base-url` and `--llm-provider-type`. They get cost `-1` and are always preferred in auto-selection.
 

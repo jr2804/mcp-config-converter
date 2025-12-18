@@ -32,6 +32,7 @@ The configuration uses a JSON structure with an `mcp` object for definitions and
 ### Server Types
 
 #### Local Server
+
 ```json
 "local-server": {
   "type": "local",
@@ -43,6 +44,7 @@ The configuration uses a JSON structure with an `mcp` object for definitions and
 ```
 
 #### Remote Server
+
 ```json
 "remote-server": {
   "type": "remote",

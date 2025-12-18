@@ -5,9 +5,11 @@ Based on [Claude Code Docs](https://code.claude.com/docs/en/mcp).
 ## Configuration Scopes
 
 ### Project Scope
+
 File: `.mcp.json` in project root.
 
 ### User Scope
+
 File: `~/.claude.json`
 
 ## Configuration Structure
@@ -30,7 +32,8 @@ The configuration file uses a JSON structure with an `mcpServers` object.
 
 ### Server Definitions
 
-#### Stdio Server
+#### Stdio Server (local)
+
 ```json
 "my-server": {
   "command": "npx",
@@ -41,7 +44,8 @@ The configuration file uses a JSON structure with an `mcpServers` object.
 }
 ```
 
-#### HTTP/SSE Server
+#### HTTP/SSE Server (remote)
+
 ```json
 "remote-server": {
   "type": "http",  // or "sse"
@@ -55,5 +59,6 @@ The configuration file uses a JSON structure with an `mcpServers` object.
 ## Environment Variables
 
 Supports expansion:
+
 - `${VAR}`: Value of `VAR`
 - `${VAR:-default}`: Value of `VAR` or `default` if unset

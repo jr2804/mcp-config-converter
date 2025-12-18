@@ -44,6 +44,7 @@ The configuration file uses a JSON structure with `mcp` (global settings) and `m
 ### Examples
 
 #### Stdio Server
+
 ```json
 "my-server": {
   "command": "python",
@@ -54,6 +55,7 @@ The configuration file uses a JSON structure with `mcp` (global settings) and `m
 ```
 
 #### HTTP Server
+
 ```json
 "http-server": {
   "httpUrl": "http://localhost:3000/mcp",
@@ -64,6 +66,7 @@ The configuration file uses a JSON structure with `mcp` (global settings) and `m
 ```
 
 #### SSE Server
+
 ```json
 "sse-server": {
   "url": "http://localhost:8080/sse"
