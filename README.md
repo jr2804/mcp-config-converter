@@ -53,8 +53,10 @@ This project was created to address the challenges developers face when working 
 
 ## Installation
 
+This project uses `uv` for dependency management. Install dependencies with:
+
 ```bash
-pip install mcp-config-converter
+uv sync
 ```
 
 ### Optional Dependencies
@@ -63,38 +65,38 @@ For specific LLM providers, install with optional dependencies:
 
 ```bash
 # Install with Anthropic Claude support
-pip install mcp-config-converter[anthropic]
+uv add mcp-config-converter[anthropic]
 
-# Install with SambaNova support
-pip install mcp-config-converter[sambanova]
+# Install with SambaNova SDK support
+uv add mcp-config-converter[sambanova-sdk]
 
-# Install with Perplexity support
-pip install mcp-config-converter[perplexity]
+# Install with Perplexity SDK support
+uv add mcp-config-converter[perplexity-sdk]
 
-# Install with OpenRouter support
-pip install mcp-config-converter[openrouter]
+# Install with OpenRouter SDK support
+uv add mcp-config-converter[openrouter-sdk]
 
 # Install with Ollama support
-pip install mcp-config-converter[ollama]
+uv add mcp-config-converter[ollama]
 
 # Install with all optional dependencies
-pip install mcp-config-converter[all]
+uv add mcp-config-converter[all]
 ```
 
 ## Quick Start
 
 ```bash
 # Convert an arbitrary MCP server configuration file `config.yaml` to Claude format via Ollama LLM provider
-mcp-config-converter convert config.yaml --provider claude -o claude_config.json --preferred-provider ollama
+uv run mcp-config-converter convert config.yaml --provider claude --output claude_config.json --preferred-provider ollama
 
 # Convert configuration using custom LLM provider with Anthropic-compatible API
-mcp-config-converter convert config.yaml --llm-provider-type anthropic --llm-api-key YOUR_API_KEY --llm-base-url https://api.anthropic.com/v1 --llm-model claude-2
+uv run mcp-config-converter convert config.yaml --llm-provider-type anthropic --llm-api-key YOUR_API_KEY --llm-base-url https://api.anthropic.com/v1 --llm-model claude-2 --output output.json
 
 # Convert configuration using custom LLM provider with OpenAI-compatible API
-mcp-config-converter convert config.yaml --llm-provider-type openai --llm-api-key YOUR_API_KEY --llm-base-url https://api.example.com/v1 --llm-model custom-model
+uv run mcp-config-converter convert config.yaml --llm-provider-type openai --llm-api-key YOUR_API_KEY --llm-base-url https://api.example.com/v1 --llm-model custom-model --output output.json
 
-# Validate an MCP configuration
-mcp-config-converter validate config.json
+# Check LLM provider status
+uv run mcp-config-converter llm-check
 ```
 
 ## Use Cases
@@ -112,13 +114,23 @@ mcp-config-converter validate config.json
 ```
 mcp-config-converter/
 ├── mcp_config_converter/
-│   ├── cli.py              # Command-line interface
-│   ├── models.py           # Pydantic models for MCP configs
+│   ├── cli/                # Command-line interface modules
+│   │   ├── arguments.py    # CLI argument parsing
+│   │   ├── convert.py     # Convert command implementation
+│   │   ├── llm_check.py   # LLM provider checking
+│   │   ├── validate.py     # Validation command implementation
+│   │   └── ...            # Other CLI modules
+│   ├── llm/               # LLM provider implementations
+│   │   ├── base.py        # Base LLM interface
+│   │   ├── claude.py      # Claude provider
+│   │   ├── deepseek.py    # DeepSeek provider
+│   │   └── ...            # Other LLM providers
+│   ├── prompts/           # LLM prompt templates
+│   ├── specs/             # MCP provider specifications
 │   ├── transformers.py     # Configuration transformation logic
-│   ├── parsers/            # Format-specific parsers (JSON, YAML, TOML)
-│   ├── formatters/         # Provider-specific formatters
-│   └── utils.py            # Utility functions
-└── tests/                  # Test suite
+│   ├── types.py           # Type definitions
+│   └── utils.py           # Utility functions
+└── tests/                 # Test suite
 ```
 
 ## Contributing

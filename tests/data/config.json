@@ -1,0 +1,11 @@
+{
+    "servers": {
+        "mcpadvisor": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@xiaohui-wang/mcpadvisor@latest"
+            ]
+        }
+    }
+}

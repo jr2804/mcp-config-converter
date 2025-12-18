@@ -1,0 +1,20 @@
+{
+    "servers": {
+        "mcpadvisor": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@xiaohui-wang/mcpadvisor@latest"
+            ]
+        },
+        "fetch": {
+            "args": [
+                "mcp-fetch-server"
+            ],
+            "command": "npx",
+            "env": {
+                "DEFAULT_LIMIT": "50000"
+            }
+        }
+    }
+}
