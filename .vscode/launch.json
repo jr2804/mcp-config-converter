@@ -31,6 +31,24 @@
             "console": "integratedTerminal",
         },
         {
+            "name": "convert (ollama/gemma3)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter",
+            "args": [
+                "convert",
+                ".vscode/mcp.json",
+                "-p",
+                "opencode",
+                "-pp",
+                "ollama",
+                "--llm-model",
+                "gemma3:latest"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+        },
+        {
             "name": "convert (deepseek)",
             "type": "debugpy",
             "request": "launch",
