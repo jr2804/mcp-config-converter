@@ -3,6 +3,7 @@
 Based on [Mistral Vibe Docs](https://docs.mistral.ai/mistral-vibe/introduction/configuration#mcp-server-configuration).
 
 ## Configuration Format
+
 Format: TOML (Array of tables `[[mcp_servers]]`)
 
 ## Configuration Structure
@@ -17,14 +18,17 @@ args = ["arg1", "arg2"]
 ```
 
 ### Server Properties
+
 - `name` (Required): Short alias
 - `transport` (Required): `stdio`, `http`, or `streamable-http`
 
 #### Stdio Transport
+
 - `command`: Executable path
 - `args`: Arguments list
 
 #### HTTP Transport
+
 - `url`: Base URL
 - `headers`: Map of headers
 - `api_key_env`: Env var for API key
@@ -32,6 +36,7 @@ args = ["arg1", "arg2"]
 - `api_key_format`: Format string (e.g. "Bearer {token}")
 
 ### Tool Filtering
+
 Control availability with `enabled_tools` and `disabled_tools`.
 
 ```toml

@@ -3,6 +3,7 @@
 Based on [Opencode MCP Docs](https://opencode.ai/docs/mcp-servers/).
 
 ## Configuration File
+
 File: `config.json` (likely `~/.opencode/config.json`).
 Schema: `https://opencode.ai/config.json`
 
@@ -58,6 +59,7 @@ The configuration uses a JSON structure with an `mcp` object for definitions and
 ```
 
 ### Tool Control
+
 Manage tool availability globally or per-agent.
 
 ```json

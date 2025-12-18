@@ -3,6 +3,7 @@
 Based on [Gemini CLI Docs](https://geminicli.com/docs/tools/mcp-server/).
 
 ## Configuration Files
+
 - Project Scope: `.gemini/settings.json`
 - User Scope: `~/.gemini/settings.json`
 
@@ -26,12 +27,15 @@ The configuration file uses a JSON structure with `mcp` (global settings) and `m
 ```
 
 ### Server Properties
+
 - **Required (one of):**
+
   - `command`: Path to executable (stdio)
   - `url`: SSE endpoint URL
   - `httpUrl`: HTTP streaming endpoint URL
 
 - **Optional:**
+
   - `args`: Array of arguments (stdio)
   - `cwd`: Working directory (stdio)
   - `env`: Environment variables object

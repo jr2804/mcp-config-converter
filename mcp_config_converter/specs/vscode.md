@@ -3,6 +3,7 @@
 Based on [VS Code MCP Docs](https://code.visualstudio.com/docs/copilot/customization/mcp-servers).
 
 ## Configuration File
+
 File: `mcp.json` (Workspace or User specific locations).
 
 ## Configuration Structure
@@ -59,7 +60,9 @@ The file contains two main sections: `servers` and `inputs`.
 ```
 
 ### Input Variables
+
 Used for sensitive data.
+
 - `type`: `promptString`
 - `id`: Variable ID
 - `description`: User prompt
