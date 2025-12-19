@@ -3,5 +3,6 @@
         {
             "file": ".vscode/commit-instructions.md"
         }
-    ]
+    ],
+    "gitmoji.autoMatch": true
 }
