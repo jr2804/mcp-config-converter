@@ -22,6 +22,7 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
         "opencode": Path(".opencode/opencode.json"),
         "mistral": Path(".vibe/config.toml"),
         "qwen": Path(".qwen/settings.json"),
+        "llxprt": Path(".llxprt/settings.json"),
     },
 )
 

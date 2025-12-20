@@ -1,9 +1,9 @@
 from enum import StrEnum
 
-
 # Provider alias mapping - maps providers to their actual implementation
 PROVIDER_ALIAS_MAP: dict[str, str] = {
     "qwen": "gemini",  # qwen uses the same spec as gemini
+    "llxprt": "gemini",  # qwen uses the same spec as gemini
 }
 
 
@@ -21,6 +21,7 @@ class ProviderConfig(StrEnum):
     VSCODE = "vscode"
     OPENCODE = "opencode"
     QWEN = "qwen"
+    LLXPRT = "llxprt"
 
 
 class ConfigFormat(StrEnum):
