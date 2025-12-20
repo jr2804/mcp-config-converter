@@ -23,6 +23,7 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
         "mistral": Path(".vibe/config.toml"),
         "qwen": Path(".qwen/settings.json"),
         "llxprt": Path(".llxprt/settings.json"),
+        "crush": Path(".crush.json"),
     },
 )
 

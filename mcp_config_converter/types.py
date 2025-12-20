@@ -22,6 +22,7 @@ class ProviderConfig(StrEnum):
     OPENCODE = "opencode"
     QWEN = "qwen"
     LLXPRT = "llxprt"
+    CRUSH = "crush"
 
 
 class ConfigFormat(StrEnum):
