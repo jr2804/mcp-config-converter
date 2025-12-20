@@ -19,8 +19,9 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
         "gemini": Path(".gemini/mcp.json"),
         "claude": Path("mcp.json"),
         "codex": Path(".mcp.json"),
-        "opencode": Path("opencode.json"),
+        "opencode": Path(".opencode/opencode.json"),
         "mistral": Path(".vibe/config.toml"),
+        "qwen": Path(".qwen/settings.json"),
     },
 )
 

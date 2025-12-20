@@ -4,6 +4,7 @@ from pathlib import Path
 
 from mcp_config_converter.llm import BaseLLMProvider
 from mcp_config_converter.prompts import build_conversion_prompt
+from mcp_config_converter.types import PROVIDER_ALIAS_MAP
 from mcp_config_converter.utils import clean_llm_output
 
 
@@ -33,8 +34,11 @@ class ConfigTransformer:
         if not target_provider:
             raise ValueError("Target provider is required for conversion")
 
+        # Resolve provider aliases using the mapping
+        actual_provider = PROVIDER_ALIAS_MAP.get(target_provider.lower(), target_provider)
+
         # Perform LLM-based conversion
-        result = self._llm_convert(input_content, target_provider)
+        result = self._llm_convert(input_content, actual_provider)
 
         return result
 
@@ -51,8 +55,11 @@ class ConfigTransformer:
         # Read input content from file
         input_content = input_file.read_text(encoding="utf-8")
 
+        # Resolve provider aliases using the mapping
+        actual_provider = PROVIDER_ALIAS_MAP.get(target_provider.lower(), target_provider)
+
         # Perform transformation
-        return self.transform(input_content, target_provider)
+        return self.transform(input_content, actual_provider)
 
     def _llm_convert(self, input_content: str, target_provider: str) -> str:
         """Perform LLM-based configuration conversion.
