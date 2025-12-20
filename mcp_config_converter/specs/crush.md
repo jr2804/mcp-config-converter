@@ -1,10 +1,10 @@
-# LLxprt Code MCP Configuration
+# Crush MCP Configuration
 
 Based on [MCP servers with the LLxprt Code](https://github.com/vybestack/llxprt-code/blob/main/docs/tools/mcp-server.md).
 
 ## Configuration File
 
-File: `settings.json` (likely `~/.llxprt/settings.json`).
+File: `.crush.json` (alternatively: `crush.json`).
 Schema: `https://charm.land/crush.json`
 
 ## Configuration Structure
@@ -15,61 +15,35 @@ The configuration uses a JSON structure with an `mcp` object for definitions and
 {
   "$schema": "https://charm.land/crush.json",
   "mcp": {
-    "my-server": {
-      "type": "local",
-      "command": ["executable", "arg1"],
-      "enabled": true,
-      "environment": {
-        "KEY": "VALUE"
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/mcp-server.js"],
+      "timeout": 120,
+      "disabled": false,
+      "disabled_tools": ["some-tool-name"],
+      "env": {
+        "NODE_ENV": "production"
       }
-    }
-  },
-  "tools": {
-    "my-server*": true
-  }
-}
-```
-
-### Server Types
-
-#### Local Server
-
-```json
-"local-server": {
-  "type": "local",
-  "command": ["npx", "-y", "server-package"],
-  "enabled": true,
-  "environment": { "VAR": "val" },
-  "timeout": 60
-}
-```
-
-#### Remote Server
-
-```json
-"remote-server": {
-  "type": "remote",
-  "url": "https://api.example.com",
-  "enabled": true,
-  "headers": {
-    "Authorization": "Bearer token"
-  },
-  "oauth": { ... } // optional
-}
-```
-
-### Tool Control
-
-Manage tool availability globally or per-agent.
-
-```json
-"tools": {
-  "server_prefix*": false // Disable globally
-},
-"agent": {
-  "my-agent": {
-    "tools": {
-      "server_prefix*": true // Enable for this agent
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "timeout": 120,
+      "disabled": false,
+      "disabled_tools": ["create_issue", "create_pull_request"],
+      "headers": {
+        "Authorization": "Bearer $GH_PAT"
+      }
+    },
+    "streaming-service": {
+      "type": "sse",
+      "url": "https://example.com/mcp/sse",
+      "timeout": 120,
+      "disabled": false,
+      "headers": {
+        "API-Key": "$(echo $API_KEY)"
+      }
     }
   }
 }
