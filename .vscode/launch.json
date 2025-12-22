@@ -49,7 +49,7 @@
             "console": "integratedTerminal",
         },
         {
-            "name": "convert (deepseek)",
+            "name": "convert (mistral/perplexity)",
             "type": "debugpy",
             "request": "launch",
             "module": "mcp_config_converter",
@@ -57,9 +57,9 @@
                 "convert",
                 ".vscode/mcp.json",
                 "-p",
-                "opencode",
+                "mistral",
                 "-pp",
-                "deepseek"
+                "perplexity-sdk"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
