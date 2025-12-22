@@ -12,7 +12,7 @@ import yaml
 from mistune.renderers.markdown import MarkdownRenderer
 from rich.prompt import Confirm, Prompt
 
-from mcp_config_converter.types import ConfigFormat
+from mcp_config_converter.types import ConfigFormat, ProviderConfig
 
 
 def determine_config_format(cfg: str) -> ConfigFormat:
@@ -236,8 +236,8 @@ def select_provider(default: str = "claude") -> str:
     Returns:
         Selected provider
     """
-    providers: list[str] = ["claude", "gemini", "vscode", "opencode"]
-    return prompt_for_choice("Select target LLM provider", choices=providers, default=default)
+    providers: list[str] = ProviderConfig.__members__.keys()  # type: ignore
+    return prompt_for_choice("Select target format", choices=providers, default=default)
 
 
 def select_format(default: str = "json") -> str:
@@ -249,5 +249,5 @@ def select_format(default: str = "json") -> str:
     Returns:
         Selected format
     """
-    formats: list[str] = ["json", "yaml", "toml"]
+    formats: list[str] = ConfigFormat.__members__.keys()  # type: ignore
     return prompt_for_choice("Select output format", choices=formats, default=default)
