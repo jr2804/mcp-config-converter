@@ -5,7 +5,7 @@ from pathlib import Path
 from mcp_config_converter.llm import BaseLLMProvider
 from mcp_config_converter.prompts import build_conversion_prompt
 from mcp_config_converter.types import PROVIDER_ALIAS_MAP
-from mcp_config_converter.utils import clean_llm_output
+from mcp_config_converter.utils import clean_llm_output, convert_format
 
 
 class ConfigTransformer:
@@ -88,6 +88,8 @@ class ConfigTransformer:
             # Try to clean up the output (remove markdown code blocks, etc.)
             result = clean_llm_output(result)
 
+            # validate and possibly correct output format
+            result = convert_format(result, target_provider)
             """
             # Validate output
             if not validate_conversion_output(result):

@@ -3,7 +3,9 @@
 import os
 from pathlib import Path
 from typing import Any
+import tempfile
 
+import remarshal
 import mistune
 import orjson
 import toml
@@ -12,7 +14,7 @@ import yaml
 from mistune.renderers.markdown import MarkdownRenderer
 from rich.prompt import Confirm, Prompt
 
-from mcp_config_converter.types import ConfigFormat, ProviderConfig
+from mcp_config_converter.types import PROVIDER_OUTPUT_FORMAT, ConfigFormat, ProviderConfig
 
 
 def determine_config_format(cfg: str) -> ConfigFormat:
@@ -179,10 +181,20 @@ def clean_llm_output(output: str) -> str:
     _, state = fmt_md.parse(output)
     for t in state.tokens:
         if t["type"] == "block_code":
-            return t["raw"].strip()
+            output = t["raw"].strip()
+            break
 
-    # Return as-is if no code blocks found
-    return output.strip()
+    # if JSON, check if wrapped in array
+    if determine_config_format(output) == ConfigFormat.JSON:
+        try:
+            parsed = orjson.loads(output)
+            if isinstance(parsed, list) and len(parsed) == 1:
+                output = orjson.dumps(parsed[0]).decode("utf-8")
+        except orjson.JSONDecodeError:
+            pass
+
+    output = output.strip()
+    return output
 
 
 def prompt_for_choice(message: str, choices: list[str], default: str | None = None) -> str:
@@ -251,3 +263,36 @@ def select_format(default: str = "json") -> str:
     """
     formats: list[str] = ConfigFormat.__members__.keys()  # type: ignore
     return prompt_for_choice("Select output format", choices=formats, default=default)
+
+
+def convert_format(data: str, target_config: ProviderConfig | str) -> str:
+    """Convert data string to specified format.
+
+    Args:
+        data: Input data string
+        target_format: Target configuration format
+
+    Returns:
+        Converted data string
+    """
+    output = data
+    if (expected_format := PROVIDER_OUTPUT_FORMAT.get(target_config, "text")) != "text":
+        current_format = determine_config_format(data)
+        if current_format != expected_format:
+            # special case TOON: convert to JSON first
+            if current_format == ConfigFormat.TOON and (current_format := ConfigFormat.JSON) == "json":
+                data = orjson.dumps(toon_format.decode(data)).decode("utf-8")
+
+            if expected_format in [ConfigFormat.JSON, ConfigFormat.YAML, ConfigFormat.TOML]:
+                # convert supported formats
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_input_file = Path(temp_dir) / f"input.{current_format}"
+                    temp_input_file.write_text(data, encoding="utf-8")
+                    temp_output_file = Path(temp_dir) / f"output.{expected_format}"
+
+                    remarshal.remarshal(str(current_format), str(expected_format), temp_input_file, temp_output_file)
+                    output = temp_output_file.read_text(encoding="utf-8")
+            else:
+                raise ValueError(f"Cannot convert format '{current_format}' to expected format '{expected_format}' for provider '{target_config}'")
+
+    return output

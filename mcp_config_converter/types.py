@@ -1,11 +1,5 @@
 from enum import StrEnum
 
-# Provider alias mapping - maps providers to their actual implementation
-PROVIDER_ALIAS_MAP: dict[str, str] = {
-    "qwen": "gemini",  # qwen uses the same spec as gemini
-    "llxprt": "gemini",  # qwen uses the same spec as gemini
-}
-
 
 class OutputAction(StrEnum):
     OVERWRITE = "overwrite"
@@ -25,9 +19,30 @@ class ProviderConfig(StrEnum):
     CRUSH = "crush"
 
 
+# Provider alias mapping - maps providers to their actual implementation
+PROVIDER_ALIAS_MAP: dict[ProviderConfig | str, ProviderConfig | str] = {
+    ProviderConfig.QWEN: ProviderConfig.GEMINI,  # qwen uses the same spec as gemini
+    ProviderConfig.LLXPRT: ProviderConfig.GEMINI,  # qwen uses the same spec as gemini
+}
+
+
 class ConfigFormat(StrEnum):
     JSON = "json"
     YAML = "yaml"
     TOML = "toml"
     TOON = "toon"
     TEXT = "text"
+
+
+# Expected output formats per provider (if known)
+PROVIDER_OUTPUT_FORMAT: dict[ProviderConfig | str, ConfigFormat] = {
+    ProviderConfig.CLAUDE: ConfigFormat.JSON,
+    ProviderConfig.GEMINI: ConfigFormat.JSON,
+    ProviderConfig.CODEX: ConfigFormat.TOML,
+    ProviderConfig.MISTRAL: ConfigFormat.TOML,
+    ProviderConfig.VSCODE: ConfigFormat.JSON,
+    ProviderConfig.OPENCODE: ConfigFormat.JSON,
+    ProviderConfig.QWEN: ConfigFormat.JSON,
+    ProviderConfig.LLXPRT: ConfigFormat.JSON,
+    ProviderConfig.CRUSH: ConfigFormat.JSON,
+}
