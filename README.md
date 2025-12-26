@@ -83,6 +83,33 @@ uv add mcp-config-converter[ollama]
 uv add mcp-config-converter[all]
 ```
 
+### Environment Configuration
+
+The tool supports loading API keys and configuration from a `.env` file. This allows you to securely manage your LLM provider credentials without hardcoding them.
+
+1. **Copy the example file**:
+```bash
+cp .env.example .env
+```
+
+2. **Edit the `.env` file** and add your API keys:
+```env
+# OpenAI API Key
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Anthropic (Claude) API Key
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Google Gemini API Key
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Other providers...
+```
+
+3. **The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
+
+**Note**: Never commit your `.env` file with real API keys! It's already excluded in `.gitignore`.
+
 ## Quick Start
 
 ```bash

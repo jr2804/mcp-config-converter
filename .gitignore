@@ -40,3 +40,4 @@ uv.lock
 /mcp_config_converter/_version.py
 opencode*.json
 .envrc
+.vibe/config.toml

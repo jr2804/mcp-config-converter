@@ -12,6 +12,23 @@ from mcp_config_converter.llm.base import BaseLLMProvider
 from mcp_config_converter.llm.openai import OpenAIProvider
 from mcp_config_converter.llm.registry import register_provider
 
+# Available Z.AI models (hardcoded from documentation)
+# Source: https://docs.z.ai/api-reference/llm/chat-completion
+ZAI_MODELS = [
+    # Text models
+    "glm-4.7",  # Latest flagship model (default)
+    "glm-4.6",
+    "glm-4.5",
+    "glm-4.5-air",
+    "glm-4.5-x",
+    "glm-4.5-airx",
+    "glm-4.5-flash",
+    "glm-4-32b-0414-128k",
+    # Vision models
+    "glm-4.6v",
+    "glm-4.5v",
+]
+
 
 @register_provider("zai-openai", cost=18)
 class ZaiOpenAIProvider(OpenAIProvider):
@@ -39,9 +56,9 @@ class ZaiOpenAIProvider(OpenAIProvider):
         """Get the list of available models for this provider.
 
         Returns:
-            List of available model names
+            List of available model names (hardcoded)
         """
-        return ["glm-4.7"]
+        return ZAI_MODELS.copy()
 
 
 @register_provider("zai-sdk", cost=19)
@@ -100,10 +117,6 @@ class ZaiSDKProvider(BaseLLMProvider):
         """Get the list of available models for this provider.
 
         Returns:
-            List of available model names, or None if not available
+            List of available model names (hardcoded)
         """
-        try:
-            response = self._get_client().models.list()
-            return [model.id for model in response.data]
-        except Exception:
-            return None
+        return ZAI_MODELS.copy()

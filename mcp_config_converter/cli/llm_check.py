@@ -52,6 +52,7 @@ def llm_check(
         table = Table(title="LLM Provider Status", show_header=True, header_style="bold magenta")
         table.add_column("Provider", style="cyan", no_wrap=True)
         table.add_column("Model", style="green")
+        table.add_column("Nbr of Models", style="cyan", no_wrap=True)
         table.add_column("Availability", style="yellow")
         table.add_column("Authentication", style="yellow")
         table.add_column("Cost", style="blue")
@@ -71,6 +72,9 @@ def llm_check(
                 availability = "[bold green]OK[/bold green]"
                 model = provider.model or "default"
 
+                # Get number of available models
+                model_count = str(len(provider.available_models)) if provider.available_models is not None else "[bold red]n/a[/bold red]"
+
                 # Check authentication
                 authentication = "[bold green]OK[/bold green]" if provider.validate_config() else "[bold red]Failed[/bold red]"
 
@@ -78,11 +82,13 @@ def llm_check(
                 availability = "[bold red]Failed[/bold red]"
                 authentication = "[bold red]Failed[/bold red]"
                 model = "[bold red]Failed[/bold red]"
+                model_count = "[bold red]n/a[/bold red]"
 
             provider_data.append(
                 {
                     "name": provider_name,
                     "model": model,
+                    "model_count": model_count,
                     "availability": availability,
                     "authentication": authentication,
                     "cost": provider_info.cost if provider_info else 0,
@@ -98,10 +104,12 @@ def llm_check(
                 availability = "[bold green]OK[/bold green]"
                 model = custom_provider.model or "custom"
                 authentication = "[bold green]OK[/bold green]" if custom_provider.validate_config() else "[bold red]Failed[/bold red]"
+                model_count = "[bold red]n/a[/bold red]"
                 provider_data.append(
                     {
                         "name": "custom",
                         "model": model,
+                        "model_count": model_count,
                         "availability": availability,
                         "authentication": authentication,
                         "cost": -1,  # Custom providers always have cost -1 (always selected)
@@ -113,6 +121,7 @@ def llm_check(
                     {
                         "name": "custom",
                         "model": "[bold red]Failed[/bold red]",
+                        "model_count": "[bold red]n/a[/bold red]",
                         "availability": "[bold red]Failed[/bold red]",
                         "authentication": "[bold red]Failed[/bold red]",
                         "cost": -1,
@@ -128,6 +137,7 @@ def llm_check(
             table.add_row(
                 data["name"],
                 data["model"],
+                data["model_count"],
                 data["availability"],
                 data["authentication"],
                 str(data["cost"]),

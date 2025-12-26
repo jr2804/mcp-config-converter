@@ -21,6 +21,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=7.0",
+    "pytest-dotenv>=0.5.2",
     "isort",
     "ruff",
     "ty",
@@ -31,9 +32,7 @@ dev = [
     "memorygraphmcp[ladybugdb]>=0.11.12",
     "rust-just>=1.45.0",
     "mdformat>=1.0.0",
-]
-zai = [
-    "zai-sdk>=0.2.0",
+    "python-dotenv>=1.2.1",
 ]
 
 # Optional dependencies for LLM providers
@@ -59,6 +58,9 @@ gemini = [
 mistral = [
     "mistralai",
 ]
+zai = [
+    "zai-sdk>=0.2.0",
+]
 all = [
     "anthropic",
     "sambanova",
@@ -78,6 +80,13 @@ mcp-config-converter = "mcp_config_converter.cli:app"
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
+
+# ---- Testing ----
+
+[tool.pytest.ini_options]
+env_files = [
+    ".env",
+]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
