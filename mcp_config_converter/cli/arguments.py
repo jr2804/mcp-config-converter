@@ -4,7 +4,7 @@ import typer
 
 from mcp_config_converter._version import version as _version
 from mcp_config_converter.cli import console
-from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, RichHelpPanel
+from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, RichHelpPanel, EnvVarName
 
 
 def version_callback(value: bool = True) -> None:
@@ -42,24 +42,28 @@ VersionOpt = typer.Option(
 LlmBaseUrlOpt = typer.Option(
     None,
     "--llm-base-url",
+    envvar=EnvVarName.LLM_BASE_URL,
     help="Custom base URL for LLM provider (for OpenAI/Anthropic compatible APIs)",
     rich_help_panel=RichHelpPanel.LLM,
 )
 LlmProviderTypeOpt = typer.Option(
     None,
     "--llm-provider-type",
+    envvar=EnvVarName.LLM_PROVIDER_TYPE,
     help="LLM provider type: 'openai' or 'anthropic' for custom providers",
     rich_help_panel=RichHelpPanel.LLM,
 )
 LlmApiKeyOpt = typer.Option(
     None,
     "--llm-api-key",
-    help="API key for LLM provider (overrides environment variables)",
+    envvar=EnvVarName.LLM_API_KEY,
+    help="API key for LLM provider (overrides provider-specific env vars)",
     rich_help_panel=RichHelpPanel.LLM,
 )
 LlmModelOpt = typer.Option(
     None,
     "--llm-model",
+    envvar=EnvVarName.LLM_MODEL,
     help="Model name for the configured LLM provider",
     rich_help_panel=RichHelpPanel.LLM,
 )
@@ -67,6 +71,7 @@ PreferredProviderOpt = typer.Option(
     "auto",
     "--preferred-provider",
     "-pp",
+    envvar=EnvVarName.PREFERRED_PROVIDER,
     help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)",
     case_sensitive=False,
     rich_help_panel=RichHelpPanel.LLM,

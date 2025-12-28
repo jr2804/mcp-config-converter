@@ -12,6 +12,16 @@ class RichHelpPanel(StrEnum):
     LLM = "LLM Parameters"
 
 
+class EnvVarName(StrEnum):
+    """Environment variable names for CLI configuration."""
+
+    LLM_BASE_URL = "MCP_CONFIG_CONF_LLM_BASE_URL"
+    LLM_PROVIDER_TYPE = "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE"
+    LLM_MODEL = "MCP_CONFIG_CONF_LLM_MODEL"
+    LLM_API_KEY = "MCP_CONFIG_CONF_API_KEY"
+    PREFERRED_PROVIDER = "MCP_CONFIG_CONF_PREFERRED_PROVIDER"
+
+
 PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
     lambda: Path("mcp.json"),
     {
