@@ -60,7 +60,6 @@ MODEL_MAPPINGS = {
     "samba-2": "sambanova/Meta-Llama-3.1-70B-Instruct",
     # ZAI models
     "glm-4.7": "glm-4",
-    "glm-4": "glm-4",
 }
 
 # Environment variable mappings for different providers
@@ -140,7 +139,7 @@ class LiteLLMProvider(BaseLLMProvider):
             env_vars = ["OPENAI_API_KEY"]
         elif model.startswith("claude-") or model.startswith("anthropic/"):
             env_vars = ["ANTHROPIC_API_KEY"]
-        elif model.startswith("gemini/") or "gemini" in model.lower():
+        elif model.startswith("gemini/") or model.startswith("gemini-"):
             env_vars = ["GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"]
         elif model.startswith("mistral/"):
             env_vars = ["MISTRAL_API_KEY"]
@@ -152,7 +151,7 @@ class LiteLLMProvider(BaseLLMProvider):
             env_vars = ["PERPLEXITY_API_KEY"]
         elif model.startswith("sambanova/"):
             env_vars = ["SAMBANOVA_API_KEY"]
-        elif "glm-" in model.lower():
+        elif model.startswith("glm-"):
             env_vars = ["ZAI_API_KEY"]
         elif model.startswith("ollama/"):
             return None  # No API key needed for Ollama
@@ -230,7 +229,8 @@ class LiteLLMProvider(BaseLLMProvider):
                 else:
                     logger.error(f"Request failed after {self.max_retries} attempts: {e}")
             except Exception as e:
-                logger.error(f"Unexpected error during generation: {e}")
+                # Log the exception type for debugging
+                logger.error(f"Unexpected error during generation (type: {type(e).__name__}): {e}")
                 raise RuntimeError(f"LiteLLM generation failed: {e}") from e
 
         raise RuntimeError(f"LiteLLM generation failed after {self.max_retries} retries: {last_exception}") from last_exception
