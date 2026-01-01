@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "A configuration converter for MCP (Model Context Protocol) with enhanced CLI experience"
 authors = [{name = "jr2804"}]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "typer",
     "rich>=13.0.0",
@@ -12,6 +12,7 @@ dependencies = [
     "pyyaml>=6.0",
     "toml>=0.10.0",
     "openai>=2.11.0",
+    "litellm>=1.59.7",
     "toon-format",
     "orjson>=3.11.5",
     "mistune>=3.1.4",
