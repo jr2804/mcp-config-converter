@@ -3,16 +3,7 @@
 import logging
 
 from .base import BaseLLMProvider
-
-# Re-export all providers for backward compatibility
-from .claude import ClaudeProvider
-from .deepseek import DeepSeekProvider
-from .gemini import GeminiProvider
-from .mistral import MistralProvider
-from .ollama import OllamaProvider
-from .openai import OpenAIProvider
-from .openrouter import OpenRouterProvider
-from .perplexity import PerplexityOpenAIProvider, PerplexitySDKProvider
+from .litellm_provider import LiteLLMProvider
 from .registry import (
     ProviderInfo,
     auto_discover,
@@ -23,7 +14,6 @@ from .registry import (
     register_provider,
     select_best_provider,
 )
-from .sambanova import SambaNovaOpenAIProvider, SambaNovaSDKProvider
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +22,8 @@ auto_discover()
 
 __all__ = [
     "BaseLLMProvider",
-    "ClaudeProvider",
-    "DeepSeekProvider",
-    "GeminiProvider",
-    "MistralProvider",
-    "OllamaProvider",
-    "OpenAIProvider",
-    "OpenRouterProvider",
-    "PerplexityOpenAIProvider",
-    "PerplexitySDKProvider",
+    "LiteLLMProvider",
     "ProviderInfo",
-    "SambaNovaOpenAIProvider",
-    "SambaNovaSDKProvider",
     "auto_discover",
     "create_provider",
     "get_provider",

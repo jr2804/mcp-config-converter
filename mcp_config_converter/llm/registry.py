@@ -129,10 +129,10 @@ def _create_custom_provider(provider_name: str, **kwargs: Any) -> "BaseLLMProvid
         raise ValueError(f"Provider '{provider_name}' not found and no base_url provided for custom provider")
 
     # Import here to avoid circular import
-    from .openai import OpenAIProvider
+    from .litellm_provider import LiteLLMProvider
 
     # Create a custom provider class with the given name
-    class CustomProvider(OpenAIProvider):
+    class CustomProvider(LiteLLMProvider):
         PROVIDER_NAME = provider_name
 
     return CustomProvider(**kwargs)
