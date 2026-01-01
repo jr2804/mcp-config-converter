@@ -1,34 +1,17 @@
-"""LLM providers for AI-assisted configuration conversion."""
+"""LLM client for AI-assisted configuration conversion."""
 
 import logging
 
-from .base import BaseLLMProvider
-from .litellm_provider import LiteLLMProvider
-from .registry import (
-    ProviderInfo,
-    auto_discover,
-    create_provider,
-    get_provider,
-    get_provider_info,
-    list_providers,
-    register_provider,
-    select_best_provider,
+from .client import (
+    LiteLLMClient,
+    create_client_from_env,
+    detect_available_providers,
 )
 
 logger = logging.getLogger(__name__)
 
-# Auto-discover providers on import
-auto_discover()
-
 __all__ = [
-    "BaseLLMProvider",
-    "LiteLLMProvider",
-    "ProviderInfo",
-    "auto_discover",
-    "create_provider",
-    "get_provider",
-    "get_provider_info",
-    "list_providers",
-    "register_provider",
-    "select_best_provider",
+    "LiteLLMClient",
+    "create_client_from_env",
+    "detect_available_providers",
 ]
