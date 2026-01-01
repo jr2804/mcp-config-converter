@@ -112,13 +112,13 @@ class LiteLLMProvider(BaseLLMProvider):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
 
-        # Map friendly model name to LiteLLM identifier
-        if model and model in MODEL_MAPPINGS:
-            self._litellm_model = MODEL_MAPPINGS[model]
-        else:
-            self._litellm_model = model
-
         super().__init__(api_key=api_key, model=model, **kwargs)
+
+        # Map friendly model name to LiteLLM identifier (after parent init sets self.model)
+        if self.model and self.model in MODEL_MAPPINGS:
+            self._litellm_model = MODEL_MAPPINGS[self.model]
+        else:
+            self._litellm_model = self.model
 
         # Determine if API key is required based on model
         if self.model:
