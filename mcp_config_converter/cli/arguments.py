@@ -4,7 +4,7 @@ import typer
 
 from mcp_config_converter._version import version as _version
 from mcp_config_converter.cli import console
-from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, RichHelpPanel, EnvVarName
+from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, EnvVarName, RichHelpPanel
 
 
 def version_callback(value: bool = True) -> None:

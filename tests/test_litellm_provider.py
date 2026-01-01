@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from mcp_config_converter.llm.client import (
-    LiteLLMClient,
     PROVIDER_DEFAULT_MODELS,
-    detect_available_providers,
+    LiteLLMClient,
     create_client_from_env,
+    detect_available_providers,
 )
 
 
@@ -80,7 +80,7 @@ class TestLiteLLMClient:
 
     def test_validate_config_without_api_key(self) -> None:
         """Test config validation without API key for cloud models."""
-        client = LiteLLMClient(provider="openai", model="gpt-4")
+        LiteLLMClient(provider="openai", model="gpt-4")
         # Should fail if no API key in environment
         with patch.dict(os.environ, {}, clear=True):
             client_no_key = LiteLLMClient(provider="openai", model="gpt-4")
@@ -286,11 +286,9 @@ class TestCreateClientFromEnv:
 
     def test_create_returns_none_when_no_config(self) -> None:
         """Test that None is returned when no configuration is found."""
-        with patch.dict(os.environ, {}, clear=True):
-            # Mock detect_available_providers to return empty list
-            with patch("mcp_config_converter.llm.client.detect_available_providers", return_value=[]):
-                client = create_client_from_env()
-                assert client is None
+        with patch.dict(os.environ, {}, clear=True), patch("mcp_config_converter.llm.client.detect_available_providers", return_value=[]):
+            client = create_client_from_env()
+            assert client is None
 
     def test_create_with_base_url(self) -> None:
         """Test client creation with custom base URL."""

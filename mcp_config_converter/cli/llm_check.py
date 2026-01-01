@@ -67,12 +67,12 @@ def llm_check(
         # Show all known providers
         for provider_name in sorted(PROVIDER_DEFAULT_MODELS.keys()):
             default_model = PROVIDER_DEFAULT_MODELS[provider_name]
-            
+
             # Check if provider is configured
             if provider_name in available_provider_names:
                 # Find the API key source
                 api_key_source = "Configured"
-                for provider, api_key in available_providers:
+                for provider, _api_key in available_providers:
                     if provider == provider_name:
                         # Find which env var was used
                         env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
@@ -82,10 +82,10 @@ def llm_check(
                                 api_key_source = env_var
                                 break
                         break
-                
+
                 if not PROVIDER_API_KEY_ENV_VARS.get(provider_name):
                     api_key_source = "N/A (Local)"
-                
+
                 table.add_row(
                     provider_name,
                     default_model,
@@ -101,7 +101,7 @@ def llm_check(
                 else:
                     api_key_source = "N/A (Local)"
                     status = "[yellow]⚠ Not Available[/yellow]"
-                
+
                 table.add_row(
                     provider_name,
                     default_model,
@@ -124,7 +124,7 @@ def llm_check(
             console.print(f"  [red]Error: {e}[/red]")
 
         console.print(f"\n[dim]Found {len(available_providers)} configured provider(s)[/dim]")
-        
+
         if verbose:
             console.print("\n[cyan]LiteLLM Documentation:[/cyan]")
             console.print("  https://docs.litellm.ai/docs/providers")
