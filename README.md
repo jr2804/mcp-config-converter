@@ -51,6 +51,51 @@ This project was created to address the challenges developers face when working 
 
 - 🔧 **Extensible Architecture**: Easy to add support for new formats and providers
 
+- 🤖 **Unified LLM Support**: Built on [LiteLLM](https://github.com/BerriAI/litellm), providing access to 100+ LLM providers through a single unified interface with automatic retry logic and exponential backoff
+
+## LLM Provider Support
+
+This project uses **LiteLLM** as a unified interface to support 100+ LLM providers. The LiteLLM integration provides:
+
+- **Single Unified API**: One consistent interface for all LLM providers
+- **Automatic Retry Logic**: Built-in retry mechanism with exponential backoff for rate limits and service unavailability
+- **Smart Model Mapping**: Friendly model names automatically mapped to provider-specific identifiers
+- **Flexible Configuration**: Support for API keys via environment variables or direct parameters
+
+### Supported Providers & Models
+
+The tool supports all major LLM providers through LiteLLM:
+
+| Provider | Example Models | Environment Variable |
+|----------|----------------|---------------------|
+| **OpenAI** | `gpt-4`, `gpt-4o`, `gpt-3.5-turbo` | `OPENAI_API_KEY` |
+| **Anthropic (Claude)** | `claude-3-5-sonnet-20241022`, `claude-3-opus-20240229` | `ANTHROPIC_API_KEY` |
+| **Google Gemini** | `gemini-2.5-flash`, `gemini-1.5-pro` | `GOOGLE_API_KEY`, `GEMINI_API_KEY` |
+| **Ollama** | `ollama/llama2`, `ollama/mistral` | None (local) |
+| **Mistral** | `mistral-large`, `mistral-medium` | `MISTRAL_API_KEY` |
+| **DeepSeek** | `deepseek-chat`, `deepseek-coder` | `DEEPSEEK_API_KEY` |
+| **Perplexity** | `sonar`, `sonar-pro` | `PERPLEXITY_API_KEY` |
+| **OpenRouter** | `openai/gpt-4` | `OPENROUTER_API_KEY` |
+| **SambaNova** | Various models | `SAMBANOVA_API_KEY` |
+
+### Using LiteLLM Provider
+
+The LiteLLM provider is automatically available and selected with the lowest cost priority:
+
+```bash
+# Use LiteLLM with automatic provider selection
+uv run mcp-config-converter convert config.yaml --preferred-provider litellm --output output.json
+
+# Use LiteLLM with a specific model
+uv run mcp-config-converter convert config.yaml --preferred-provider litellm --llm-model gpt-4 --output output.json
+
+# Use LiteLLM with Claude
+uv run mcp-config-converter convert config.yaml --preferred-provider litellm --llm-model claude-3-5-sonnet-20241022 --output output.json
+
+# Use LiteLLM with Ollama (no API key needed)
+uv run mcp-config-converter convert config.yaml --preferred-provider litellm --llm-model ollama/llama2 --output output.json
+```
+
 ## Installation
 
 This project uses `uv` for dependency management. Install dependencies with:
@@ -59,29 +104,7 @@ This project uses `uv` for dependency management. Install dependencies with:
 uv sync
 ```
 
-### Optional Dependencies
-
-For specific LLM providers, install with optional dependencies:
-
-```bash
-# Install with Anthropic Claude support
-uv add mcp-config-converter[anthropic]
-
-# Install with SambaNova SDK support
-uv add mcp-config-converter[sambanova-sdk]
-
-# Install with Perplexity SDK support
-uv add mcp-config-converter[perplexity-sdk]
-
-# Install with OpenRouter SDK support
-uv add mcp-config-converter[openrouter-sdk]
-
-# Install with Ollama support
-uv add mcp-config-converter[ollama]
-
-# Install with all optional dependencies
-uv add mcp-config-converter[all]
-```
+**Note**: With the unified LiteLLM implementation, all LLM providers are now supported out of the box without additional optional dependencies. Simply set the appropriate API key environment variable for your chosen provider.
 
 ### Environment Configuration
 
@@ -113,14 +136,17 @@ GOOGLE_API_KEY=your_google_api_key_here
 ## Quick Start
 
 ```bash
-# Convert an arbitrary MCP server configuration file `config.yaml` to Claude format via Ollama LLM provider
-uv run mcp-config-converter convert config.yaml --provider claude --output claude_config.json --preferred-provider ollama
+# Convert an MCP configuration file to Claude format using LiteLLM with Ollama (local, no API key)
+uv run mcp-config-converter convert config.yaml --provider claude --output claude_config.json --preferred-provider litellm --llm-model ollama/llama2
 
-# Convert configuration using custom LLM provider with Anthropic-compatible API
-uv run mcp-config-converter convert config.yaml --llm-provider-type anthropic --llm-api-key YOUR_API_KEY --llm-base-url https://api.anthropic.com/v1 --llm-model claude-2 --output output.json
+# Convert using LiteLLM with GPT-4
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider litellm --llm-model gpt-4
 
-# Convert configuration using custom LLM provider with OpenAI-compatible API
-uv run mcp-config-converter convert config.yaml --llm-provider-type openai --llm-api-key YOUR_API_KEY --llm-base-url https://api.example.com/v1 --llm-model custom-model --output output.json
+# Convert using LiteLLM with Claude (requires ANTHROPIC_API_KEY)
+uv run mcp-config-converter convert config.yaml --provider vscode --output output.json --preferred-provider litellm --llm-model claude-3-5-sonnet-20241022
+
+# Use auto provider selection (picks best available provider)
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider auto
 
 # Check LLM provider status
 uv run mcp-config-converter llm-check
