@@ -93,20 +93,6 @@ class LiteLLMClient:
 
         logger.debug(f"Initialized LiteLLM client: provider={self.provider}, model={self.model}")
 
-    def _get_api_key_from_env(self) -> str | None:
-        """Get API key from environment variables based on provider."""
-        if not self.provider:
-            return None
-
-        env_vars = PROVIDER_API_KEY_ENV_VARS.get(self.provider, [])
-        for env_var in env_vars:
-            value = os.getenv(env_var)
-            if value and value.strip():
-                logger.debug(f"Found API key in {env_var}")
-                return value.strip()
-
-        return None
-
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using LiteLLM.
 
@@ -208,6 +194,20 @@ class LiteLLMClient:
             return False
 
         return True
+
+    def _get_api_key_from_env(self) -> str | None:
+        """Get API key from environment variables based on provider."""
+        if not self.provider:
+            return None
+
+        env_vars = PROVIDER_API_KEY_ENV_VARS.get(self.provider, [])
+        for env_var in env_vars:
+            value = os.getenv(env_var)
+            if value and value.strip():
+                logger.debug(f"Found API key in {env_var}")
+                return value.strip()
+
+        return None
 
 
 def detect_available_providers() -> list[tuple[str, str | None]]:
