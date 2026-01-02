@@ -4,5 +4,6 @@
             "file": ".vscode/commit-instructions.md"
         }
     ],
-    "gitmoji.autoMatch": true
+    "gitmoji.autoMatch": true,
+    "gitmoji.showEmojiCode": true
 }

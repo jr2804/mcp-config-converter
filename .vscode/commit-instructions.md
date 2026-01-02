@@ -1,5 +1,9 @@
 # Commit Message Instructions
 
+## General
+
+The guidelines follow the rules given by [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#specification).
+
 ## Subject Line Guidelines
 
 When creating commit messages, please follow these guidelines:
@@ -18,7 +22,7 @@ When creating commit messages, please follow these guidelines:
 For additional details, use a well-structured body section.
 
 - Separate subject and body with a blank line.
-- Use bullet points (*) for clarity.
+- Use bullet points (\*) for clarity.
 - Summarize the key changes made in this commit, referencing affected files, implemented features, bug fixes, or documentation updates in up to (one sentence per bullet point) ...
   - one bullet point for small to medium changes,
   - two bullet points for medium-large changes,
