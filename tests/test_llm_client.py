@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from mcp_config_converter.llm.client import (
+    PROVIDER_DEFAULT_MODELS,
     LiteLLMClient,
     create_client_from_env,
     detect_available_providers,
-    PROVIDER_DEFAULT_MODELS,
 )
 
 
@@ -49,7 +49,15 @@ class TestLiteLLMClient:
 
     def test_api_key_from_env_gemini(self) -> None:
         """Test API key detection from environment for Gemini (multiple env vars)."""
-        with patch.dict(os.environ, {"GOOGLE_API_KEY": "google-key"}, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "GOOGLE_API_KEY": "google-key",
+                "GEMINI_API_KEY": "",
+                "GOOGLE_GENERATIVE_AI_API_KEY": "",
+            },
+            clear=False,
+        ):
             client = LiteLLMClient(provider="gemini")
             assert client.api_key == "google-key"
 
@@ -125,12 +133,7 @@ class TestLiteLLMClient:
         mock_response.choices[0].message.content = "Generated text"
         mock_completion.return_value = mock_response
 
-        client = LiteLLMClient(
-            provider="openai",
-            api_key="test-key",
-            model="gpt-4",
-            base_url="https://custom.api.com/v1"
-        )
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", base_url="https://custom.api.com/v1")
         result = client.generate("Test prompt")
 
         assert result == "Generated text"
@@ -156,10 +159,10 @@ class TestLiteLLMClient:
     def test_get_available_models(self, mock_model_list: Mock) -> None:
         """Test getting available models."""
         mock_model_list.return_value = ["gpt-4", "gpt-3.5-turbo", "claude-3"]
-        
+
         client = LiteLLMClient()
         models = client.get_available_models()
-        
+
         assert "gpt-4" in models
         assert "gpt-3.5-turbo" in models
 
@@ -169,13 +172,17 @@ class TestHelperFunctions:
 
     def test_detect_available_providers_with_keys(self) -> None:
         """Test detecting providers with configured API keys."""
-        with patch.dict(os.environ, {
-            "OPENAI_API_KEY": "openai-key",
-            "ANTHROPIC_API_KEY": "anthropic-key",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "OPENAI_API_KEY": "openai-key",
+                "ANTHROPIC_API_KEY": "anthropic-key",
+            },
+            clear=False,
+        ):
             providers = detect_available_providers()
             provider_names = [p[0] for p in providers]
-            
+
             assert "openai" in provider_names
             assert "anthropic" in provider_names
             assert "ollama" in provider_names  # Ollama doesn't need API key
@@ -187,19 +194,23 @@ class TestHelperFunctions:
         with patch.dict(os.environ, env_clear, clear=False):
             providers = detect_available_providers()
             provider_names = [p[0] for p in providers]
-            
+
             # Should still have Ollama (no API key needed)
             assert "ollama" in provider_names
 
     def test_create_client_from_env_with_explicit_config(self) -> None:
         """Test creating client from explicit env vars."""
-        with patch.dict(os.environ, {
-            "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
-            "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
-            "MCP_CONFIG_CONF_API_KEY": "test-key",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
+                "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
+                "MCP_CONFIG_CONF_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
             client = create_client_from_env()
-            
+
             assert client is not None
             assert client.provider == "openai"
             assert client.model == "gpt-4"
@@ -207,11 +218,15 @@ class TestHelperFunctions:
 
     def test_create_client_from_env_with_auto_detect(self) -> None:
         """Test creating client with auto-detection."""
-        with patch.dict(os.environ, {
-            "OPENAI_API_KEY": "openai-key",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "OPENAI_API_KEY": "openai-key",
+            },
+            clear=False,
+        ):
             client = create_client_from_env()
-            
+
             assert client is not None
             assert client.provider == "openai"
             assert client.api_key == "openai-key"
@@ -219,14 +234,10 @@ class TestHelperFunctions:
     def test_create_client_from_env_no_config(self) -> None:
         """Test creating client with no configuration."""
         # Clear all relevant env vars
-        env_clear = {
-            key: "" 
-            for key in os.environ 
-            if "API_KEY" in key or "MCP_CONFIG_CONF" in key
-        }
+        env_clear = {key: "" for key in os.environ if "API_KEY" in key or "MCP_CONFIG_CONF" in key}
         with patch.dict(os.environ, env_clear, clear=False):
             client = create_client_from_env()
-            
+
             # Should return None or create Ollama client
             if client is None:
                 assert True

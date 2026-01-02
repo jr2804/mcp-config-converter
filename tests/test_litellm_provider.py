@@ -58,7 +58,16 @@ class TestLiteLLMClient:
     def test_api_key_from_env_gemini(self) -> None:
         """Test API key detection from environment for Gemini."""
         with patch.dict(os.environ, {"GOOGLE_API_KEY": "test-google-key"}, clear=False):
-            client = LiteLLMClient(provider="gemini")
+            with patch.dict(
+                os.environ,
+                {
+                    "GOOGLE_API_KEY": "test-google-key",
+                    "GEMINI_API_KEY": "",
+                    "GOOGLE_GENERATIVE_AI_API_KEY": "",
+                },
+                clear=False,
+            ):
+                client = LiteLLMClient(provider="gemini")
             assert client.api_key == "test-google-key"
 
     def test_api_key_from_env_zai(self) -> None:
@@ -207,12 +216,7 @@ class TestLiteLLMClient:
         mock_response.choices[0].message.content = "Generated text"
         mock_completion.return_value = mock_response
 
-        client = LiteLLMClient(
-            provider="openai",
-            api_key="test-key",
-            model="gpt-4",
-            base_url="https://custom.api.com/v1"
-        )
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", base_url="https://custom.api.com/v1")
         result = client.generate("Test prompt")
 
         assert result == "Generated text"
@@ -240,11 +244,15 @@ class TestDetectAvailableProviders:
 
     def test_detect_multiple_providers(self) -> None:
         """Test detection of multiple providers."""
-        with patch.dict(os.environ, {
-            "OPENAI_API_KEY": "openai-key",
-            "ANTHROPIC_API_KEY": "anthropic-key",
-            "GOOGLE_API_KEY": "google-key",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "OPENAI_API_KEY": "openai-key",
+                "ANTHROPIC_API_KEY": "anthropic-key",
+                "GOOGLE_API_KEY": "google-key",
+            },
+            clear=False,
+        ):
             providers = detect_available_providers()
             provider_names = [p[0] for p in providers]
             assert "openai" in provider_names
@@ -254,13 +262,13 @@ class TestDetectAvailableProviders:
     def test_detect_provider_with_multiple_env_vars(self) -> None:
         """Test detection when provider has multiple possible env vars."""
         # Test with GEMINI_API_KEY
-        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}, clear=False):
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GOOGLE_API_KEY": "", "GOOGLE_GENERATIVE_AI_API_KEY": ""}, clear=False):
             providers = detect_available_providers()
             provider_names = [p[0] for p in providers]
             assert "gemini" in provider_names
 
         # Test with GOOGLE_API_KEY
-        with patch.dict(os.environ, {"GOOGLE_API_KEY": "test-key"}, clear=False):
+        with patch.dict(os.environ, {"GOOGLE_API_KEY": "test-key", "GEMINI_API_KEY": "", "GOOGLE_GENERATIVE_AI_API_KEY": ""}, clear=False):
             providers = detect_available_providers()
             provider_names = [p[0] for p in providers]
             assert "gemini" in provider_names
@@ -278,11 +286,15 @@ class TestCreateClientFromEnv:
 
     def test_create_from_explicit_config(self) -> None:
         """Test client creation from explicit MCP_CONFIG_CONF_* variables."""
-        with patch.dict(os.environ, {
-            "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
-            "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
-            "MCP_CONFIG_CONF_API_KEY": "test-key",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
+                "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
+                "MCP_CONFIG_CONF_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
             client = create_client_from_env()
             assert client is not None
             assert client.provider == "openai"
@@ -305,11 +317,15 @@ class TestCreateClientFromEnv:
 
     def test_create_with_base_url(self) -> None:
         """Test client creation with custom base URL."""
-        with patch.dict(os.environ, {
-            "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
-            "MCP_CONFIG_CONF_LLM_BASE_URL": "https://custom.api.com/v1",
-            "MCP_CONFIG_CONF_API_KEY": "test-key",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
+                "MCP_CONFIG_CONF_LLM_BASE_URL": "https://custom.api.com/v1",
+                "MCP_CONFIG_CONF_API_KEY": "test-key",
+            },
+            clear=False,
+        ):
             client = create_client_from_env()
             assert client is not None
             assert client.base_url == "https://custom.api.com/v1"

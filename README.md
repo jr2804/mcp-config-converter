@@ -67,7 +67,7 @@ This project uses **LiteLLM** as a unified interface to support 100+ LLM provide
 The tool supports all major LLM providers through LiteLLM:
 
 | Provider | Example Models | Environment Variable |
-|----------|----------------|---------------------|
+| ---------- | ---------------- | --------------------- |
 | **OpenAI** | `gpt-4`, `gpt-4o`, `gpt-3.5-turbo` | `OPENAI_API_KEY` |
 | **Anthropic (Claude)** | `claude-3-5-sonnet-20241022`, `claude-3-opus-20240229` | `ANTHROPIC_API_KEY` |
 | **Google Gemini** | `gemini-2.5-flash`, `gemini-1.5-pro` | `GOOGLE_API_KEY`, `GEMINI_API_KEY` |
@@ -112,25 +112,27 @@ uv sync
 The tool supports loading API keys and configuration from a `.env` file. This allows you to securely manage your LLM provider credentials without hardcoding them.
 
 1. **Copy the example file**:
-```bash
-cp .env.example .env
-```
 
-2. **Edit the `.env` file** and add your API keys:
-```env
-# OpenAI API Key
-OPENAI_API_KEY=your_openai_api_key_here
+  ```bash
+  cp .env.example .env
+  ```
 
-# Anthropic (Claude) API Key
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+1. **Edit the `.env` file** and add your API keys:
 
-# Google Gemini API Key
-GOOGLE_API_KEY=your_google_api_key_here
+  ```env
+  # OpenAI API Key
+  OPENAI_API_KEY=your_openai_api_key_here
 
-# Other providers...
-```
+  # Anthropic (Claude) API Key
+  ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-3. **The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
+  # Google Gemini API Key
+  GOOGLE_API_KEY=your_google_api_key_here
+
+  # Other providers...
+  ```
+
+1. **The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
 
 **Note**: Never commit your `.env` file with real API keys! It's already excluded in `.gitignore`.
 
@@ -165,7 +167,7 @@ uv run mcp-config-converter llm-check
 
 ## Project Structure
 
-```
+```text
 mcp-config-converter/
 ├── mcp_config_converter/
 │   ├── cli/                # Command-line interface modules
