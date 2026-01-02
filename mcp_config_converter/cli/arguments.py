@@ -50,7 +50,7 @@ LlmProviderTypeOpt = typer.Option(
     None,
     "--llm-provider-type",
     envvar=EnvVarName.LLM_PROVIDER_TYPE,
-    help="LLM provider type: 'openai' or 'anthropic' for custom providers",
+    help="LLM provider type: e.g., 'openai', 'anthropic', 'zai'",
     rich_help_panel=RichHelpPanel.LLM,
 )
 LlmApiKeyOpt = typer.Option(

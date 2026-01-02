@@ -28,6 +28,7 @@ PROVIDER_DEFAULT_MODELS = {
     "perplexity": "sonar",
     "sambanova": "Meta-Llama-3.1-8B-Instruct",
     "cohere": "command",
+    "zai": "zai/glm-4.7",
 }
 
 # Environment variable mappings for different providers
@@ -43,6 +44,7 @@ PROVIDER_API_KEY_ENV_VARS = {
     "sambanova": ["SAMBANOVA_API_KEY"],
     "cohere": ["COHERE_API_KEY"],
     "ollama": [],  # No API key required
+    "zai": ["ZAI_API_KEY"],
 }
 
 

@@ -61,6 +61,12 @@ class TestLiteLLMClient:
             client = LiteLLMClient(provider="gemini")
             assert client.api_key == "test-google-key"
 
+    def test_api_key_from_env_zai(self) -> None:
+        """Test API key detection from environment for z.ai."""
+        with patch.dict(os.environ, {"ZAI_API_KEY": "test-zai-key"}, clear=False):
+            client = LiteLLMClient(provider="zai")
+            assert client.api_key == "test-zai-key"
+
     def test_api_key_from_env_multiple_vars(self) -> None:
         """Test API key detection when multiple env vars are possible."""
         with patch.dict(os.environ, {"GEMINI_API_KEY": "gemini-key"}, clear=False):
@@ -258,6 +264,13 @@ class TestDetectAvailableProviders:
             providers = detect_available_providers()
             provider_names = [p[0] for p in providers]
             assert "gemini" in provider_names
+
+    def test_detect_zai_provider(self) -> None:
+        """Test detection of z.ai provider via env var."""
+        with patch.dict(os.environ, {"ZAI_API_KEY": "test-key"}, clear=False):
+            providers = detect_available_providers()
+            provider_names = [p[0] for p in providers]
+            assert "zai" in provider_names
 
 
 class TestCreateClientFromEnv:

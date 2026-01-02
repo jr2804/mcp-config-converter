@@ -77,6 +77,7 @@ The tool supports all major LLM providers through LiteLLM:
 | **Perplexity** | `sonar`, `sonar-pro` | `PERPLEXITY_API_KEY` |
 | **OpenRouter** | `openai/gpt-4` | `OPENROUTER_API_KEY` |
 | **SambaNova** | Various models | `SAMBANOVA_API_KEY` |
+| **z.ai** | `zai/glm-4.7` | `ZAI_API_KEY` |
 
 ### Using LiteLLM Provider
 
