@@ -15,7 +15,7 @@ from litellm.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-# Provider-specific default models  
+# Provider-specific default models
 PROVIDER_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-3-5-sonnet-20241022",
@@ -199,10 +199,9 @@ class LiteLLMClient:
             return False
 
         # Check if API key is available for providers that need it
-        if self.provider and self.provider not in ["ollama"]:
-            if not self.api_key:
-                logger.debug(f"No API key available for provider {self.provider}")
-                return False
+        if self.provider and self.provider not in ["ollama"] and not self.api_key:
+            logger.debug(f"No API key available for provider {self.provider}")
+            return False
 
         return True
 

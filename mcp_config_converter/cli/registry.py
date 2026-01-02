@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from mcp_config_converter.llm import LiteLLMClient, detect_available_providers
 

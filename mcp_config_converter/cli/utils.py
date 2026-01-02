@@ -11,7 +11,7 @@ from rich.prompt import Prompt
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
 from mcp_config_converter.cli.registry import create_llm_client
-from mcp_config_converter.llm import create_client_from_env, detect_available_providers
+from mcp_config_converter.llm import create_client_from_env
 from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
@@ -99,7 +99,7 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
             if verbose:
                 console.print(f"[blue]Using LLM client: {created_client.provider or 'auto'}[/blue]")
         elif verbose:
-            console.print(f"[yellow]Warning: Could not create LLM client[/yellow]")
+            console.print("[yellow]Warning: Could not create LLM client[/yellow]")
     except (ImportError, ValueError) as exc:
         console.print(f"[yellow]Warning: Could not create LLM client: {exc}[/yellow]")
         raise typer.Exit(1)
