@@ -1,4 +1,5 @@
 """Tests for LiteLLM client."""
+# ruff: noqa: S101  # asserts are intended in tests
 
 import os
 from unittest.mock import MagicMock, Mock, patch

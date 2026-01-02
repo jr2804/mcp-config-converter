@@ -1,4 +1,5 @@
 """Tests for CLI functionality."""
+# ruff: noqa: S101  # asserts are intended in tests
 
 from pathlib import Path
 
