@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from mcp_config_converter.llm import BaseLLMProvider
+from mcp_config_converter.llm import LiteLLMClient
 from mcp_config_converter.prompts import build_conversion_prompt
 from mcp_config_converter.types import PROVIDER_ALIAS_MAP
 from mcp_config_converter.utils import clean_llm_output, convert_format
@@ -11,14 +11,14 @@ from mcp_config_converter.utils import clean_llm_output, convert_format
 class ConfigTransformer:
     """Transform MCP configurations between formats and providers."""
 
-    def __init__(self, llm_provider: BaseLLMProvider, encode_toon: bool = True):
-        """Initialize the transformer with an LLM provider.
+    def __init__(self, llm_client: LiteLLMClient, encode_toon: bool = True):
+        """Initialize the transformer with an LLM client.
 
         Args:
-            llm_provider: LLM provider instance for conversion
+            llm_client: LiteLLM client instance for conversion
             encode_toon: Whether to encode structured input to TOON format for LLM
         """
-        self.llm_provider = llm_provider
+        self.llm_client = llm_client
         self.encode_toon = encode_toon
 
     def transform(self, input_content: str, target_provider: str) -> str:
@@ -83,7 +83,7 @@ class ConfigTransformer:
 
         # Generate conversion using LLM
         try:
-            result = self.llm_provider.generate(formatted_prompt, system_prompt=system_prompt)
+            result = self.llm_client.generate(formatted_prompt, system_prompt=system_prompt)
 
             # Try to clean up the output (remove markdown code blocks, etc.)
             result = clean_llm_output(result)

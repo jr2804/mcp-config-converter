@@ -16,7 +16,7 @@ from mcp_config_converter.cli.utils import (
     validate_format_choice,
     validate_output_action,
 )
-from mcp_config_converter.llm import create_provider
+from mcp_config_converter.llm import LiteLLMClient, create_client_from_env
 from mcp_config_converter.transformers import ConfigTransformer
 
 
@@ -106,28 +106,33 @@ def convert(
         console.print(f"[blue]Converting {input_desc}...[/blue]")
 
         try:
-            # Create LLM provider instance
-            llm_provider_kwargs = {}
+            # Create LiteLLM client instance
+            llm_client_kwargs = {}
             if llm_base_url:
-                llm_provider_kwargs["base_url"] = llm_base_url
+                llm_client_kwargs["base_url"] = llm_base_url
             if llm_api_key:
-                llm_provider_kwargs["api_key"] = llm_api_key
+                llm_client_kwargs["api_key"] = llm_api_key
             if llm_model:
-                llm_provider_kwargs["model"] = llm_model
+                llm_client_kwargs["model"] = llm_model
             if llm_provider_type:
-                llm_provider_kwargs["provider_type"] = llm_provider_type
+                llm_client_kwargs["provider"] = llm_provider_type
 
-            # Use preferred_provider or create custom provider
-            if llm_base_url and not preferred_provider:
-                # Create custom provider with base URL
-                llm_provider = create_provider("custom", **llm_provider_kwargs)
+            # Use preferred_provider or auto-detect
+            if preferred_provider and preferred_provider != "auto":
+                llm_client_kwargs["provider"] = preferred_provider
+                llm_client = LiteLLMClient(**llm_client_kwargs)
+            elif llm_client_kwargs:
+                # Create with explicit parameters
+                llm_client = LiteLLMClient(**llm_client_kwargs)
             else:
-                # Use preferred provider (or "auto" if not specified)
-                provider_name = preferred_provider if preferred_provider else "auto"
-                llm_provider = create_provider(provider_name, **llm_provider_kwargs)
+                # Auto-detect from environment
+                llm_client = create_client_from_env()
+                if llm_client is None:
+                    console.print("[red]Error: No LLM provider configured. Please set API keys or use --llm-api-key[/red]")
+                    raise typer.Exit(1)
 
             # Create transformer instance
-            transformer = ConfigTransformer(llm_provider=llm_provider, encode_toon=encode_toon)
+            transformer = ConfigTransformer(llm_client=llm_client, encode_toon=encode_toon)
 
             if provider:
                 # Perform conversion

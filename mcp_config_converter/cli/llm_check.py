@@ -9,7 +9,8 @@ from rich.console import Console
 from rich.table import Table
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.llm import create_provider, get_provider_info, list_providers, select_best_provider
+from mcp_config_converter.llm import LiteLLMClient, create_client_from_env, detect_available_providers
+from mcp_config_converter.llm.client import PROVIDER_API_KEY_ENV_VARS, PROVIDER_DEFAULT_MODELS
 
 console = Console()
 
@@ -29,138 +30,109 @@ def llm_check(
     Args:
         ctx: Typer context
         llm_base_url: Custom base URL for LLM provider
-        llm_provider_type: LLM provider type
+        llm_provider_type: LiteLLM provider type (e.g., 'openai', 'anthropic')
         llm_api_key: API key for LLM provider
         llm_model: Model name for LLM provider
         verbose: Verbose output
     """
     try:
-        console.print("[bold blue]LLM Provider Status Check[/bold blue]\n")
+        console.print("[bold blue]LiteLLM Provider Status Check[/bold blue]\n")
 
-        # Check for custom provider configuration
-        custom_provider_args = {}
-        if llm_base_url:
-            custom_provider_args["base_url"] = llm_base_url
-        if llm_api_key:
-            custom_provider_args["api_key"] = llm_api_key
-        if llm_model:
-            custom_provider_args["model"] = llm_model
-        if llm_provider_type:
-            custom_provider_args["provider_type"] = llm_provider_type
+        # Check if custom configuration provided
+        if llm_provider_type or llm_api_key or llm_model or llm_base_url:
+            console.print("[cyan]Custom Configuration Provided:[/cyan]")
+            client = LiteLLMClient(
+                provider=llm_provider_type,
+                api_key=llm_api_key,
+                model=llm_model,
+                base_url=llm_base_url,
+            )
+            is_valid = client.validate_config()
+            status = "[green]✓ Valid[/green]" if is_valid else "[red]✗ Invalid[/red]"
+            console.print(f"  Provider: {client.provider or 'auto'}")
+            console.print(f"  Model: {client.model}")
+            console.print(f"  Status: {status}\n")
 
-        # Create table
-        table = Table(title="LLM Provider Status", show_header=True, header_style="bold magenta")
+        # Create table for available providers
+        table = Table(title="Available LiteLLM Providers", show_header=True, header_style="bold magenta")
         table.add_column("Provider", style="cyan", no_wrap=True)
-        table.add_column("Model", style="green")
-        table.add_column("Nbr of Models", style="cyan", no_wrap=True)
-        table.add_column("Availability", style="yellow")
-        table.add_column("Authentication", style="yellow")
-        table.add_column("Cost", style="blue")
+        table.add_column("Default Model", style="green")
+        table.add_column("API Key Source", style="yellow")
+        table.add_column("Status", style="yellow")
 
-        # Collect all provider data for sorting
-        provider_data = []
+        # Detect available providers
+        available_providers = detect_available_providers()
+        available_provider_names = {p[0] for p in available_providers}
 
-        # Check all registered providers
-        for provider_name in list_providers():
-            provider_info = get_provider_info(provider_name)
-            if not provider_info:
-                continue
-
-            try:
-                # Try to create provider instance
-                provider = provider_info.provider_class()
-                availability = "[bold green]OK[/bold green]"
-                model = provider.model or "default"
-
-                # Get number of available models
-                model_count = str(len(provider.available_models)) if provider.available_models is not None else "[bold red]n/a[/bold red]"
-
-                # Check authentication
-                authentication = "[bold green]OK[/bold green]" if provider.validate_config() else "[bold red]Failed[/bold red]"
-
-            except Exception:
-                availability = "[bold red]Failed[/bold red]"
-                authentication = "[bold red]Failed[/bold red]"
-                model = "[bold red]Failed[/bold red]"
-                model_count = "[bold red]n/a[/bold red]"
-
-            provider_data.append(
-                {
-                    "name": provider_name,
-                    "model": model,
-                    "model_count": model_count,
-                    "availability": availability,
-                    "authentication": authentication,
-                    "cost": provider_info.cost if provider_info else 0,
-                    "is_custom": False,
-                }
-            )
-
-        # Check custom provider if configured
-        if custom_provider_args:
-            try:
-                # Try to create custom provider
-                custom_provider = create_provider("custom", **custom_provider_args)
-                availability = "[bold green]OK[/bold green]"
-                model = custom_provider.model or "custom"
-                authentication = "[bold green]OK[/bold green]" if custom_provider.validate_config() else "[bold red]Failed[/bold red]"
-                model_count = "[bold red]n/a[/bold red]"
-                provider_data.append(
-                    {
-                        "name": "custom",
-                        "model": model,
-                        "model_count": model_count,
-                        "availability": availability,
-                        "authentication": authentication,
-                        "cost": -1,  # Custom providers always have cost -1 (always selected)
-                        "is_custom": True,
-                    }
+        # Show all known providers
+        for provider_name in sorted(PROVIDER_DEFAULT_MODELS.keys()):
+            default_model = PROVIDER_DEFAULT_MODELS[provider_name]
+            
+            # Check if provider is configured
+            if provider_name in available_provider_names:
+                # Find the API key source
+                api_key_source = "Configured"
+                for provider, api_key in available_providers:
+                    if provider == provider_name:
+                        # Find which env var was used
+                        env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
+                        for env_var in env_vars:
+                            import os
+                            if os.getenv(env_var):
+                                api_key_source = env_var
+                                break
+                        break
+                
+                if not PROVIDER_API_KEY_ENV_VARS.get(provider_name):
+                    api_key_source = "N/A (Local)"
+                
+                table.add_row(
+                    provider_name,
+                    default_model,
+                    api_key_source,
+                    "[green]✓ Available[/green]"
                 )
-            except Exception:
-                provider_data.append(
-                    {
-                        "name": "custom",
-                        "model": "[bold red]Failed[/bold red]",
-                        "model_count": "[bold red]n/a[/bold red]",
-                        "availability": "[bold red]Failed[/bold red]",
-                        "authentication": "[bold red]Failed[/bold red]",
-                        "cost": -1,
-                        "is_custom": True,
-                    }
+            else:
+                # Not configured
+                env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
+                if env_vars:
+                    api_key_source = f"Missing ({', '.join(env_vars)})"
+                    status = "[yellow]⚠ Not Configured[/yellow]"
+                else:
+                    api_key_source = "N/A (Local)"
+                    status = "[yellow]⚠ Not Available[/yellow]"
+                
+                table.add_row(
+                    provider_name,
+                    default_model,
+                    api_key_source,
+                    status
                 )
-
-        # Sort by cost (increasing)
-        provider_data.sort(key=lambda x: x["cost"])
-
-        # Add sorted data to table
-        for data in provider_data:
-            table.add_row(
-                data["name"],
-                data["model"],
-                data["model_count"],
-                data["availability"],
-                data["authentication"],
-                str(data["cost"]),
-            )
 
         console.print(table)
 
-        # Check auto-selection
+        # Show auto-selected provider
+        console.print("\n[cyan]Auto-Selection:[/cyan]")
+        try:
+            auto_client = create_client_from_env()
+            if auto_client:
+                console.print(f"  Provider: [green]{auto_client.provider or 'auto'}[/green]")
+                console.print(f"  Model: [green]{auto_client.model}[/green]")
+            else:
+                console.print("  [yellow]No provider auto-selected (no API keys found)[/yellow]")
+        except Exception as e:
+            console.print(f"  [red]Error: {e}[/red]")
+
+        console.print(f"\n[dim]Found {len(available_providers)} configured provider(s)[/dim]")
+        
         if verbose:
-            console.print("\n[bold blue]Auto-selection Test:[/bold blue]")
-            try:
-                best_provider = select_best_provider()
-                console.print(f"[green]Auto-selected LLM provider: {best_provider.PROVIDER_NAME}[/green]")
-                console.print(f"[green]Model: {best_provider.model or 'default'}[/green]")
-                console.print(f"[green]Cost: {get_provider_info(best_provider.PROVIDER_NAME).cost}[/green]")
-            except Exception as e:
-                console.print(f"[red]Auto-selection failed: {str(e)}[/red]")
+            console.print("\n[cyan]LiteLLM Documentation:[/cyan]")
+            console.print("  https://docs.litellm.ai/docs/providers")
 
-        console.print("\n[bold green]LLM provider check completed.[/bold green]")
-
-    except KeyboardInterrupt:
-        console.print("\n[yellow]LLM check cancelled by user.[/yellow]")
-        raise typer.Exit(130)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {str(e)}")
+        console.print(f"[red]Error checking LLM providers: {e}[/red]")
+        if verbose:
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
         raise typer.Exit(1)
+

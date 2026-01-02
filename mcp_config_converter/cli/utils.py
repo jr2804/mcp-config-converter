@@ -10,8 +10,8 @@ from rich.prompt import Prompt
 
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
-from mcp_config_converter.cli.registry import create_llm_provider
-from mcp_config_converter.llm import list_providers, select_best_provider
+from mcp_config_converter.cli.registry import create_llm_client
+from mcp_config_converter.llm import create_client_from_env, detect_available_providers
 from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
@@ -46,65 +46,62 @@ def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
     return ctx.obj.get("llm_config", {})
 
 
-def select_auto_provider() -> str:
-    """Select the first fully configured LLM provider automatically using registry order.
+def select_auto_client():
+    """Select and create a LiteLLM client automatically.
 
     Returns:
-        Provider name if found
+        LiteLLMClient instance
 
     Raises:
         ValueError: If no providers are configured
     """
-    return select_best_provider()
+    client = create_client_from_env()
+    if client is None:
+        raise ValueError("No LLM provider configured. Please set API keys in environment variables.")
+    return client
 
 
 def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> None:
     llm_config = get_context_llm_config(ctx)
-    provider_type = llm_config.get("provider_type")
+    provider = llm_config.get("provider_type")
 
     # Check for preferred provider selection
     preferred_provider = ctx.obj.get("preferred_provider", "auto") if ctx and ctx.obj else "auto"
 
     if preferred_provider == "auto":
         try:
-            auto_provider = select_auto_provider()
-            provider_type = auto_provider
+            client = select_auto_client()
             if verbose:
-                console.print(f"[blue]Auto-selected LLM provider: {provider_type}[/blue]")
+                console.print(f"[blue]Auto-selected LLM provider: {client.provider}[/blue]")
         except ValueError as e:
             console.print(f"[red]Error: {e}[/red]")
             raise typer.Exit(1)
-    elif preferred_provider != "auto":
-        # Validate that the preferred provider exists
-        if preferred_provider not in list_providers():
-            available_providers = ", ".join(list_providers())
-            console.print(f"[red]Error: Unknown provider '{preferred_provider}'. Available providers: {available_providers}[/red]")
-            raise typer.Exit(1)
-
-        provider_type = preferred_provider
+    else:
+        # Use specific provider
+        provider = preferred_provider
         if verbose:
-            console.print(f"[blue]Using preferred LLM provider: {provider_type}[/blue]")
+            console.print(f"[blue]Using LLM provider: {provider}[/blue]")
 
-    if not provider_type:
+    if not provider and preferred_provider != "auto":
         # This should not happen with auto-selection, but keep as fallback
         console.print("[red]Error: No LLM provider specified or auto-selected[/red]")
         raise typer.Exit(1)
 
     try:
-        created_provider = create_llm_provider(
-            provider_type=provider_type,
+        created_client = create_llm_client(
+            provider=provider if provider else None,
             base_url=llm_config.get("base_url"),
             api_key=llm_config.get("api_key"),
             model=llm_config.get("model"),
         )
 
-        if created_provider is not None:
+        if created_client is not None:
             if verbose:
-                console.print(f"[blue]Using LLM provider: {provider_type}[/blue]")
+                console.print(f"[blue]Using LLM client: {created_client.provider or 'auto'}[/blue]")
         elif verbose:
-            console.print(f"[yellow]Warning: Could not create LLM provider: {provider_type}[/yellow]")
+            console.print(f"[yellow]Warning: Could not create LLM client[/yellow]")
     except (ImportError, ValueError) as exc:
-        console.print(f"[yellow]Warning: Could not create LLM provider: {exc}[/yellow]")
+        console.print(f"[yellow]Warning: Could not create LLM client: {exc}[/yellow]")
         raise typer.Exit(1)
 
 
