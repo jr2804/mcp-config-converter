@@ -17,6 +17,7 @@ dependencies = [
     "orjson>=3.11.5",
     "mistune>=3.1.4",
     "remarshal>=1.2.0",
+    "python-dotenv>=1.2.1"
 ]
 
 [dependency-groups]
@@ -33,42 +34,6 @@ dev = [
     "memorygraphmcp[ladybugdb]>=0.11.12",
     "rust-just>=1.45.0",
     "mdformat>=1.0.0",
-    "python-dotenv>=1.2.1",
-]
-
-# Optional dependencies for LLM providers
-[project.optional-dependencies]
-anthropic = [
-    "anthropic",
-]
-sambanova = [
-    "sambanova",
-]
-perplexity = [
-    "perplexityai",
-]
-openrouter = [
-    "openrouter",
-]
-ollama = [
-    "ollama",
-]
-gemini = [
-    "google-genai>=1.55.0",
-]
-mistral = [
-    "mistralai",
-]
-zai = [
-    "zai-sdk>=0.2.0",
-]
-all = [
-    "anthropic",
-    "sambanova",
-    "perplexityai",
-    "openrouter",
-    "ollama",
-    "mistralai",
 ]
 
 # ---- Scripts ----
