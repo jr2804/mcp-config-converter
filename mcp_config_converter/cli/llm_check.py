@@ -78,6 +78,7 @@ def llm_check(
                         env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
                         for env_var in env_vars:
                             import os
+
                             if os.getenv(env_var):
                                 api_key_source = env_var
                                 break
@@ -86,12 +87,7 @@ def llm_check(
                 if not PROVIDER_API_KEY_ENV_VARS.get(provider_name):
                     api_key_source = "N/A (Local)"
 
-                table.add_row(
-                    provider_name,
-                    default_model,
-                    api_key_source,
-                    "[green]✓ Available[/green]"
-                )
+                table.add_row(provider_name, default_model, api_key_source, "[green]✓ Available[/green]")
             else:
                 # Not configured
                 env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
@@ -102,12 +98,7 @@ def llm_check(
                     api_key_source = "N/A (Local)"
                     status = "[yellow]⚠ Not Available[/yellow]"
 
-                table.add_row(
-                    provider_name,
-                    default_model,
-                    api_key_source,
-                    status
-                )
+                table.add_row(provider_name, default_model, api_key_source, status)
 
         console.print(table)
 
@@ -133,6 +124,6 @@ def llm_check(
         console.print(f"[red]Error checking LLM providers: {e}[/red]")
         if verbose:
             import traceback
+
             console.print(f"[dim]{traceback.format_exc()}[/dim]")
         raise typer.Exit(1)
-
