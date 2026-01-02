@@ -11,10 +11,10 @@ clean:
 
 # Lint the codebase
 lint:
-    uv run ruff check .
     uv run ruff format --check
-    uv run isort --check-only .
-    uv run undersort --check .
+    uv run ruff check --fix tests mcp_config_converter
+    uv run isort --check-only tests mcp_config_converter
+    uv run undersort --check tests mcp_config_converter
     uv run ty check
 
 # Lint the documentation
@@ -24,10 +24,9 @@ lint-md:
 
 # Format the codebase
 format:
-    uv run ruff format .
-    uv run ruff check --fix .
-    uv run isort .
-    uv run undersort --modify .
+    uv run ruff format tests mcp_config_converter
+    uv run isort tests mcp_config_converter
+    uv run undersort tests mcp_config_converter
 
 # Build the project
 build:
