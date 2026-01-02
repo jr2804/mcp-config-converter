@@ -19,16 +19,17 @@ logger = logging.getLogger(__name__)
 PROVIDER_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-3-5-sonnet-20241022",
-    "gemini": "gemini-2.0-flash-exp",
+    "gemini": "gemini-3-flash-preview",
     "vertex_ai": "gemini-2.0-flash-exp",
     "ollama": "llama2",
     "mistral": "mistral-medium-latest",
     "deepseek": "deepseek-chat",
-    "openrouter": "openai/gpt-4",
+    "openrouter": "xiaomi/mimo-v2-flash:free",
     "perplexity": "sonar",
+    "poe": "gemini-2.5-flash-lite",
     "sambanova": "Meta-Llama-3.1-8B-Instruct",
     "cohere": "command",
-    "zai": "zai/glm-4.7",
+    "zai": "glm-4.7",
 }
 
 # Environment variable mappings for different providers
@@ -41,6 +42,7 @@ PROVIDER_API_KEY_ENV_VARS = {
     "deepseek": ["DEEPSEEK_API_KEY"],
     "openrouter": ["OPENROUTER_API_KEY"],
     "perplexity": ["PERPLEXITY_API_KEY"],
+    "poe": ["POE_API_KEY"],
     "sambanova": ["SAMBANOVA_API_KEY"],
     "cohere": ["COHERE_API_KEY"],
     "ollama": [],  # No API key required
