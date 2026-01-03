@@ -15,11 +15,14 @@ class TestProviderSpecifications:
         spec_content = _get_provider_specification(target_provider=provider)
 
         # Verify it's non-empty markdown content
-        assert spec_content.strip(), f"Provider {provider} specification should not be empty"
-        assert isinstance(spec_content, str), f"Provider {provider} specification should be a string"
+        if not spec_content.strip():
+            raise AssertionError(f"Provider {provider} specification should not be empty")
+        if not isinstance(spec_content, str):
+            raise AssertionError(f"Provider {provider} specification should be a string")
 
         # Basic markdown format validation
-        assert "# " in spec_content, f"Provider {provider} specification should contain markdown headers"
+        if "# " not in spec_content:
+            raise AssertionError(f"Provider {provider} specification should contain markdown headers")
 
     @staticmethod
     def test_get_provider_specification_invalid_provider() -> None:
@@ -34,4 +37,5 @@ class TestProviderSpecifications:
         for provider in expected_providers:
             # If this doesn't raise an exception, the spec file exists
             spec_content = _get_provider_specification(target_provider=provider)
-            assert spec_content.strip(), f"Provider {provider} specification should not be empty"
+            if not spec_content.strip():
+                raise AssertionError(f"Provider {provider} specification should not be empty")
