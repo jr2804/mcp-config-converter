@@ -42,9 +42,4 @@ opencode*.json
 .envrc
 .vibe/config.toml
 .gemini/mcp.json
-tests/temp/.mcp.json
-tests/temp/.claude/mcp.json
-tests/temp/.gemini/mcp.json
-tests/temp/.opencode/settings.json
-tests/temp/.vibe/config.toml
-tests/temp/.vscode/mcp.json
+tests/temp

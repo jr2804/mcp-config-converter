@@ -1,15 +1,21 @@
 """Tests for CLI functionality."""
 # ruff: noqa: S101  # asserts are intended in tests
 
+import os
 from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
-from mcp_config_converter import transformers
 from mcp_config_converter.cli import app
-from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES
+from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS
+from mcp_config_converter.llm.client import (
+    PROVIDER_API_KEY_ENV_VARS,
+    PROVIDER_DEFAULT_MODELS,
+)
 
+TEST_DATA_DIR = Path("tests/data")
+TEST_INPUT_FILE = TEST_DATA_DIR / "config_vscode.json"
 TEST_OUTPUT_ROOT = Path("tests/temp")
 
 
@@ -34,124 +40,72 @@ class TestCLI:
         assert "mcp-config-converter v" in result.stdout
 
     @staticmethod
-    def test_convert_command_opencode(runner: CliRunner) -> None:
-        """Test convert command for opencode provider."""
-        result = runner.invoke(
-            app,
-            [
-                "convert",
-                "data/input.json",
-                "-p",
-                "opencode",
-                "-pp",
-                "auto",
-                "--llm-provider-type",
-                "ollama",
-                "--llm-model",
-                "ollama/llama2",
-            ],
-        )
-        assert result.exit_code == 0
+    def _has_api_key_for_provider(provider: str) -> bool:
+        """Check if API key is available for a given LLM provider."""
+        env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider, [])
+        if not env_vars:
+            return True
+        return any(os.getenv(var) for var in env_vars)
 
     @staticmethod
-    def test_convert_command_claude(runner: CliRunner) -> None:
-        """Test convert command for claude provider."""
-        result = runner.invoke(
-            app,
-            [
-                "convert",
-                "tests/data/input.json",
-                "-p",
-                "claude",
-                "-pp",
-                "auto",
-                "--llm-provider-type",
-                "ollama",
-                "--llm-model",
-                "ollama/llama2",
-            ],
-        )
-        assert result.exit_code == 0
+    def _generate_test_params() -> list:
+        """Generate test parameters for all provider combinations."""
+        params = []
+        for output_provider in SUPPORTED_PROVIDERS:
+            for llm_provider, llm_model in PROVIDER_DEFAULT_MODELS.items():
+                params.append(
+                    pytest.param(
+                        output_provider,
+                        llm_provider,
+                        llm_model,
+                        id=f"{output_provider}-{llm_provider}",
+                    )
+                )
+        return params
 
     @staticmethod
-    def test_convert_command_gemini(runner: CliRunner) -> None:
-        """Test convert command for gemini provider."""
-        result = runner.invoke(
-            app,
-            [
-                "convert",
-                "data/input.json",
-                "-p",
-                "gemini",
-                "-pp",
-                "auto",
-                "--llm-provider-type",
-                "ollama",
-                "--llm-model",
-                "ollama/llama2",
-            ],
-        )
-        assert result.exit_code == 0
+    @pytest.mark.parametrize(
+        ("output_provider", "llm_provider", "llm_model"),
+        _generate_test_params(),
+    )
+    def test_convert_command_with_providers(
+        runner: CliRunner,
+        output_provider: str,
+        llm_provider: str,
+        llm_model: str,
+    ) -> None:
+        """Test convert command with all combinations of output and LLM providers.
 
-    @staticmethod
-    def test_convert_command_codex(runner: CliRunner) -> None:
-        """Test convert command for codex provider."""
-        result = runner.invoke(
-            app,
-            [
-                "convert",
-                "data/input.json",
-                "-p",
-                "codex",
-                "-pp",
-                "auto",
-                "--llm-provider-type",
-                "ollama",
-                "--llm-model",
-                "ollama/llama2",
-            ],
-        )
-        assert result.exit_code == 0
+        Makes actual LLM calls if API keys are configured. Skips tests if
+        API keys are not available.
+        """
+        if not TestCLI._has_api_key_for_provider(llm_provider):
+            pytest.skip(f"API key not configured for LLM provider: {llm_provider}")
 
-    @staticmethod
-    def test_convert_command_mistral(runner: CliRunner) -> None:
-        """Test convert command for mistral provider."""
-        result = runner.invoke(
-            app,
-            [
-                "convert",
-                "data/input.json",
-                "-p",
-                "mistral",
-                "-pp",
-                "auto",
-                "--llm-provider-type",
-                "ollama",
-                "--llm-model",
-                "ollama/llama2",
-            ],
-        )
-        assert result.exit_code == 0
+        llm_output_dir = TEST_OUTPUT_ROOT / llm_provider
+        llm_output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = llm_output_dir / f"{output_provider}_output.json"
 
-    @staticmethod
-    def test_convert_command_vscode(runner: CliRunner) -> None:
-        """Test convert command for vscode provider."""
         result = runner.invoke(
             app,
             [
                 "convert",
-                "data/input.json",
+                str(TEST_INPUT_FILE),
                 "-p",
-                "vscode",
-                "-pp",
-                "auto",
+                output_provider,
+                "-o",
+                str(output_file),
                 "--llm-provider-type",
-                "ollama",
+                llm_provider,
                 "--llm-model",
-                "ollama/llama2",
+                f"{llm_provider}/{llm_model}",
+                "--output-action",
+                "overwrite",
             ],
         )
+
         assert result.exit_code == 0
+        assert output_file.exists()
 
     @staticmethod
     def test_validate_command(runner: CliRunner) -> None:
@@ -164,37 +118,3 @@ class TestCLI:
         """Test llm-check command."""
         result = runner.invoke(app, ["llm-check"])
         assert result.exit_code == 0
-
-    @staticmethod
-    @pytest.fixture(autouse=True)
-    def _clear_llm_env(monkeypatch: pytest.MonkeyPatch) -> None:
-        """Clear provider env vars so tests don't pick up host credentials."""
-        for key in [
-            "OPENAI_API_KEY",
-            "ANTHROPIC_API_KEY",
-            "GEMINI_API_KEY",
-            "GOOGLE_API_KEY",
-            "GOOGLE_GENERATIVE_AI_API_KEY",
-            "MISTRAL_API_KEY",
-            "DEEPSEEK_API_KEY",
-            "PERPLEXITY_API_KEY",
-            "OPENROUTER_API_KEY",
-            "SAMBANOVA_API_KEY",
-            "ZAI_API_KEY",
-            "VERTEX_AI_PROJECT",
-            "GOOGLE_APPLICATION_CREDENTIALS",
-        ]:
-            monkeypatch.delenv(key, raising=False)
-
-        # Stub out LLM-based transformations to avoid network calls
-        monkeypatch.setattr(transformers.ConfigTransformer, "transform", lambda self, *_args, **_kwargs: "{}")
-        monkeypatch.setattr(transformers.ConfigTransformer, "transform_file", lambda self, *_args, **_kwargs: "{}")
-
-        # Redirect output files into tests/data to avoid clobbering real project files
-        test_root = TEST_OUTPUT_ROOT
-        monkeypatch.setitem(PROVIDER_DEFAULT_OUTPUT_FILES, "opencode", test_root / ".opencode" / "settings.json")
-        monkeypatch.setitem(PROVIDER_DEFAULT_OUTPUT_FILES, "claude", test_root / ".claude" / "mcp.json")
-        monkeypatch.setitem(PROVIDER_DEFAULT_OUTPUT_FILES, "gemini", test_root / ".gemini" / "mcp.json")
-        monkeypatch.setitem(PROVIDER_DEFAULT_OUTPUT_FILES, "codex", test_root / ".mcp.json")
-        monkeypatch.setitem(PROVIDER_DEFAULT_OUTPUT_FILES, "mistral", test_root / ".vibe" / "config.toml")
-        monkeypatch.setitem(PROVIDER_DEFAULT_OUTPUT_FILES, "vscode", test_root / ".vscode" / "mcp.json")
