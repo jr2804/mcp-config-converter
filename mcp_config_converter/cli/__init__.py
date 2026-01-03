@@ -14,6 +14,6 @@ console = Console()
 
 
 # Import all command modules to register commands - must happen after app creation
-from mcp_config_converter.cli import convert, llm_check, validate, ver  # noqa: E402, F401
+from mcp_config_converter.cli import convert, llm_check, show_defaults, validate, ver  # noqa: E402, F401
 
 __all__ = ["app"]
