@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import traceback
 from typing import Annotated
 
 import typer
@@ -32,7 +34,7 @@ def llm_check(
         llm_base_url: Custom base URL for LLM provider
         llm_provider_type: LiteLLM provider type (e.g., 'openai', 'anthropic')
         llm_api_key: API key for LLM provider
-        llm_model: Model name for LLM provider
+        llm_model: Model name or index for LLM provider
         verbose: Verbose output
     """
     try:
@@ -67,6 +69,8 @@ def llm_check(
         # Show all known providers
         for provider_name in sorted(PROVIDER_DEFAULT_MODELS.keys()):
             default_model = PROVIDER_DEFAULT_MODELS[provider_name]
+            # Convert int to string for table display
+            default_model_str = str(default_model)
 
             # Check if provider is configured
             if provider_name in available_provider_names:
@@ -77,8 +81,6 @@ def llm_check(
                         # Find which env var was used
                         env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
                         for env_var in env_vars:
-                            import os
-
                             if os.getenv(env_var):
                                 api_key_source = env_var
                                 break
@@ -87,7 +89,7 @@ def llm_check(
                 if not PROVIDER_API_KEY_ENV_VARS.get(provider_name):
                     api_key_source = "N/A (Local)"
 
-                table.add_row(provider_name, default_model, api_key_source, "[green]✓ Available[/green]")
+                table.add_row(provider_name, default_model_str, api_key_source, "[green]✓ Available[/green]")
             else:
                 # Not configured
                 env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
@@ -98,7 +100,7 @@ def llm_check(
                     api_key_source = "N/A (Local)"
                     status = "[yellow]⚠ Not Available[/yellow]"
 
-                table.add_row(provider_name, default_model, api_key_source, status)
+                table.add_row(provider_name, default_model_str, api_key_source, status)
 
         console.print(table)
 
@@ -123,7 +125,5 @@ def llm_check(
     except Exception as e:
         console.print(f"[red]Error checking LLM providers: {e}[/red]")
         if verbose:
-            import traceback
-
             console.print(f"[dim]{traceback.format_exc()}[/dim]")
         raise typer.Exit(1)

@@ -5,7 +5,7 @@ import os
 import time
 from typing import Any
 
-from litellm import completion, model_list
+from litellm import completion, model_cost
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 # Provider-specific default models
-PROVIDER_DEFAULT_MODELS = {
+PROVIDER_DEFAULT_MODELS: dict[str, str | int] = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-3-5-sonnet-20241022",
     "gemini": "gemini-3-flash-preview",
     "vertex_ai": "gemini-2.0-flash-exp",
-    "ollama": "llama2",
+    "ollama": -1,
     "mistral": "mistral-medium-latest",
     "deepseek": "deepseek-chat",
     "openrouter": "xiaomi/mimo-v2-flash:free",
@@ -56,7 +56,7 @@ class LiteLLMClient:
     def __init__(
         self,
         provider: str | None = None,
-        model: str | None = None,
+        model: str | int | None = None,
         api_key: str | None = None,
         base_url: str | None = None,
         max_retries: int = 3,
@@ -67,7 +67,7 @@ class LiteLLMClient:
 
         Args:
             provider: Provider type (e.g., 'openai', 'anthropic', 'gemini')
-            model: Model name to use
+            model: Model name to use, or integer index into available models list
             api_key: API key for the provider
             base_url: Custom base URL for the provider
             max_retries: Maximum number of retry attempts for rate limits
@@ -84,10 +84,11 @@ class LiteLLMClient:
         self.api_key = api_key or self._get_api_key_from_env()
 
         # Determine model to use
-        if model:
-            self.model = model
+        if model is not None:
+            self.model = self._resolve_model(model)
         elif provider and provider in PROVIDER_DEFAULT_MODELS:
-            self.model = PROVIDER_DEFAULT_MODELS[provider]
+            default_model = PROVIDER_DEFAULT_MODELS[provider]
+            self.model = self._resolve_model(default_model)
         else:
             self.model = "gpt-4o-mini"  # Fallback default
 
@@ -165,8 +166,9 @@ class LiteLLMClient:
             List of model names available through LiteLLM
         """
         try:
-            # Use LiteLLM's model_list to get available models
-            models = model_list()
+            # Use LiteLLM's model_cost to get available models
+            model_cost_dict = model_cost
+            models = list(model_cost_dict.keys())
             if self.provider:
                 # Filter models for this provider if specified
                 # LiteLLM model names often start with provider prefix
@@ -194,6 +196,49 @@ class LiteLLMClient:
             return False
 
         return True
+
+    def _resolve_model(self, model: str | int) -> str:
+        """Resolve model specification to actual model name.
+
+        If model is an integer or string representation of integer,
+        use it as an index into the available models list.
+        Supports negative indices (e.g., -1 for last model).
+
+        Args:
+            model: Model name or index
+
+        Returns:
+            Resolved model name as string
+
+        Raises:
+            ValueError: If index is out of bounds or no models are available
+        """
+        if isinstance(model, str):
+            # Try to parse string as integer
+            try:
+                model_as_int = int(model)
+                return self._resolve_model(model_as_int)
+            except ValueError:
+                # Not an integer, use as-is
+                return model
+
+        if isinstance(model, int):
+            available_models = self.get_available_models()
+            if not available_models:
+                raise ValueError(f"No models available for provider {self.provider}")
+
+            try:
+                resolved = available_models[model]
+                logger.info(f"Resolved model index {model} to model name: {resolved}")
+                return resolved
+            except IndexError:
+                raise ValueError(
+                    f"Model index {model} is out of bounds. "
+                    f"Available models: {len(available_models)} "
+                    f"(valid indices: {-len(available_models)} to {len(available_models) - 1})"
+                )
+
+        raise ValueError(f"Invalid model type: {type(model)}")
 
     def _get_api_key_from_env(self) -> str | None:
         """Get API key from environment variables based on provider."""

@@ -11,16 +11,16 @@ def create_llm_client(
     provider: str | None = None,
     base_url: str | None = None,
     api_key: str | None = None,
-    model: str | None = None,
+    model: str | int | None = None,
 ) -> LiteLLMClient | None:
     """Create a LiteLLM client based on configuration.
 
     Args:
         provider: LiteLLM provider type (e.g., 'openai', 'anthropic', 'gemini')
                  See https://docs.litellm.ai/docs/providers for supported providers
-        base_url: Custom base URL for the provider
-        api_key: API key for the provider
-        model: Model name to use
+        base_url: Custom base URL for provider
+        api_key: API key for provider
+        model: Model name or index for LLM provider
 
     Returns:
         LiteLLMClient instance or None if no configuration provided

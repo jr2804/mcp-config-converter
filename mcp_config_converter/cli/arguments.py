@@ -64,7 +64,7 @@ LlmModelOpt = typer.Option(
     None,
     "--llm-model",
     envvar=EnvVarName.LLM_MODEL,
-    help="Model name for the configured LLM provider",
+    help="Model name or index (e.g., 'gpt-4o-mini' or 0 for first model, -1 for last)",
     rich_help_panel=RichHelpPanel.LLM,
 )
 PreferredProviderOpt = typer.Option(

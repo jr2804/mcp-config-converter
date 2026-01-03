@@ -4,8 +4,6 @@
 import os
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 from mcp_config_converter.llm.client import (
     PROVIDER_DEFAULT_MODELS,
     LiteLLMClient,

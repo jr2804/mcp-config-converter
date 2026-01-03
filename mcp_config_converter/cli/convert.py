@@ -52,7 +52,7 @@ def convert(
         llm_base_url: Custom base URL for LLM provider
         llm_provider_type: LLM provider type
         llm_api_key: API key for LLM provider
-        llm_model: Model name for LLM provider
+        llm_model: Model name or index for LLM provider
         preferred_provider: Preferred LLM provider
         verbose: Verbose output
     """
