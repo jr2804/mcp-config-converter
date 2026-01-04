@@ -51,8 +51,9 @@ ignore = [
     "E722",
     "ANN002",
     "ANN003",
-    "ANN204",  # dynamically typed expressions
+    "ANN204",  # dynamically typed typed expressions
     "ANN401",
+    "PLR0912",  # too-many-branches
     "PLR0913",
     "PLR2004", # magic value used in comparison
     "PT028",   # test function parameter has default argument
