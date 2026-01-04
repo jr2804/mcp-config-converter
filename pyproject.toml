@@ -36,6 +36,13 @@ dev = [
     "mdformat>=1.0.0",
 ]
 
+# ---- Formatting/Linter/Type-Checking ----
+# Do not configure tools directly here!
+# See separate configuration files for tool-specific settings:
+#   ruff.toml  - Ruff linter/formatter
+#   ty.toml    - Ty type checker
+
+
 # ---- Scripts ----
 
 [project.scripts]

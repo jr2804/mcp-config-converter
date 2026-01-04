@@ -1,0 +1,13 @@
+# type checker rules - see https://docs.astral.sh/ty/reference/rules/
+
+[environment]
+python-version = "3.12"
+
+[src]
+include = [
+    "mcp_config_converter",
+    "tests",
+]
+
+[terminal]
+error-on-warning = true
