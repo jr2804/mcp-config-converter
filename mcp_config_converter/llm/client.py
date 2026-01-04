@@ -5,7 +5,8 @@ import os
 import time
 from typing import Any
 
-from litellm import completion, model_cost
+from litellm import completion, get_valid_models
+from litellm.caching.caching import Cache
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 PROVIDER_DEFAULT_MODELS: dict[str, str | int] = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-3-5-sonnet-20241022",
-    "gemini": "gemini-3-flash-preview",
+    "gemini": "gemini-2.5-flash-preview-04-17",
     "vertex_ai": "gemini-2.0-flash-exp",
     "ollama": -1,
     "mistral": "mistral-medium-latest",
@@ -79,6 +80,9 @@ class LiteLLMClient:
         base_url: str | None = None,
         max_retries: int = 3,
         retry_delay: float = 1.0,
+        enable_cache: bool = False,
+        cache_type: str = "disk",
+        cache_dir: str | None = None,
         **kwargs: Any,
     ):
         """Initialize LiteLLM client.
@@ -90,6 +94,9 @@ class LiteLLMClient:
             base_url: Custom base URL for the provider
             max_retries: Maximum number of retry attempts for rate limits
             retry_delay: Initial delay between retries (exponential backoff)
+            enable_cache: Enable caching for completion calls
+            cache_type: Type of cache to use (default: "disk")
+            cache_dir: Directory for disk cache (optional)
             **kwargs: Additional provider-specific arguments
         """
         self.provider = provider
@@ -97,6 +104,7 @@ class LiteLLMClient:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.kwargs = kwargs
+        self.enable_cache = enable_cache or os.getenv("MCP_CONFIG_CONF_LLM_CACHE_ENABLED", "false").lower() == "true"
 
         # Get API key (provided or from environment)
         self.api_key = api_key or self._get_api_key_from_env()
@@ -110,7 +118,15 @@ class LiteLLMClient:
         else:
             self.model = "gpt-4o-mini"  # Fallback default
 
-        logger.debug(f"Initialized LiteLLM client: provider={self.provider}, model={self.model}")
+        # Initialize cache if enabled
+        if self.enable_cache:
+            cache_kwargs: dict[str, Any] = {"type": cache_type}
+            if cache_dir:
+                cache_kwargs["disk_cache_dir"] = cache_dir
+            Cache(**cache_kwargs)
+            logger.debug(f"Initialized {cache_type} cache: dir={cache_dir}")
+
+        logger.debug(f"Initialized LiteLLM client: provider={self.provider}, model={self.model}, cache_enabled={self.enable_cache}")
 
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """Generate text using LiteLLM.
@@ -157,6 +173,10 @@ class LiteLLMClient:
             if key not in completion_kwargs:
                 completion_kwargs[key] = value
 
+        # Add caching if enabled
+        if self.enable_cache:
+            completion_kwargs["caching"] = True
+
         # Retry logic with exponential backoff
         last_exception = None
         for attempt in range(self.max_retries):
@@ -184,13 +204,9 @@ class LiteLLMClient:
             List of model names available through LiteLLM
         """
         try:
-            # Use LiteLLM's model_cost to get available models
-            model_cost_dict = model_cost
-            models = list(model_cost_dict.keys())
+            models = get_valid_models()
             if self.provider:
-                # Filter models for this provider if specified
-                # LiteLLM model names often start with provider prefix
-                filtered = [m for m in models if m.startswith(f"{self.provider}/") or "/" not in m]
+                filtered = [m for m in models if m.startswith(f"{self.provider}/") or (self.provider in m and "/" not in m)]
                 return filtered if filtered else models
             return models
         except Exception as e:

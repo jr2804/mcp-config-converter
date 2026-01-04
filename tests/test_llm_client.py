@@ -168,6 +168,56 @@ class TestLiteLLMClient:
         client = LiteLLMClient(provider="ollama", model="llama2")
         assert client.validate_config() is True
 
+    @staticmethod
+    def test_cache_disabled_by_default() -> None:
+        """Test that caching is disabled by default."""
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4")
+        assert client.enable_cache is False
+
+    @staticmethod
+    def test_cache_enabled_when_true() -> None:
+        """Test that caching is enabled when enabled=True."""
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", enable_cache=True)
+        assert client.enable_cache is True
+
+    @staticmethod
+    def test_cache_disabled_when_false() -> None:
+        """Test that caching is disabled when enabled=False."""
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", enable_cache=False)
+        assert client.enable_cache is False
+
+    @staticmethod
+    @patch("mcp_config_converter.llm.client.completion")
+    def test_cache_parameter_passed_to_completion(mock_completion: Mock) -> None:
+        """Test that caching parameter is passed to completion when enabled."""
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Generated text"
+        mock_completion.return_value = mock_response
+
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", enable_cache=True)
+        result = client.generate("Test prompt")
+
+        assert result == "Generated text"
+        call_kwargs = mock_completion.call_args[1]
+        assert call_kwargs["caching"] is True
+
+    @staticmethod
+    @patch("mcp_config_converter.llm.client.completion")
+    def test_cache_parameter_not_passed_when_disabled(mock_completion: Mock) -> None:
+        """Test that caching parameter is not passed to completion when disabled."""
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Generated text"
+        mock_completion.return_value = mock_response
+
+        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", enable_cache=False)
+        result = client.generate("Test prompt")
+
+        assert result == "Generated text"
+        call_kwargs = mock_completion.call_args[1]
+        assert "caching" not in call_kwargs or call_kwargs["caching"] is False
+
 
 class TestHelperFunctions:
     """Tests for helper functions."""
