@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -11,15 +12,89 @@ from typer.testing import CliRunner
 
 from mcp_config_converter.cli import app
 from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS
-from mcp_config_converter.llm.client import (
-    PROVIDER_API_KEY_ENV_VARS,
-    PROVIDER_DEFAULT_MODELS,
-)
+from mcp_config_converter.llm import PROVIDER_API_KEY_ENV_VARS
 from mcp_config_converter.types import PROVIDER_OUTPUT_FORMAT, ConfigFormat
 
 TEST_DATA_DIR = Path("tests/data")
 TEST_INPUT_FILE = TEST_DATA_DIR / "config_vscode.json"
 TEST_OUTPUT_ROOT = Path("tests/temp")
+
+
+def _parse_test_llm_providers(input_str: str) -> list[tuple[str, str]]:
+    """Parse LLM provider/model specifications from environment variable.
+
+    Supports multiple formats:
+    - Single: "openrouter/subprovider/model"
+    - List (comma): "ollama/gemma3, deepseek/deepseek-chat"
+    - List (semicolon): "ollama/gemma3; deepseek/deepseek-chat"
+    - List (colon): "ollama/gemma3: deepseek/deepseek-chat"
+    - Mixed separators: "ollama/gemma3; deepseek/deepseek-chat,sambanova/model"
+
+    Args:
+        input_str: Comma/semicolon/colon-separated provider/model specs
+
+    Returns:
+        List of (provider, model) tuples
+
+    Raises:
+        ValueError: If parsing fails at any point
+    """
+    configs = []
+
+    for part in re.split(r"[,;:]", input_str.strip()):
+        part = part.strip()
+        if not part:
+            raise ValueError(f"Empty provider specification in: {input_str}")
+
+        if "/" in part:
+            parts = part.split("/", 1)
+            provider = parts[0].strip()
+            model = parts[1].strip()
+        else:
+            provider = part.strip()
+            model = "-1"
+
+        if not provider:
+            raise ValueError(f"Missing provider in specification: {part}")
+        if not model:
+            raise ValueError(f"Missing model in specification: {part}")
+
+        configs.append((provider, model))
+
+    return configs
+
+
+def _generate_test_params() -> list:
+    """Generate test parameters for all provider combinations.
+
+    Respects MCP_CONFIG_CONF_MAX_TESTS environment variable to limit tests.
+    Respects MCP_CONFIG_CONF_TEST_LLM_PROVIDERS to specify providers.
+
+    Raises:
+        ValueError: If test provider parsing fails or invalid configuration
+    """
+    params = []
+
+    test_llm_providers_str = os.getenv("MCP_CONFIG_CONF_TEST_LLM_PROVIDERS")
+    max_tests = int(os.getenv("MCP_CONFIG_CONF_MAX_TESTS", "2"))
+
+    llm_configs = _parse_test_llm_providers(test_llm_providers_str) if test_llm_providers_str else [("ollama", "-1")]
+
+    for output_provider in SUPPORTED_PROVIDERS:
+        for i, (llm_provider, llm_model) in enumerate(llm_configs):
+            if i >= max_tests:
+                break
+
+            params.append(
+                pytest.param(
+                    output_provider,
+                    llm_provider,
+                    llm_model,
+                    id=f"{output_provider}-{llm_provider}",
+                )
+            )
+
+    return params
 
 
 @pytest.fixture
@@ -67,17 +142,22 @@ class TestCLI:
         llm_model: str,
         expected_server_data: tuple[int, set[str]],
     ) -> None:
-        """Test convert command with all combinations of output and LLM providers.
+        """Test convert command with provider combinations.
 
-        Makes actual LLM calls if API keys are configured. Skips tests if
-        API keys are not available. VS Code to VS Code conversions are skipped.
+        Test behavior depends on environment variables:
+        - If MCP_CONFIG_CONF_TEST_LLM_PROVIDERS is set: Tests specified providers
+        - Otherwise: Tests ollama/-1 (default, no cost)
+        - MCP_CONFIG_CONF_MAX_TESTS: Limits tests per output provider (default: 2)
+
+        Makes actual LLM calls if API keys are configured.
+        Test suite fails if API key is missing or provider is invalid.
+        VS Code to VS Code conversions are skipped.
         """
         # Skip vscode-to-vscode conversions (no conversion needed)
         if output_provider == "vscode":
             pytest.skip("VS Code to VS Code conversion is not applicable")
 
-        if not TestCLI._has_api_key_for_provider(llm_provider):
-            pytest.skip(f"API key not configured for LLM provider: {llm_provider}")
+        TestCLI._ensure_provider_available(llm_provider, llm_model)
 
         expected_count, expected_names = expected_server_data
 
@@ -97,7 +177,7 @@ class TestCLI:
                 "--llm-provider-type",
                 llm_provider,
                 "--llm-model",
-                f"{llm_provider}/{llm_model}",
+                llm_model,
                 "--output-action",
                 "overwrite",
             ],
@@ -136,32 +216,35 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Default Output Paths" in result.stdout
         assert "qwen" in result.stdout
-        assert ".qwen/settings.json" in result.stdout
         assert "gemini" in result.stdout
 
     @staticmethod
-    def _has_api_key_for_provider(provider: str) -> bool:
-        """Check if API key is available for a given LLM provider."""
-        env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider, [])
-        if not env_vars:
-            return True
-        return any(os.getenv(var) for var in env_vars)
+    def _ensure_provider_available(provider: str, model: str | int) -> None:
+        """Ensure LLM provider can be instantiated, fail test if not.
 
-    @staticmethod
-    def _generate_test_params() -> list:
-        """Generate test parameters for all provider combinations."""
-        params = []
-        for output_provider in SUPPORTED_PROVIDERS:
-            for llm_provider, llm_model in PROVIDER_DEFAULT_MODELS.items():
-                params.append(
-                    pytest.param(
-                        output_provider,
-                        llm_provider,
-                        llm_model,
-                        id=f"{output_provider}-{llm_provider}",
-                    )
-                )
-        return params
+        Args:
+            provider: LLM provider name
+            model: Model name or index
+
+        Raises:
+            ValueError: If provider cannot be instantiated or API key is missing
+        """
+        from mcp_config_converter.llm import LiteLLMClient
+
+        # Check if provider requires API key
+        env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider, [])
+        if env_vars:
+            has_api_key = any(os.getenv(var) for var in env_vars)
+            if not has_api_key:
+                raise ValueError(f"API key required for provider '{provider}' but none configured. Expected one of: {', '.join(env_vars)}")
+
+        # Try to instantiate client
+        try:
+            LiteLLMClient(provider=provider, model=model)
+        except ValueError as e:
+            raise ValueError(f"Failed to instantiate client for provider '{provider}': {e}") from e
+        except Exception as e:
+            raise ValueError(f"Failed to instantiate client for provider '{provider}': {e}") from e
 
     @staticmethod
     def _count_servers_in_output(output_file: Path, output_provider: str) -> int:

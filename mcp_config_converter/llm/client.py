@@ -32,6 +32,24 @@ PROVIDER_DEFAULT_MODELS: dict[str, str | int] = {
     "zai": "glm-4.7",
 }
 
+# Provider cost factors (0-100, lower is cheaper)
+# Estimates based on typical pricing per 1M tokens
+PROVIDER_COST_FACTORS: dict[str, int] = {
+    "ollama": 0,
+    "zai": 15,
+    "deepseek": 20,
+    "openrouter": 25,
+    "sambanova": 30,
+    "perplexity": 50,
+    "gemini": 55,
+    "mistral": 60,
+    "poe": 65,
+    "cohere": 80,
+    "openai": 90,
+    "anthropic": 95,
+    "vertex_ai": 100,
+}
+
 # Environment variable mappings for different providers
 PROVIDER_API_KEY_ENV_VARS = {
     "openai": ["OPENAI_API_KEY"],
@@ -275,6 +293,59 @@ def detect_available_providers() -> list[tuple[str, str | None]]:
                 break
 
     return available
+
+
+def get_providers_sorted_by_cost(providers: list[str] | None = None) -> list[str]:
+    """Get available providers sorted by cost (cheapest first).
+
+    Args:
+        providers: List of provider names to consider, or None for all
+
+    Returns:
+        List of provider names sorted by cost factor (ascending)
+    """
+    if providers is None:
+        providers = list(PROVIDER_COST_FACTORS.keys())
+
+    sorted_providers = sorted(
+        providers,
+        key=lambda p: get_provider_cost(p),
+    )
+
+    logger.debug(f"Providers sorted by cost: {sorted_providers}")
+    return sorted_providers
+
+
+def get_provider_cost(provider: str) -> int:
+    """Get cost factor for a provider, checking environment variable overrides.
+
+    Args:
+        provider: Provider name (case-insensitive)
+
+    Returns:
+        Cost factor as integer (0-100+)
+
+    Raises:
+        ValueError: If environment variable is negative or cannot be parsed
+    """
+    provider_upper = provider.upper()
+    env_var_name = f"MCP_CONVERT_CONF_{provider_upper}_COST"
+    env_value = os.getenv(env_var_name)
+
+    if env_value is not None:
+        try:
+            env_cost = int(env_value)
+            if env_cost < 0:
+                logger.warning(
+                    f"Ignored negative cost factor for provider '{provider}': {env_cost}. Using default value: {PROVIDER_COST_FACTORS.get(provider, 0)}"
+                )
+                return PROVIDER_COST_FACTORS.get(provider, 0)
+            return env_cost
+        except ValueError:
+            logger.warning(f"Invalid cost factor for provider '{provider}': '{env_value}'. Using default value: {PROVIDER_COST_FACTORS.get(provider, 0)}")
+            return PROVIDER_COST_FACTORS.get(provider, 0)
+
+    return PROVIDER_COST_FACTORS.get(provider, 0)
 
 
 def create_client_from_env() -> LiteLLMClient | None:

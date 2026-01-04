@@ -81,21 +81,58 @@ The tool supports all major LLM providers through LiteLLM:
 
 ### Using LiteLLM Provider
 
-The LiteLLM provider is automatically available and selected with the lowest cost priority:
+The tool supports automatic provider selection based on cost:
 
 ```bash
-# Use LiteLLM with automatic provider selection
-uv run mcp-config-converter convert config.yaml --preferred-provider litellm --output output.json
+# Auto-select cheapest available provider (prefers ollama, then zai, etc.)
+uv run mcp-config-converter convert config.yaml --preferred-provider auto --output output.json
 
-# Use LiteLLM with a specific model
-uv run mcp-config-converter convert config.yaml --preferred-provider litellm --llm-model gpt-4 --output output.json
-
-# Use LiteLLM with Claude
-uv run mcp-config-converter convert config.yaml --preferred-provider litellm --llm-model claude-3-5-sonnet-20241022 --output output.json
-
-# Use LiteLLM with Ollama (no API key needed)
-uv run mcp-config-converter convert config.yaml --preferred-provider litellm --llm-model ollama/llama2 --output output.json
+# Use specific provider
+uv run mcp-config-converter convert config.yaml --preferred-provider openai --output output.json
 ```
+
+**Provider Cost Priorities (cheapest to most expensive):**
+
+| Cost | Provider | Notes |
+|------|-----------|-------|
+| 0 | **ollama** | Local, no API cost |
+| 15 | **zai** | Very cheap Chinese provider |
+| 20 | **deepseek** | Very cheap Chinese provider |
+| 25 | **openrouter** | Cheap aggregation with free tiers |
+| 30 | **sambanova** | Cheap cloud provider |
+| 50 | **perplexity** | Moderate cost |
+| 55 | **gemini** | Moderate cost |
+| 60 | **mistral** | Moderate+ cost |
+| 65 | **poe** | Moderate+ cost |
+| 80 | **cohere** | Expensive |
+| 90 | **openai** | Very expensive |
+| 95 | **anthropic** | Very expensive |
+| 100 | **vertex_ai** | Most expensive |
+
+**Note:** Costs are estimates based on typical pricing per 1M tokens. Actual costs vary by usage patterns.
+
+**Overriding Cost Factors:**
+
+You can override default cost factors via environment variables (case-insensitive):
+
+```bash
+# Example: Override ollama cost to 10 (useful if it's slow)
+export MCP_CONVERT_CONF_OLLAMA_COST=10
+
+# Example: Make deepseek more expensive than default
+export MCP_CONVERT_CONF_DEEPSEEK_COST=100
+
+# Example: Override multiple providers
+export MCP_CONVERT_CONF_OPENAI_COST=95
+export MCP_CONVERT_CONF_ANTHROPIC_COST=85
+```
+
+**Cost Override Rules:**
+- Values must be positive integers
+- Values > 100 are allowed
+- Negative values are ignored with warning (uses default)
+- Non-integer values are ignored with warning (uses default)
+
 
 ## Installation
 
@@ -135,6 +172,42 @@ The tool supports loading API keys and configuration from a `.env` file. This al
 1. **The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
 
 **Note**: Never commit your `.env` file with real API keys! It's already excluded in `.gitignore`.
+
+## Test Configuration
+
+The test suite can be configured via environment variables:
+
+| Variable | Purpose | Default | Example |
+|----------|----------|----------|----------|
+| `MCP_CONFIG_CONF_MAX_TESTS` | Maximum successful conversions per output provider | 2 | `export MCP_CONFIG_CONF_MAX_TESTS=5` |
+| `MCP_CONFIG_CONF_TEST_LLM_PROVIDERS` | Specific LLM providers to test | ollama/-1 | `export MCP_CONFIG_CONF_TEST_LLM_PROVIDERS="deepseek/deepseek-chat,openrouter/model"` |
+
+**Example Usage:**
+
+```bash
+# Test with default (ollama, 2 tests per provider)
+uv run pytest tests/test_cli.py
+
+# Test with specific providers (5 tests per provider)
+export MCP_CONFIG_CONF_TEST_LLM_PROVIDERS="deepseek/deepseek-chat,openrouter/xiaomi/mimo-v2-flash:free,zai/glm-4.7"
+export MCP_CONFIG_CONF_MAX_TESTS=5
+uv run pytest tests/test_cli.py
+
+# Single provider test
+export MCP_CONFIG_CONF_TEST_LLM_PROVIDERS="openai/gpt-4o-mini"
+uv run pytest tests/test_cli.py
+```
+
+**Provider/Model Format:**
+
+- Single: `provider/model` (e.g., `openrouter/subprovider/model`)
+- List: Comma, semicolon, or colon-separated (e.g., `ollama/gemma3, deepseek/deepseek-chat; sambanova/model`)
+- Provider only: Uses model index `-1` (last model)
+
+**Error Behavior:**
+- Parsing failures cause test suite to fail immediately
+- Missing API keys cause test suite to fail
+- Invalid providers cause client instantiation to fail
 
 ## Quick Start
 

@@ -11,8 +11,14 @@ from rich.console import Console
 from rich.table import Table
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.llm import LiteLLMClient, create_client_from_env, detect_available_providers
-from mcp_config_converter.llm.client import PROVIDER_API_KEY_ENV_VARS, PROVIDER_DEFAULT_MODELS
+from mcp_config_converter.llm import (
+    PROVIDER_API_KEY_ENV_VARS,
+    PROVIDER_DEFAULT_MODELS,
+    LiteLLMClient,
+    create_client_from_env,
+    detect_available_providers,
+    get_provider_cost,
+)
 
 console = Console()
 
@@ -59,6 +65,8 @@ def llm_check(
         table = Table(title="Available LiteLLM Providers", show_header=True, header_style="bold magenta")
         table.add_column("Provider", style="cyan", no_wrap=True)
         table.add_column("Default Model", style="green")
+        table.add_column("Cost Factor", style="blue")
+        table.add_column("Env Var Name", style="magenta")
         table.add_column("API Key Source", style="yellow")
         table.add_column("Status", style="yellow")
 
@@ -69,12 +77,11 @@ def llm_check(
         # Show all known providers
         for provider_name in sorted(PROVIDER_DEFAULT_MODELS.keys()):
             default_model = PROVIDER_DEFAULT_MODELS[provider_name]
-            # Convert int to string for table display
             default_model_str = str(default_model)
 
             # Check if provider is configured
             if provider_name in available_provider_names:
-                # Find the API key source
+                # Find which env var was used
                 api_key_source = "Configured"
                 for provider, _api_key in available_providers:
                     if provider == provider_name:
@@ -89,7 +96,17 @@ def llm_check(
                 if not PROVIDER_API_KEY_ENV_VARS.get(provider_name):
                     api_key_source = "N/A (Local)"
 
-                table.add_row(provider_name, default_model_str, api_key_source, "[green]✓ Available[/green]")
+                cost_factor = get_provider_cost(provider_name)
+                env_var_name = f"MCP_CONVERT_CONF_{provider_name.upper()}_COST"
+
+                table.add_row(
+                    provider_name,
+                    default_model_str,
+                    str(cost_factor),
+                    env_var_name,
+                    api_key_source,
+                    "[green]✓ Available[/green]",
+                )
             else:
                 # Not configured
                 env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
@@ -100,7 +117,17 @@ def llm_check(
                     api_key_source = "N/A (Local)"
                     status = "[yellow]⚠ Not Available[/yellow]"
 
-                table.add_row(provider_name, default_model_str, api_key_source, status)
+                cost_factor = get_provider_cost(provider_name)
+                env_var_name = f"MCP_CONVERT_CONF_{provider_name.upper()}_COST"
+
+                table.add_row(
+                    provider_name,
+                    default_model_str,
+                    str(cost_factor),
+                    env_var_name,
+                    api_key_source,
+                    status,
+                )
 
         console.print(table)
 
@@ -114,7 +141,7 @@ def llm_check(
             else:
                 console.print("  [yellow]No provider auto-selected (no API keys found)[/yellow]")
         except Exception as e:
-            console.print(f"  [red]Error: {e}[/red]")
+            console.print(f"[red]Error: {e}[/red]")
 
         console.print(f"\n[dim]Found {len(available_providers)} configured provider(s)[/dim]")
 
