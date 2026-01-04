@@ -15,6 +15,14 @@ from litellm.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+# Environment variable name constants to avoid circular import
+MCP_CONFIG_CONF_LLM_PROVIDER = "MCP_CONFIG_CONF_LLM_PROVIDER"
+MCP_CONFIG_CONF_LLM_MODEL = "MCP_CONFIG_CONF_LLM_MODEL"
+MCP_CONFIG_CONF_API_KEY = "MCP_CONFIG_CONF_API_KEY"
+MCP_CONFIG_CONF_LLM_BASE_URL = "MCP_CONFIG_CONF_LLM_BASE_URL"
+MCP_CONFIG_CONF_LLM_CACHE_ENABLED = "MCP_CONFIG_CONF_LLM_CACHE_ENABLED"
+MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT = "MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT"
+
 
 # Provider-specific default models
 PROVIDER_DEFAULT_MODELS: dict[str, str | int] = {
@@ -83,6 +91,7 @@ class LiteLLMClient:
         enable_cache: bool = False,
         cache_type: str = "disk",
         cache_dir: str | None = None,
+        check_provider_endpoint: bool = False,
         **kwargs: Any,
     ):
         """Initialize LiteLLM client.
@@ -90,13 +99,14 @@ class LiteLLMClient:
         Args:
             provider: Provider type (e.g., 'openai', 'anthropic', 'gemini')
             model: Model name to use, or integer index into available models list
-            api_key: API key for the provider
-            base_url: Custom base URL for the provider
+            api_key: API key for provider
+            base_url: Custom base URL for provider
             max_retries: Maximum number of retry attempts for rate limits
             retry_delay: Initial delay between retries (exponential backoff)
             enable_cache: Enable caching for completion calls
             cache_type: Type of cache to use (default: "disk")
             cache_dir: Directory for disk cache (optional)
+            check_provider_endpoint: Query provider endpoints for accurate model lists
             **kwargs: Additional provider-specific arguments
         """
         self.provider = provider
@@ -104,7 +114,8 @@ class LiteLLMClient:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.kwargs = kwargs
-        self.enable_cache = enable_cache or os.getenv("MCP_CONFIG_CONF_LLM_CACHE_ENABLED", "false").lower() == "true"
+        self.enable_cache = enable_cache or os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
+        self.check_provider_endpoint = check_provider_endpoint or os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
 
         # Get API key (provided or from environment)
         self.api_key = api_key or self._get_api_key_from_env()
@@ -204,7 +215,14 @@ class LiteLLMClient:
             List of model names available through LiteLLM
         """
         try:
-            models = get_valid_models()
+            if self.check_provider_endpoint:
+                if self.provider:
+                    models = get_valid_models(check_provider_endpoint=True, custom_llm_provider=self.provider)
+                else:
+                    models = get_valid_models(check_provider_endpoint=True)
+            else:
+                models = get_valid_models()
+
             if self.provider:
                 filtered = [m for m in models if m.startswith(f"{self.provider}/") or (self.provider in m and "/" not in m)]
                 return filtered if filtered else models
@@ -378,10 +396,12 @@ def create_client_from_env() -> LiteLLMClient | None:
         LiteLLMClient instance or None if no configuration found
     """
     # Check for explicit configuration
-    provider = os.getenv("MCP_CONFIG_CONF_LLM_PROVIDER")
-    model = os.getenv("MCP_CONFIG_CONF_LLM_MODEL")
-    api_key = os.getenv("MCP_CONFIG_CONF_API_KEY")
-    base_url = os.getenv("MCP_CONFIG_CONF_LLM_BASE_URL")
+    provider = os.getenv(MCP_CONFIG_CONF_LLM_PROVIDER)
+    model = os.getenv(MCP_CONFIG_CONF_LLM_MODEL)
+    api_key = os.getenv(MCP_CONFIG_CONF_API_KEY)
+    base_url = os.getenv(MCP_CONFIG_CONF_LLM_BASE_URL)
+    enable_cache = os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
+    check_provider_endpoint = os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
 
     if provider or model or api_key or base_url:
         logger.debug(f"Creating client from explicit configuration: provider={provider}, model={model}")
@@ -390,6 +410,8 @@ def create_client_from_env() -> LiteLLMClient | None:
             model=model,
             api_key=api_key,
             base_url=base_url,
+            enable_cache=enable_cache,
+            check_provider_endpoint=check_provider_endpoint,
         )
 
     # Auto-detect available providers
@@ -397,7 +419,12 @@ def create_client_from_env() -> LiteLLMClient | None:
     if available:
         provider_name, api_key = available[0]  # Use first available
         logger.debug(f"Auto-detected provider: {provider_name}")
-        return LiteLLMClient(provider=provider_name, api_key=api_key)
+        return LiteLLMClient(
+            provider=provider_name,
+            api_key=api_key,
+            enable_cache=enable_cache,
+            check_provider_endpoint=check_provider_endpoint,
+        )
 
     logger.debug("No LiteLLM configuration found")
     return None

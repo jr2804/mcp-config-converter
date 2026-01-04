@@ -149,12 +149,13 @@ def llm_check(
             if provider_name in available_provider_names:
                 api_key = available_provider_map.get(provider_name)
 
-                api_key_source = "Configured"
                 env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
                 for env_var in env_vars:
                     if os.getenv(env_var):
-                        api_key_source = env_var
+                        api_key_source = "[green]Configured[/green]"
                         break
+                if not api_key_source and env_vars:
+                    api_key_source = "[yellow]Missing[/yellow]"
 
                 if not env_vars:
                     api_key_source = "N/A (Local)"
@@ -188,7 +189,7 @@ def llm_check(
             else:
                 env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider_name, [])
                 if env_vars:
-                    api_key_source = f"Missing ({', '.join(env_vars)})"
+                    api_key_source = "[yellow]Missing[/yellow]"
                     status = "[yellow]⚠ Not Configured[/yellow]"
                 else:
                     api_key_source = "N/A (Local)"

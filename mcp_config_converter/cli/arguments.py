@@ -88,6 +88,13 @@ CacheDirOpt = typer.Option(
     help="Custom directory for disk cache (default: LiteLLM's default)",
     rich_help_panel=RichHelpPanel.LLM,
 )
+CheckProviderEndpointOpt = typer.Option(
+    False,
+    "--check-provider-endpoint",
+    help="Query provider endpoints for accurate model lists (slower but more accurate)",
+    envvar=EnvVarName.LLM_CHECK_PROVIDER_ENDPOINT,
+    rich_help_panel=RichHelpPanel.LLM,
+)
 
 # Conversion-specific options
 InputContentOpt = typer.Option(
