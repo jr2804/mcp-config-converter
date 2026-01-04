@@ -5,5 +5,10 @@
         }
     ],
     "gitmoji.autoMatch": true,
-    "gitmoji.showEmojiCode": true
+    "gitmoji.showEmojiCode": true,
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
