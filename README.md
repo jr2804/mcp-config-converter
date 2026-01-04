@@ -128,11 +128,11 @@ export MCP_CONVERT_CONF_ANTHROPIC_COST=85
 ```
 
 **Cost Override Rules:**
+
 - Values must be positive integers
 - Values > 100 are allowed
 - Negative values are ignored with warning (uses default)
 - Non-integer values are ignored with warning (uses default)
-
 
 ## Installation
 
@@ -150,24 +150,24 @@ The tool supports loading API keys and configuration from a `.env` file. This al
 
 1. **Copy the example file**:
 
-  ```bash
-  cp .env.example .env
-  ```
+```bash
+cp .env.example .env
+```
 
 1. **Edit the `.env` file** and add your API keys:
 
-  ```env
-  # OpenAI API Key
-  OPENAI_API_KEY=your_openai_api_key_here
+```env
+# OpenAI API Key
+OPENAI_API_KEY=your_openai_api_key_here
 
-  # Anthropic (Claude) API Key
-  ANTHROPIC_API_KEY=your_anthropic_api_key_here
+# Anthropic (Claude) API Key
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-  # Google Gemini API Key
-  GOOGLE_API_KEY=your_google_api_key_here
+# Google Gemini API Key
+GOOGLE_API_KEY=your_google_api_key_here
 
-  # Other providers...
-  ```
+# Other providers...
+```
 
 1. **The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
 
@@ -205,6 +205,7 @@ uv run pytest tests/test_cli.py
 - Provider only: Uses model index `-1` (last model)
 
 **Error Behavior:**
+
 - Parsing failures cause test suite to fail immediately
 - Missing API keys cause test suite to fail
 - Invalid providers cause client instantiation to fail
