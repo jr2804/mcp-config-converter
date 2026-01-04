@@ -48,8 +48,8 @@ LlmBaseUrlOpt = typer.Option(
 )
 LlmProviderOpt = typer.Option(
     None,
-    "--llm-provider-type",
     "--llm-provider",
+    "--llm-provider-type",
     "-lp",
     envvar=["MCP_CONFIG_CONF_LLM_PROVIDER", EnvVarName.LLM_PROVIDER_TYPE],
     help="LLM provider type: e.g., 'openai', 'anthropic', 'zai'",

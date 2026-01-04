@@ -37,6 +37,7 @@ build:
 
 # LLM overview
 check-llm:
+    @cls
     @uv run -m mcp_config_converter llm-check
 
 # Convert MCP config from .vscode/mcp.json to target format
@@ -44,4 +45,5 @@ check-llm:
 #   target: Target format (opencode, gemini, claude, vscode, etc.)
 #   ...: Additional LLM provider arguments (e.g., --llm-provider-type ollama --llm-model -1)
 convert target="opencode" *args:
+    @cls
     @uv run -m mcp_config_converter convert .vscode/mcp.json --provider {{target}} {{args}}
