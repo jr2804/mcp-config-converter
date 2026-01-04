@@ -12,7 +12,7 @@ dependencies = [
     "pyyaml>=6.0",
     "toml>=0.10.0",
     "openai>=2.11.0",
-    "litellm>=1.59.7",
+    "litellm[caching]>=1.59.7",
     "toon-format",
     "orjson>=3.11.5",
     "mistune>=3.1.4",
