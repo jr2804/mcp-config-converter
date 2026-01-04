@@ -19,6 +19,8 @@ dependencies = [
     "remarshal>=1.2.0",
     "python-dotenv>=1.2.1",
     "google-genai>=1.56.0",
+    "ison-py>=1.0.2",
+    "isonantic>=1.0.1",
 ]
 
 [dependency-groups]
@@ -36,6 +38,7 @@ dev = [
     "rust-just>=1.45.0",
     "mdformat>=1.0.0",
     "beads-mcp>=0.43.0",
+
 ]
 
 # ---- Formatting/Linter/Type-Checking ----
