@@ -34,6 +34,7 @@ dev = [
     "memorygraphmcp[ladybugdb]>=0.11.12",
     "rust-just>=1.45.0",
     "mdformat>=1.0.0",
+    "beads-mcp>=0.43.0",
 ]
 
 # ---- Formatting/Linter/Type-Checking ----
