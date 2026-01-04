@@ -28,9 +28,9 @@ MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT = "MCP_CONFIG_CONF_LLM_CHECK_PROVIDE
 PROVIDER_DEFAULT_MODELS: dict[str, str | int] = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-3-5-sonnet-20241022",
-    "gemini": "gemini-2.5-flash-preview-04-17",
+    "gemini": "gemini-3-flash-preview",
     "vertex_ai": "gemini-2.0-flash-exp",
-    "ollama": -1,
+    "ollama": 0,  # Use first available model from Ollama
     "mistral": "mistral-medium-latest",
     "deepseek": "deepseek-chat",
     "openrouter": "xiaomi/mimo-v2-flash:free",
@@ -82,8 +82,8 @@ class LiteLLMClient:
 
     def __init__(
         self,
-        provider: str | None = None,
-        model: str | int | None = None,
+        provider: str,
+        model: str | int,
         api_key: str | None = None,
         base_url: str | None = None,
         max_retries: int = 3,
@@ -161,9 +161,10 @@ class LiteLLMClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Prepare completion parameters
+        # Prepare completion parameters - combine provider and model
+        model_spec = f"{self.provider}/{self.model}"
         completion_kwargs: dict[str, Any] = {
-            "model": self.model,
+            "model": model_spec,
             "messages": messages,
             "max_tokens": max_tokens,
         }
@@ -215,6 +216,13 @@ class LiteLLMClient:
             List of model names available through LiteLLM
         """
         try:
+            # For Ollama, always check the actual endpoint to get installed models
+            if self.provider == "ollama":
+                models = get_valid_models(check_provider_endpoint=True, custom_llm_provider="ollama")
+                # Filter out embedding models (they can't generate text)
+                generative_models = [m for m in models if "embed" not in m.lower()]
+                return generative_models if generative_models else models
+
             if self.check_provider_endpoint:
                 if self.provider:
                     models = get_valid_models(check_provider_endpoint=True, custom_llm_provider=self.provider)
@@ -252,9 +260,9 @@ class LiteLLMClient:
     def _resolve_model(self, model: str | int) -> str:
         """Resolve model specification to actual model name.
 
-        If model is an integer or string representation of integer,
-        use it as an index into the available models list.
+        If model is an integer, use it as an index into the available models list.
         Supports negative indices (e.g., -1 for last model).
+        If model is a string, return it as-is (no provider prefixing).
 
         Args:
             model: Model name or index
@@ -263,20 +271,10 @@ class LiteLLMClient:
             Resolved model name as string
 
         Raises:
-            ValueError: If index is out of bounds or no models are available
+            ValueError: If index is out of bounds, no models are available, or invalid type
         """
         if isinstance(model, str):
-            # Try to parse string as integer
-            try:
-                model_as_int = int(model)
-                return self._resolve_model(model_as_int)
-            except ValueError:
-                # Not an integer, check if it needs provider prefix
-                resolved_model = model
-                # Add provider prefix if we have a provider and model doesn't already have a provider prefix
-                if self.provider and "/" not in resolved_model:
-                    resolved_model = f"{self.provider}/{resolved_model}"
-                return resolved_model
+            return model
 
         if isinstance(model, int):
             available_models = self.get_available_models()
@@ -294,7 +292,7 @@ class LiteLLMClient:
                     f"(valid indices: {-len(available_models)} to {len(available_models) - 1})"
                 )
 
-        raise ValueError(f"Invalid model type: {type(model)}")
+        raise ValueError(f"Invalid model type: {type(model)}. Expected str or int")
 
     def _get_api_key_from_env(self) -> str | None:
         """Get API key from environment variables based on provider."""
@@ -405,9 +403,12 @@ def create_client_from_env() -> LiteLLMClient | None:
 
     if provider or model or api_key or base_url:
         logger.debug(f"Creating client from explicit configuration: provider={provider}, model={model}")
+        if not provider:
+            logger.debug("No provider specified in environment, cannot create client")
+            return None
         return LiteLLMClient(
             provider=provider,
-            model=model,
+            model=model or PROVIDER_DEFAULT_MODELS.get(provider, "gpt-4o-mini"),
             api_key=api_key,
             base_url=base_url,
             enable_cache=enable_cache,
@@ -419,8 +420,10 @@ def create_client_from_env() -> LiteLLMClient | None:
     if available:
         provider_name, api_key = available[0]  # Use first available
         logger.debug(f"Auto-detected provider: {provider_name}")
+        default_model = PROVIDER_DEFAULT_MODELS.get(provider_name, "gpt-4o-mini")
         return LiteLLMClient(
             provider=provider_name,
+            model=default_model,
             api_key=api_key,
             enable_cache=enable_cache,
             check_provider_endpoint=check_provider_endpoint,

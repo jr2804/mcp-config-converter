@@ -17,7 +17,28 @@ from mcp_config_converter.cli.utils import (
     validate_output_action,
 )
 from mcp_config_converter.llm import LiteLLMClient, create_client_from_env
+from mcp_config_converter.llm.client import PROVIDER_DEFAULT_MODELS
 from mcp_config_converter.transformers import ConfigTransformer
+
+
+def _parse_model_arg(model_arg: str | None) -> str | int | None:
+    """Parse model argument, converting numeric strings to integers.
+
+    Args:
+        model_arg: Model argument from CLI (string or None)
+
+    Returns:
+        Integer if the string represents a valid integer, otherwise the original string or None
+    """
+    if model_arg is None:
+        return None
+
+    # Try to parse as integer
+    try:
+        return int(model_arg)
+    except ValueError:
+        # Not a number, return as string
+        return model_arg
 
 
 @app.command(name="convert")
@@ -109,23 +130,24 @@ def convert(
 
         try:
             # Create LiteLLM client instance
-            llm_client_kwargs = {}
-            if llm_base_url:
-                llm_client_kwargs["base_url"] = llm_base_url
-            if llm_api_key:
-                llm_client_kwargs["api_key"] = llm_api_key
-            if llm_model:
-                llm_client_kwargs["model"] = llm_model
             if llm_provider:
-                llm_client_kwargs["provider"] = llm_provider
-            if cache_dir:
-                llm_client_kwargs["cache_dir"] = cache_dir
-            if enable_cache:
-                llm_client_kwargs["enable_cache"] = enable_cache
+                # Explicit provider specified - create client with provided/default parameters
+                # Parse model argument - convert numeric strings to integers for index-based selection
+                parsed_model = _parse_model_arg(llm_model)
+                model = parsed_model if parsed_model is not None else PROVIDER_DEFAULT_MODELS.get(llm_provider, "gpt-4o-mini")
 
-            if llm_client_kwargs:
-                # Create with explicit parameters
-                llm_client = LiteLLMClient(**llm_client_kwargs)
+                # Build optional kwargs
+                optional_kwargs = {}
+                if llm_api_key:
+                    optional_kwargs["api_key"] = llm_api_key
+                if llm_base_url:
+                    optional_kwargs["base_url"] = llm_base_url
+                if cache_dir:
+                    optional_kwargs["cache_dir"] = cache_dir
+                if enable_cache:
+                    optional_kwargs["enable_cache"] = enable_cache
+
+                llm_client = LiteLLMClient(provider=llm_provider, model=model, **optional_kwargs)
             else:
                 # Auto-detect from environment
                 llm_client = create_client_from_env()

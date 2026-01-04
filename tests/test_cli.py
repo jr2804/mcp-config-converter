@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 
 from mcp_config_converter.cli import app
 from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS
-from mcp_config_converter.llm import PROVIDER_API_KEY_ENV_VARS
+from mcp_config_converter.llm import PROVIDER_API_KEY_ENV_VARS, LiteLLMClient
 from mcp_config_converter.types import PROVIDER_OUTPUT_FORMAT, ConfigFormat
 
 TEST_DATA_DIR = Path("tests/data")
@@ -286,8 +286,6 @@ class TestCLI:
         Raises:
             ValueError: If provider cannot be instantiated or API key is missing
         """
-        from mcp_config_converter.llm import LiteLLMClient
-
         # Check if provider requires API key
         env_vars = PROVIDER_API_KEY_ENV_VARS.get(provider, [])
         if env_vars:

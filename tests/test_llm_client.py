@@ -20,17 +20,17 @@ class TestLiteLLMClient:
     @staticmethod
     def test_initialization_with_defaults() -> None:
         """Test client initialization with defaults."""
-        client = LiteLLMClient()
-        assert client.provider is None
-        assert client.model == "gpt-4o-mini"  # Fallback default
+        client = LiteLLMClient(provider="openai", model="gpt-4o-mini")
+        assert client.provider == "openai"
+        assert client.model == "gpt-4o-mini"
         assert client.api_key is None
 
     @staticmethod
     def test_initialization_with_provider() -> None:
         """Test client initialization with provider."""
-        client = LiteLLMClient(provider="openai", api_key="test-key")
+        client = LiteLLMClient(provider="openai", model=PROVIDER_DEFAULT_MODELS["openai"], api_key="test-key")
         assert client.provider == "openai"
-        assert client.model == PROVIDER_DEFAULT_MODELS["openai"]
+        assert client.model == "gpt-4o-mini"
         assert client.api_key == "test-key"
 
     @staticmethod
@@ -43,14 +43,14 @@ class TestLiteLLMClient:
     def test_api_key_from_env_openai() -> None:
         """Test API key detection from environment for OpenAI."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}, clear=False):
-            client = LiteLLMClient(provider="openai")
+            client = LiteLLMClient(provider="openai", model="gpt-4")
             assert client.api_key == "env-key"
 
     @staticmethod
     def test_api_key_from_env_anthropic() -> None:
         """Test API key detection from environment for Anthropic."""
         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "anthropic-key"}, clear=False):
-            client = LiteLLMClient(provider="anthropic")
+            client = LiteLLMClient(provider="anthropic", model="claude-3")
             assert client.api_key == "anthropic-key"
 
     @staticmethod
@@ -65,14 +65,14 @@ class TestLiteLLMClient:
             },
             clear=False,
         ):
-            client = LiteLLMClient(provider="gemini")
+            client = LiteLLMClient(provider="gemini", model="gemini-2.0-flash")
             assert client.api_key == "google-key"
 
     @staticmethod
     def test_explicit_api_key_takes_precedence() -> None:
         """Test that explicit API key takes precedence over environment."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}, clear=False):
-            client = LiteLLMClient(provider="openai", api_key="explicit-key")
+            client = LiteLLMClient(provider="openai", model="gpt-4", api_key="explicit-key")
             assert client.api_key == "explicit-key"
 
     @staticmethod
@@ -90,7 +90,7 @@ class TestLiteLLMClient:
         assert result == "Generated text"
         mock_completion.assert_called_once()
         call_kwargs = mock_completion.call_args[1]
-        assert call_kwargs["model"] == "gpt-4"
+        assert call_kwargs["model"] == "openai/gpt-4"
         assert len(call_kwargs["messages"]) == 1
         assert call_kwargs["messages"][0]["role"] == "user"
 
@@ -314,7 +314,7 @@ class TestHelperFunctions:
         with patch.dict(
             os.environ,
             {
-                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
+                "MCP_CONFIG_CONF_LLM_PROVIDER": "openai",
                 "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
                 "MCP_CONFIG_CONF_API_KEY": "test-key",
             },
