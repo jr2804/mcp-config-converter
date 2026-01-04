@@ -31,10 +31,9 @@ def convert(
     input_content: str | None = arguments.InputContentOpt,
     encode_toon: bool = arguments.EncodeToonOpt,
     llm_base_url: str | None = arguments.LlmBaseUrlOpt,
-    llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
+    llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
-    preferred_provider: str = arguments.PreferredProviderOpt,
     verbose: bool = arguments.VerboseOpt,
     version: Annotated[bool | None, arguments.VersionOpt] = None,
 ) -> None:
@@ -50,10 +49,9 @@ def convert(
         input_content: Raw input configuration content
         encode_toon: Whether to encode JSON input to TOON format
         llm_base_url: Custom base URL for LLM provider
-        llm_provider_type: LLM provider type
+        llm_provider: LLM provider type
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
-        preferred_provider: Preferred LLM provider
         verbose: Verbose output
     """
     try:
@@ -114,14 +112,10 @@ def convert(
                 llm_client_kwargs["api_key"] = llm_api_key
             if llm_model:
                 llm_client_kwargs["model"] = llm_model
-            if llm_provider_type:
-                llm_client_kwargs["provider"] = llm_provider_type
+            if llm_provider:
+                llm_client_kwargs["provider"] = llm_provider
 
-            # Use preferred_provider or auto-detect
-            if preferred_provider and preferred_provider != "auto":
-                llm_client_kwargs["provider"] = preferred_provider
-                llm_client = LiteLLMClient(**llm_client_kwargs)
-            elif llm_client_kwargs:
+            if llm_client_kwargs:
                 # Create with explicit parameters
                 llm_client = LiteLLMClient(**llm_client_kwargs)
             else:

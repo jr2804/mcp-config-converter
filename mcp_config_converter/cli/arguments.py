@@ -46,10 +46,12 @@ LlmBaseUrlOpt = typer.Option(
     help="Custom base URL for LLM provider (for OpenAI/Anthropic compatible APIs)",
     rich_help_panel=RichHelpPanel.LLM,
 )
-LlmProviderTypeOpt = typer.Option(
+LlmProviderOpt = typer.Option(
     None,
     "--llm-provider-type",
-    envvar=EnvVarName.LLM_PROVIDER_TYPE,
+    "--llm-provider",
+    "-lp",
+    envvar=["MCP_CONFIG_CONF_LLM_PROVIDER", EnvVarName.LLM_PROVIDER_TYPE],
     help="LLM provider type: e.g., 'openai', 'anthropic', 'zai'",
     rich_help_panel=RichHelpPanel.LLM,
 )
@@ -71,15 +73,6 @@ NoAuthCheckOpt = typer.Option(
     False,
     "--no-auth-check",
     help="Skip API key authentication check (faster)",
-    rich_help_panel=RichHelpPanel.LLM,
-)
-PreferredProviderOpt = typer.Option(
-    "auto",
-    "--preferred-provider",
-    "-pp",
-    envvar=EnvVarName.PREFERRED_PROVIDER,
-    help="Preferred LLM provider ('auto' for automatic selection, or specific provider name)",
-    case_sensitive=False,
     rich_help_panel=RichHelpPanel.LLM,
 )
 

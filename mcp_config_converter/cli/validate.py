@@ -15,10 +15,9 @@ def validate(
     ctx: typer.Context,
     config_file: Path | None = arguments.ConfigFileArg,
     llm_base_url: str | None = arguments.LlmBaseUrlOpt,
-    llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
+    llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
-    preferred_provider: str = arguments.PreferredProviderOpt,
     verbose: bool = arguments.VerboseOpt,
     version: Annotated[bool | None, arguments.VersionOpt] = None,
 ) -> None:

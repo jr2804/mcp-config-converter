@@ -65,24 +65,19 @@ def configure_llm_provider(ctx: typer.Context | None, verbose: bool = False) -> 
     llm_config = get_context_llm_config(ctx)
     provider = llm_config.get("provider_type")
 
-    # Check for preferred provider selection
-    preferred_provider = ctx.obj.get("preferred_provider", "auto") if ctx and ctx.obj else "auto"
-
-    if preferred_provider == "auto":
+    if provider is None:
         try:
             client = select_auto_client()
+            provider = client.provider
             if verbose:
-                console.print(f"[blue]Auto-selected LLM provider: {client.provider}[/blue]")
+                console.print(f"[blue]Auto-selected LLM provider: {provider}[/blue]")
         except ValueError as e:
             console.print(f"[red]Error: {e}[/red]")
             raise typer.Exit(1)
-    else:
-        # Use specific provider
-        provider = preferred_provider
-        if verbose:
-            console.print(f"[blue]Using LLM provider: {provider}[/blue]")
+    elif verbose:
+        console.print(f"[blue]Using LLM provider: {provider}[/blue]")
 
-    if not provider and preferred_provider != "auto":
+    if not provider:
         # This should not happen with auto-selection, but keep as fallback
         console.print("[red]Error: No LLM provider specified or auto-selected[/red]")
         raise typer.Exit(1)

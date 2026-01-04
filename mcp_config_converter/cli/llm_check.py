@@ -83,7 +83,7 @@ def check_provider_auth(provider: str, api_key: str | None, default_model: str |
 def llm_check(
     ctx: typer.Context,
     llm_base_url: str | None = arguments.LlmBaseUrlOpt,
-    llm_provider_type: str | None = arguments.LlmProviderTypeOpt,
+    llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
     no_auth_check: bool = arguments.NoAuthCheckOpt,
@@ -95,7 +95,7 @@ def llm_check(
     Args:
         ctx: Typer context
         llm_base_url: Custom base URL for LLM provider
-        llm_provider_type: LiteLLM provider type (e.g., 'openai', 'anthropic')
+        llm_provider: LiteLLM provider type (e.g., 'openai', 'anthropic')
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
         no_auth_check: Skip API key authentication check
@@ -105,10 +105,10 @@ def llm_check(
     try:
         console.print("[bold blue]LiteLLM Provider Status Check[/bold blue]\n")
 
-        if llm_provider_type or llm_api_key or llm_model or llm_base_url:
+        if llm_provider or llm_api_key or llm_model or llm_base_url:
             console.print("[cyan]Custom Configuration Provided:[/cyan]")
             client = LiteLLMClient(
-                provider=llm_provider_type,
+                provider=llm_provider,
                 api_key=llm_api_key,
                 model=llm_model,
                 base_url=llm_base_url,
