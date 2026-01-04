@@ -86,6 +86,8 @@ def llm_check(
     llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
+    cache_dir: str | None = arguments.CacheDirOpt,
+    enable_cache: bool = arguments.EnableCacheOpt,
     no_auth_check: bool = arguments.NoAuthCheckOpt,
     verbose: bool = arguments.VerboseOpt,
     version: Annotated[bool | None, arguments.VersionOpt] = None,
@@ -98,6 +100,8 @@ def llm_check(
         llm_provider: LiteLLM provider type (e.g., 'openai', 'anthropic')
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
+        cache_dir: Custom directory for disk cache
+        enable_cache: Enable disk caching for LLM API calls
         no_auth_check: Skip API key authentication check
         verbose: Verbose output
         version: Show version and exit
@@ -112,6 +116,8 @@ def llm_check(
                 api_key=llm_api_key,
                 model=llm_model,
                 base_url=llm_base_url,
+                cache_dir=cache_dir,
+                enable_cache=enable_cache,
             )
             is_valid = client.validate_config()
             status = "[green]✓ Valid[/green]" if is_valid else "[red]✗ Invalid[/red]"

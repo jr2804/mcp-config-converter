@@ -378,7 +378,7 @@ def create_client_from_env() -> LiteLLMClient | None:
         LiteLLMClient instance or None if no configuration found
     """
     # Check for explicit configuration
-    provider = os.getenv("MCP_CONFIG_CONF_LLM_PROVIDER_TYPE")
+    provider = os.getenv("MCP_CONFIG_CONF_LLM_PROVIDER")
     model = os.getenv("MCP_CONFIG_CONF_LLM_MODEL")
     api_key = os.getenv("MCP_CONFIG_CONF_API_KEY")
     base_url = os.getenv("MCP_CONFIG_CONF_LLM_BASE_URL")

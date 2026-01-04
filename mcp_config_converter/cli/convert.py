@@ -34,6 +34,8 @@ def convert(
     llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
     llm_model: str | None = arguments.LlmModelOpt,
+    cache_dir: str | None = arguments.CacheDirOpt,
+    enable_cache: bool = arguments.EnableCacheOpt,
     verbose: bool = arguments.VerboseOpt,
     version: Annotated[bool | None, arguments.VersionOpt] = None,
 ) -> None:
@@ -52,6 +54,7 @@ def convert(
         llm_provider: LLM provider type
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
+        cache_dir: Custom directory for disk cache
         verbose: Verbose output
         version: Show version and exit
     """
@@ -115,6 +118,10 @@ def convert(
                 llm_client_kwargs["model"] = llm_model
             if llm_provider:
                 llm_client_kwargs["provider"] = llm_provider
+            if cache_dir:
+                llm_client_kwargs["cache_dir"] = cache_dir
+            if enable_cache:
+                llm_client_kwargs["enable_cache"] = enable_cache
 
             if llm_client_kwargs:
                 # Create with explicit parameters

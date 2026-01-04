@@ -74,6 +74,20 @@ NoAuthCheckOpt = typer.Option(
     help="Skip API key authentication check (faster)",
     rich_help_panel=RichHelpPanel.LLM,
 )
+EnableCacheOpt = typer.Option(
+    False,
+    "--enable-cache",
+    "-ec",
+    envvar=EnvVarName.LLM_CACHE_ENABLED,
+    help="Enable disk caching for LLM API calls to reduce costs and latency",
+    rich_help_panel=RichHelpPanel.LLM,
+)
+CacheDirOpt = typer.Option(
+    None,
+    "--cache-dir",
+    help="Custom directory for disk cache (default: LiteLLM's default)",
+    rich_help_panel=RichHelpPanel.LLM,
+)
 
 # Conversion-specific options
 InputContentOpt = typer.Option(

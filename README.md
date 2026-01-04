@@ -209,6 +209,69 @@ The `show-defaults` command displays a table showing:
 2. Generic environment variable (`MCP_CONFIG_CONV_DEFAULT_OUTPUT`)
 3. Built-in default path
 
+## Disk Caching
+
+The tool includes a disk caching feature for LLM responses to reduce API calls and improve conversion speed when processing the same configuration multiple times.
+
+### Benefits
+
+- **Reduced API Costs**: Cache responses avoid redundant API calls for identical conversions
+- **Faster Iterations**: Subsequent conversions of the same configuration are nearly instant
+- **Offline Development**: Work with cached responses when API access is unavailable
+
+### Enabling Cache
+
+#### Environment Variable
+
+Enable caching by setting the `MCP_CONFIG_CONF_LLM_CACHE_ENABLED` environment variable:
+
+```bash
+# Enable caching
+export MCP_CONFIG_CONF_LLM_CACHE_ENABLED=true
+
+# Now conversions will use cached responses when available
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json
+```
+
+#### CLI Flag
+
+Alternatively, enable caching per-command using the `--enable-cache` flag:
+
+```bash
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --enable-cache
+```
+
+### Cache Directory
+
+By default, cache files are stored in `.litellm_cache` in the project root. You can specify a custom cache directory using the `--cache-dir` option:
+
+```bash
+# Use a custom cache directory
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --enable-cache --cache-dir /path/to/custom/cache
+
+# Or set an environment variable
+export MCP_CONFIG_CONF_LLM_CACHE_DIR=/path/to/custom/cache
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --enable-cache
+```
+
+### Example Usage
+
+```bash
+# Enable cache via environment variable and run conversion
+export MCP_CONFIG_CONF_LLM_CACHE_ENABLED=true
+uv run mcp-config-converter convert config.yaml --provider vscode --output .vscode/mcp.json
+
+# Enable cache via CLI flag
+uv run mcp-config-converter convert config.yaml --provider gemini --output gemini_mcp.json --enable-cache
+
+# Use custom cache directory
+uv run mcp-config-converter convert config.yaml --provider claude --output claude_mcp.json --enable-cache --cache-dir ~/.mcp-cache
+```
+
+### Important Note
+
+The default `.litellm_cache` directory is included in `.gitignore` to prevent accidentally committing cached responses to version control. If using a custom cache directory, ensure it's also excluded from your version control system.
+
 ## Test Configuration
 
 The test suite can be configured via environment variables:
