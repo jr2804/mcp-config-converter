@@ -19,8 +19,9 @@ lint:
 
 # Lint the documentation
 lint-md:
-    uvx mdformat .\mcp_config_converter
-    uvx mdformat AGENTS.md README.md
+    uv run mdformat .\mcp_config_converter
+    uv run mdformat docs
+    uv run mdformat AGENTS.md README.md
 
 # Format the codebase
 format:
