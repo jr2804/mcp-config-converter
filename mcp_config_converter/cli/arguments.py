@@ -67,6 +67,12 @@ LlmModelOpt = typer.Option(
     help="Model name or index (e.g., 'gpt-4o-mini' or 0 for first model, -1 for last)",
     rich_help_panel=RichHelpPanel.LLM,
 )
+NoAuthCheckOpt = typer.Option(
+    False,
+    "--no-auth-check",
+    help="Skip API key authentication check (faster)",
+    rich_help_panel=RichHelpPanel.LLM,
+)
 PreferredProviderOpt = typer.Option(
     "auto",
     "--preferred-provider",
