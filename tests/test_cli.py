@@ -174,7 +174,7 @@ class TestCLI:
                 output_provider,
                 "-o",
                 str(output_file),
-                "--llm-provider-type",
+                "--llm-provider",
                 llm_provider,
                 "--llm-model",
                 llm_model,
@@ -217,6 +217,63 @@ class TestCLI:
         assert "Default Output Paths" in result.stdout
         assert "qwen" in result.stdout
         assert "gemini" in result.stdout
+        # Check for new columns - note: column headers are truncated in display
+        # The table shows "Environment" (truncated from "Environment Variable")
+        # and "Override" (truncated from "Override Value")
+        assert "Environment" in result.stdout
+        assert "Override" in result.stdout
+
+    @staticmethod
+    def test_show_defaults_with_env_var_override(runner: CliRunner) -> None:
+        """Test show-defaults command with environment variable override."""
+        # Set environment variable for vscode provider
+        env_var_name = "MCP_CONFIG_CONV_VSCODE_DEFAULT_OUTPUT"
+        override_path = "/custom/path/vscode_mcp.json"
+        original_value = os.getenv(env_var_name)
+
+        try:
+            # Set the environment variable
+            os.environ[env_var_name] = override_path
+
+            # Run the show-defaults command
+            result = runner.invoke(app, ["show-defaults"])
+            assert result.exit_code == 0
+            assert "Default Output Paths" in result.stdout
+
+            # Check that the override value appears in the output
+            # The table shows truncated values, so check for partial matches
+            # Environment variable name is truncated to "MCP_CONFIG_..."
+            assert "MCP_CONFIG_" in result.stdout
+
+            # The override path should appear in the output (may be truncated or normalized)
+            # On Windows, paths get normalized with backslashes
+            if "\\custom\\" in result.stdout or "/custom/" in result.stdout:
+                # Path appears in output (either Windows or Unix format)
+                pass
+            else:
+                # Check for truncated version
+                assert "custom" in result.stdout or "vscode_mcp" in result.stdout
+
+            # Also check that vscode provider shows something other than the default
+            # The default path ".vscode/mcp.json" should not appear for vscode row
+            # when override is set (though it might appear for other providers)
+            # We'll check that the vscode row shows a path containing "custom"
+            vscode_line = None
+            for line in result.stdout.split("\n"):
+                if "vscode" in line and "|" in line:
+                    vscode_line = line
+                    break
+
+            if vscode_line:
+                # The vscode line should contain "custom" or the override path
+                assert "custom" in vscode_line or "vscode_mcp" in vscode_line
+
+        finally:
+            # Clean up - restore original environment variable
+            if original_value is not None:
+                os.environ[env_var_name] = original_value
+            else:
+                os.environ.pop(env_var_name, None)
 
     @staticmethod
     def _ensure_provider_available(provider: str, model: str | int) -> None:

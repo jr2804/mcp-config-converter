@@ -253,8 +253,12 @@ class LiteLLMClient:
                 model_as_int = int(model)
                 return self._resolve_model(model_as_int)
             except ValueError:
-                # Not an integer, use as-is
-                return model
+                # Not an integer, check if it needs provider prefix
+                resolved_model = model
+                # Add provider prefix if we have a provider and model doesn't already have a provider prefix
+                if self.provider and "/" not in resolved_model:
+                    resolved_model = f"{self.provider}/{resolved_model}"
+                return resolved_model
 
         if isinstance(model, int):
             available_models = self.get_available_models()

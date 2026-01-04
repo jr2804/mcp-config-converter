@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
+from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, get_default_output_path
 from mcp_config_converter.cli.utils import (
     CliPrompt,
     console,
@@ -53,6 +53,7 @@ def convert(
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
         verbose: Verbose output
+        version: Show version and exit
     """
     try:
         # Validate input source
@@ -76,7 +77,7 @@ def convert(
                 provider = CliPrompt.select_format()
 
             if not output:
-                suggested_output = PROVIDER_DEFAULT_OUTPUT_FILES.get(provider)
+                suggested_output = get_default_output_path(provider)[0] if provider else None
                 output = Path(Prompt.ask("Enter output file path", default=str(suggested_output)))
 
             if not Confirm.ask(
@@ -98,7 +99,7 @@ def convert(
 
         if not output and provider:
             default_suffix = input_file.with_suffix(".mcp.json") if input_file else Path("input.mcp.json")
-            output = PROVIDER_DEFAULT_OUTPUT_FILES.get(provider, default_suffix)
+            output = get_default_output_path(provider)[0] if provider else default_suffix
 
         input_desc = actual_input_file.name if actual_input_file else "raw input"
         console.print(f"[blue]Converting {input_desc}...[/blue]")
