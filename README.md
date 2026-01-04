@@ -173,6 +173,42 @@ GOOGLE_API_KEY=your_google_api_key_here
 
 **Note**: Never commit your `.env` file with real API keys! It's already excluded in `.gitignore`.
 
+### Default Output Path Configuration
+
+Default output paths for converted configurations can be overridden via environment variables. This allows you to customize where converted files are saved without specifying the `--output` option each time.
+
+#### Environment Variable Format
+
+- **Provider-specific**: `MCP_CONFIG_CONV_<PROVIDER>_DEFAULT_OUTPUT`
+- **Generic fallback**: `MCP_CONFIG_CONV_DEFAULT_OUTPUT` (applies to all providers)
+
+Supported providers include: `VSCODE`, `GEMINI`, `CLAUDE`, `CODEX`, `OPENCODE`, `MISTRAL`, `QWEN`, `LLXPRT`, `CRUSH`
+
+#### Example Usage
+
+```bash
+# Override VS Code default output path
+export MCP_CONFIG_CONV_VSCODE_DEFAULT_OUTPUT=".vscode/custom-mcp.json"
+
+# Override generic default for all providers
+export MCP_CONFIG_CONV_DEFAULT_OUTPUT="custom-output.json"
+
+# View current defaults and overrides
+uv run mcp-config-converter show-defaults
+```
+
+The `show-defaults` command displays a table showing:
+- Default output path for each provider
+- Environment variable name for overriding
+- Current override value (if set)
+- Whether the provider is an alias of another
+
+#### Priority Order
+
+1. Provider-specific environment variable (e.g., `MCP_CONFIG_CONV_VSCODE_DEFAULT_OUTPUT`)
+2. Generic environment variable (`MCP_CONFIG_CONV_DEFAULT_OUTPUT`)
+3. Built-in default path
+
 ## Test Configuration
 
 The test suite can be configured via environment variables:
