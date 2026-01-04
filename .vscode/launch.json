@@ -15,7 +15,7 @@
             "env": {}
         },
         {
-            "name": "convert (auto)",
+            "name": "convert (ollama -> opencode)",
             "type": "debugpy",
             "request": "launch",
             "module": "mcp_config_converter",
@@ -24,14 +24,28 @@
                 ".vscode/mcp.json",
                 "-p",
                 "opencode",
-                "-pp",
-                "auto"
+                "-lp", "ollama",
+                "--llm-model", "1"
             ],
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
+            "console": "integratedTerminal"
         },
         {
-            "name": "convert (ollama/gemma3)",
+            "name": "convert (auto -> opencode)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_config_converter",
+            "args": [
+                "convert",
+                ".vscode/mcp.json",
+                "-p",
+                "opencode"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "convert (ollama/gemma3 -> opencode)",
             "type": "debugpy",
             "request": "launch",
             "module": "mcp_config_converter",
@@ -40,16 +54,16 @@
                 ".vscode/mcp.json",
                 "-p",
                 "opencode",
-                "-pp",
+                "--llm-provider",
                 "ollama",
                 "--llm-model",
                 "gemma3:latest"
             ],
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
+            "console": "integratedTerminal"
         },
         {
-            "name": "convert (mistral/perplexity)",
+            "name": "convert (perplexity -> mistral)",
             "type": "debugpy",
             "request": "launch",
             "module": "mcp_config_converter",
@@ -58,11 +72,11 @@
                 ".vscode/mcp.json",
                 "-p",
                 "mistral",
-                "-pp",
-                "perplexity-sdk"
+                "--llm-provider",
+                "perplexity"
             ],
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
+            "console": "integratedTerminal"
         },
         {
             "name": "version",
@@ -73,7 +87,7 @@
                 "version"
             ],
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
+            "console": "integratedTerminal"
         },
         {
             "name": "convert --version",
@@ -85,7 +99,7 @@
                 "--version"
             ],
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
+            "console": "integratedTerminal"
         }
     ]
 }
