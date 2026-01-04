@@ -44,3 +44,4 @@ opencode*.json
 .gemini/mcp.json
 tests/temp
 .litellm_cache
+temp/
