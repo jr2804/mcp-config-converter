@@ -43,3 +43,4 @@ opencode*.json
 .vibe/config.toml
 .gemini/mcp.json
 tests/temp
+.litellm_cache
