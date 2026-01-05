@@ -11,7 +11,7 @@ from rich.prompt import Prompt
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
 from mcp_config_converter.cli.registry import create_llm_client
-from mcp_config_converter.llm import create_client_from_env
+from mcp_config_converter.llm import LiteLLMClient, create_client_from_env
 from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
@@ -46,7 +46,7 @@ def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
     return ctx.obj.get("llm_config", {})
 
 
-def select_auto_client():
+def select_auto_client() -> LiteLLMClient:
     """Select and create a LiteLLM client automatically.
 
     Returns:
