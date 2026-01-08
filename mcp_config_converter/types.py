@@ -17,12 +17,14 @@ class ProviderConfig(StrEnum):
     QWEN = "qwen"
     LLXPRT = "llxprt"
     CRUSH = "crush"
+    NCP = "ncp"
 
 
 # Provider alias mapping - maps providers to their actual implementation
 PROVIDER_ALIAS_MAP: dict[ProviderConfig | str, ProviderConfig | str] = {
     ProviderConfig.QWEN: ProviderConfig.GEMINI,  # qwen uses the same spec as gemini
     ProviderConfig.LLXPRT: ProviderConfig.GEMINI,  # qwen uses the same spec as gemini
+    ProviderConfig.NCP: ProviderConfig.CLAUDE,  # ncp uses the same spec as claude
 }
 
 
@@ -45,4 +47,5 @@ PROVIDER_OUTPUT_FORMAT: dict[ProviderConfig | str, ConfigFormat] = {
     ProviderConfig.QWEN: ConfigFormat.JSON,
     ProviderConfig.LLXPRT: ConfigFormat.JSON,
     ProviderConfig.CRUSH: ConfigFormat.JSON,
+    ProviderConfig.NCP: ConfigFormat.JSON,
 }

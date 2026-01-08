@@ -39,6 +39,7 @@ class DefaultOutputEnvVar(StrEnum):
     QWEN = "MCP_CONFIG_CONV_QWEN_DEFAULT_OUTPUT"
     LLXPRT = "MCP_CONFIG_CONV_LLXPRT_DEFAULT_OUTPUT"
     CRUSH = "MCP_CONFIG_CONV_CRUSH_DEFAULT_OUTPUT"
+    NCP = "MCP_CONFIG_CONV_NCP_DEFAULT_OUTPUT"
 
 
 def get_default_output_path(provider: str) -> tuple[Path, str | None, str | None]:
@@ -88,6 +89,7 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
         "qwen": Path(".qwen/settings.json"),
         "llxprt": Path(".llxprt/settings.json"),
         "crush": Path(".crush.json"),
+        "ncp": Path(".ncp/all.json"),
     },
 )
 
