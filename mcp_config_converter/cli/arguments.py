@@ -64,6 +64,7 @@ LlmApiKeyOpt = typer.Option(
 LlmModelOpt = typer.Option(
     None,
     "--llm-model",
+    "-lm",
     envvar=EnvVarName.LLM_MODEL,
     help="Model name or index (e.g., 'gpt-4o-mini' or 0 for first model, -1 for last)",
     rich_help_panel=RichHelpPanel.LLM,
