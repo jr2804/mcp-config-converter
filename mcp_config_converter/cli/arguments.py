@@ -21,7 +21,7 @@ ConfigFileArg = typer.Argument(None, help="Configuration file to validate")
 # Option definitions
 OutputOpt = typer.Option(None, "--output", "-o", help="Output file path")
 ProviderOpt = typer.Option(None, "--provider", "-p", help=f"Target provider format ({', '.join(SUPPORTED_PROVIDERS)})")
-InteractiveOpt = typer.Option(False, "--interactive", "-i", help="Run in interactive mode")
+
 OutputActionOpt = typer.Option(
     "overwrite",
     "--output-action",

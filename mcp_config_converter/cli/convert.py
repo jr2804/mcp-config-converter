@@ -5,13 +5,10 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
 
 from mcp_config_converter.cli import app, arguments
 from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, get_default_output_path
 from mcp_config_converter.cli.utils import (
-    CliPrompt,
     console,
     validate_format_choice,
     validate_output_action,
@@ -47,7 +44,6 @@ def convert(
     input_file: Path | None = arguments.InputFileArg,
     output: Path | None = arguments.OutputOpt,
     provider: str | None = arguments.ProviderOpt,
-    interactive: bool = arguments.InteractiveOpt,
     output_action: str = arguments.OutputActionOpt,
     input_content: str | None = arguments.InputContentOpt,
     encode_toon: bool = arguments.EncodeToonOpt,
@@ -67,7 +63,6 @@ def convert(
         input_file: Input file path
         output: Output file path
         provider: Target provider format (claude, gemini, vscode, opencode)
-        interactive: Run in interactive mode
         output_action: Action when output file exists
         input_content: Raw input configuration content
         encode_toon: Whether to encode JSON input to TOON format
@@ -76,6 +71,7 @@ def convert(
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
         cache_dir: Custom directory for disk cache
+        enable_cache: Enable disk caching for LLM API calls
         verbose: Verbose output
         version: Show version and exit
     """
@@ -94,22 +90,7 @@ def convert(
             actual_input_file = input_file
             input_content = None
 
-        if interactive:
-            console.print(Panel.fit("Interactive Conversion Mode", style="bold blue"))
 
-            if not provider:
-                provider = CliPrompt.select_format()
-
-            if not output:
-                suggested_output = get_default_output_path(provider)[0] if provider else None
-                output = Path(Prompt.ask("Enter output file path", default=str(suggested_output)))
-
-            if not Confirm.ask(
-                f"\nConvert [cyan]{input_file}[/cyan] → [green]{output}[/green]",
-                default=True,
-            ):
-                console.print("[yellow]Conversion cancelled.[/yellow]")
-                raise typer.Exit(0)
 
         if provider and not validate_format_choice(provider):
             valid_formats = ", ".join(SUPPORTED_PROVIDERS)
