@@ -5,6 +5,7 @@ import typer
 from mcp_config_converter._version import version as _version
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, EnvVarName, RichHelpPanel
+from mcp_config_converter.types import EncodingFormat
 
 
 def version_callback(value: bool = True) -> None:
@@ -104,8 +105,10 @@ InputContentOpt = typer.Option(
     "-c",
     help="Raw input configuration content (alternative to input file)",
 )
-EncodeToonOpt = typer.Option(
-    True,
-    "--encode-toon/--no-encode-toon",
-    help="Encode JSON input to TOON format for LLM processing",
+EncodingOpt = typer.Option(
+    EncodingFormat.TOON.value,
+    "--encoding",
+    "-e",
+    help=f"Input encoding format for LLM processing: {', '.join([e.value for e in EncodingFormat])}",
+    case_sensitive=False,
 )

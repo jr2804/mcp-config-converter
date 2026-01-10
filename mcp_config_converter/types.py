@@ -36,6 +36,12 @@ class ConfigFormat(StrEnum):
     TEXT = "text"
 
 
+class EncodingFormat(StrEnum):
+    NONE = "none"
+    TOON = "toon"
+    ISON = "ison"
+
+
 # Expected output formats per provider (if known)
 PROVIDER_OUTPUT_FORMAT: dict[ProviderConfig | str, ConfigFormat] = {
     ProviderConfig.CLAUDE: ConfigFormat.JSON,

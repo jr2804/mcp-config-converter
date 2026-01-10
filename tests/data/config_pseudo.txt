@@ -1,0 +1,39 @@
+SERVER: mcpadvisor
+  COMMAND: npx
+  ARGS: -y, @xiaohui-wang/mcpadvisor@latest
+
+SERVER: fetch
+  COMMAND: npx
+  ARGS: mcp-fetch-server
+  ENV: DEFAULT_LIMIT=50000
+
+SERVER: gh_grep
+  TYPE: http
+  URL: https://mcp.grep.app
+
+SERVER: mcp-compass
+  COMMAND: npx
+  ARGS: -y, @liuyoshio/mcp-compass@latest
+
+SERVER: upstash-context7
+  COMMAND: npx
+  ARGS: -y, @upstash/context7-mcp
+
+SERVER: memorygraph
+  TYPE: stdio
+  COMMAND: uvx
+  ARGS: --refresh, --from, https://github.com/gregorydickson/memory-graph.git, --with, memorygraphMCP[ladybugdb], --, memorygraph, --profile, extended
+  ENV: PYTHONIOENCODING=utf-8
+
+SERVER: sequential-thinking
+  COMMAND: npx
+  ARGS: -y, @modelcontextprotocol/server-sequential-thinking@latest
+
+SERVER: desktop-commander
+  COMMAND: npx
+  ARGS: -y, @wonderwhy-er/desktop-commander@latest, --no-onboarding
+
+SERVER: beads
+  TYPE: stdio
+  COMMAND: uvx
+  ARGS: beads-mcp

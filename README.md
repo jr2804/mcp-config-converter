@@ -316,8 +316,8 @@ uv run pytest tests/test_cli.py
 # Convert an MCP configuration file to Claude format using LiteLLM with Ollama (local, no API key)
 uv run mcp-config-converter convert config.yaml --provider claude --output claude_config.json --preferred-provider litellm --llm-model ollama/llama2
 
-# Convert using LiteLLM with GPT-4
-uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider litellm --llm-model gpt-4
+# Convert using LiteLLM with GPT-4 (using -lm alias for --llm-model)
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider litellm -lm gpt-4
 
 # Convert using LiteLLM with Claude (requires ANTHROPIC_API_KEY)
 uv run mcp-config-converter convert config.yaml --provider vscode --output output.json --preferred-provider litellm --llm-model claude-3-5-sonnet-20241022

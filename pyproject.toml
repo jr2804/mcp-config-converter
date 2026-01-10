@@ -21,6 +21,7 @@ dependencies = [
     "google-genai>=1.56.0",
     "ison-py>=1.0.2",
     "isonantic>=1.0.1",
+    "jsonfmt>=0.2.7",
 ]
 
 [dependency-groups]
