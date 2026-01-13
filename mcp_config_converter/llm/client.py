@@ -92,6 +92,8 @@ class LiteLLMClient:
         cache_type: str = "disk",
         cache_dir: str | None = None,
         check_provider_endpoint: bool = False,
+        max_tokens: int = 4096,
+        temperature: float = 0.25,
         **kwargs: Any,
     ):
         """Initialize LiteLLM client.
@@ -107,13 +109,17 @@ class LiteLLMClient:
             cache_type: Type of cache to use (default: "disk")
             cache_dir: Directory for disk cache (optional)
             check_provider_endpoint: Query provider endpoints for accurate model lists
+            max_tokens: Maximum tokens to generate (default set in generate method)
+            temperature: Default temperature for generation (may not be supported by all providers)
             **kwargs: Additional provider-specific arguments
         """
         self.provider = provider
         self.base_url = base_url
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self.kwargs = kwargs
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.add_model_kwargs = kwargs
         self.enable_cache = enable_cache or os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
         self.check_provider_endpoint = check_provider_endpoint or os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
 
@@ -127,7 +133,7 @@ class LiteLLMClient:
             default_model = PROVIDER_DEFAULT_MODELS[provider]
             self.model = self._resolve_model(default_model)
         else:
-            self.model = "gpt-4o-mini"  # Fallback default
+            raise ValueError(f"No model specified and no default model for provider '{provider}'")
 
         # Initialize cache if enabled
         if self.enable_cache:
@@ -145,7 +151,7 @@ class LiteLLMClient:
         Args:
             prompt: Input prompt
             system_prompt: Optional system instruction
-            **kwargs: Additional generation parameters (e.g., max_tokens, temperature)
+            **kwargs: Additional generation parameters (e.g., max_tokens, temperature - will override self.add_model_kwargs)
 
         Returns:
             Generated text
@@ -153,41 +159,34 @@ class LiteLLMClient:
         Raises:
             RuntimeError: If generation fails after all retries
         """
-        max_tokens = kwargs.get("max_tokens", 1024)
-
         # Build messages array
         messages: list[dict[str, str]] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Prepare completion parameters - combine provider and model
-        model_spec = f"{self.provider}/{self.model}"
-        completion_kwargs: dict[str, Any] = {
-            "model": model_spec,
+        # Prepare completion parameters - combine mandatory client params with any overrides
+        completion_kwargs: dict[str, Any] = self.add_model_kwargs.copy()
+        completion_kwargs.update({
+            "model": f"{self.provider}/{self.model}",
             "messages": messages,
-            "max_tokens": max_tokens,
-        }
+            "max_tokens": self.max_tokens,
+            "drop_params": True,
+            "temperature": self.temperature,
+        })
 
+        # do not pass None to completion function
         if self.api_key:
             completion_kwargs["api_key"] = self.api_key
 
         if self.base_url:
             completion_kwargs["api_base"] = self.base_url
 
-        # Add any additional kwargs
-        for key, value in kwargs.items():
-            if key not in ["max_tokens"]:
-                completion_kwargs[key] = value
-
-        # Add provider-specific kwargs
-        for key, value in self.kwargs.items():
-            if key not in completion_kwargs:
-                completion_kwargs[key] = value
-
-        # Add caching if enabled
         if self.enable_cache:
             completion_kwargs["caching"] = True
+
+        # Add any additional kwargs
+        completion_kwargs.update(kwargs)
 
         # Retry logic with exponential backoff
         last_exception = None
