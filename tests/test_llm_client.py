@@ -20,17 +20,17 @@ class TestLiteLLMClient:
     @staticmethod
     def test_initialization_with_defaults() -> None:
         """Test client initialization with defaults."""
-        client = LiteLLMClient(provider="openai", model="gpt-4o-mini")
-        assert client.provider == "openai"
-        assert client.model == "gpt-4o-mini"
+        client = LiteLLMClient()
+        assert client.provider is None
+        assert client.model == "gpt-4o-mini"  # Fallback default
         assert client.api_key is None
 
     @staticmethod
     def test_initialization_with_provider() -> None:
         """Test client initialization with provider."""
-        client = LiteLLMClient(provider="openai", model=PROVIDER_DEFAULT_MODELS["openai"], api_key="test-key")
+        client = LiteLLMClient(provider="openai", api_key="test-key")
         assert client.provider == "openai"
-        assert client.model == "gpt-4o-mini"
+        assert client.model == PROVIDER_DEFAULT_MODELS["openai"]
         assert client.api_key == "test-key"
 
     @staticmethod
@@ -43,14 +43,14 @@ class TestLiteLLMClient:
     def test_api_key_from_env_openai() -> None:
         """Test API key detection from environment for OpenAI."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}, clear=False):
-            client = LiteLLMClient(provider="openai", model="gpt-4")
+            client = LiteLLMClient(provider="openai")
             assert client.api_key == "env-key"
 
     @staticmethod
     def test_api_key_from_env_anthropic() -> None:
         """Test API key detection from environment for Anthropic."""
         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "anthropic-key"}, clear=False):
-            client = LiteLLMClient(provider="anthropic", model="claude-3")
+            client = LiteLLMClient(provider="anthropic")
             assert client.api_key == "anthropic-key"
 
     @staticmethod
@@ -65,14 +65,14 @@ class TestLiteLLMClient:
             },
             clear=False,
         ):
-            client = LiteLLMClient(provider="gemini", model="gemini-2.0-flash")
+            client = LiteLLMClient(provider="gemini")
             assert client.api_key == "google-key"
 
     @staticmethod
     def test_explicit_api_key_takes_precedence() -> None:
         """Test that explicit API key takes precedence over environment."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}, clear=False):
-            client = LiteLLMClient(provider="openai", model="gpt-4", api_key="explicit-key")
+            client = LiteLLMClient(provider="openai", api_key="explicit-key")
             assert client.api_key == "explicit-key"
 
     @staticmethod
@@ -90,7 +90,7 @@ class TestLiteLLMClient:
         assert result == "Generated text"
         mock_completion.assert_called_once()
         call_kwargs = mock_completion.call_args[1]
-        assert call_kwargs["model"] == "openai/gpt-4"
+        assert call_kwargs["model"] == "gpt-4"
         assert len(call_kwargs["messages"]) == 1
         assert call_kwargs["messages"][0]["role"] == "user"
 
@@ -187,20 +187,6 @@ class TestLiteLLMClient:
         assert client.enable_cache is False
 
     @staticmethod
-    def test_check_provider_endpoint_from_env() -> None:
-        """Test that check_provider_endpoint is enabled from env var."""
-        with patch.dict(os.environ, {"MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT": "true"}, clear=False):
-            client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4")
-            assert client.check_provider_endpoint is True
-
-    @staticmethod
-    def test_check_provider_endpoint_from_env_false() -> None:
-        """Test that check_provider_endpoint is disabled from env var when false."""
-        with patch.dict(os.environ, {"MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT": "false"}, clear=False):
-            client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", check_provider_endpoint=False)
-            assert client.check_provider_endpoint is False
-
-    @staticmethod
     @patch("mcp_config_converter.llm.client.completion")
     def test_cache_parameter_passed_to_completion(mock_completion: Mock) -> None:
         """Test that caching parameter is passed to completion when enabled."""
@@ -231,48 +217,6 @@ class TestLiteLLMClient:
         assert result == "Generated text"
         call_kwargs = mock_completion.call_args[1]
         assert "caching" not in call_kwargs or call_kwargs["caching"] is False
-
-    @staticmethod
-    def test_check_provider_endpoint_disabled_by_default() -> None:
-        """Test that check_provider_endpoint is disabled by default."""
-        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4")
-        assert client.check_provider_endpoint is False
-
-    @staticmethod
-    def test_check_provider_endpoint_enabled_when_true() -> None:
-        """Test that check_provider_endpoint is enabled when enabled=True."""
-        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", check_provider_endpoint=True)
-        assert client.check_provider_endpoint is True
-
-    @staticmethod
-    def test_check_provider_endpoint_disabled_when_false() -> None:
-        """Test that check_provider_endpoint is disabled when enabled=False."""
-        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", check_provider_endpoint=False)
-        assert client.check_provider_endpoint is False
-
-    @staticmethod
-    @patch("mcp_config_converter.llm.client.get_valid_models")
-    def test_get_available_models_without_provider_endpoint_check(mock_get_valid_models: Mock) -> None:
-        """Test that get_valid_models is called without check_provider_endpoint when disabled."""
-        mock_get_valid_models.return_value = ["openai/gpt-4", "anthropic/claude-3"]
-
-        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", check_provider_endpoint=False)
-        models = client.get_available_models()
-
-        mock_get_valid_models.assert_called_once_with()
-        assert "openai/gpt-4" in models
-
-    @staticmethod
-    @patch("mcp_config_converter.llm.client.get_valid_models")
-    def test_get_available_models_with_provider_endpoint_check(mock_get_valid_models: Mock) -> None:
-        """Test that get_valid_models is called with check_provider_endpoint when enabled."""
-        mock_get_valid_models.return_value = ["openai/gpt-4"]
-
-        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4", check_provider_endpoint=True)
-        models = client.get_available_models()
-
-        mock_get_valid_models.assert_called_once_with(check_provider_endpoint=True, custom_llm_provider="openai")
-        assert "openai/gpt-4" in models
 
 
 class TestHelperFunctions:
@@ -314,7 +258,7 @@ class TestHelperFunctions:
         with patch.dict(
             os.environ,
             {
-                "MCP_CONFIG_CONF_LLM_PROVIDER": "openai",
+                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
                 "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
                 "MCP_CONFIG_CONF_API_KEY": "test-key",
             },

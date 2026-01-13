@@ -15,7 +15,7 @@ This project was created to address the challenges developers face when working 
 ### The Problem
 
 - **Fragmented Ecosystem**: Different LLM providers (Claude, Gemini, etc.)
-  and development environments (VS Code, OpenCode, NCP) use different configuration formats for MCP servers
+  and development environments (VS Code, OpenCode) use different configuration formats for MCP servers
 
 - **Manual Conversion**: Developers often need to manually rewrite configurations when switching between platforms or sharing MCP server setups
 
@@ -30,7 +30,7 @@ This project was created to address the challenges developers face when working 
 
 1. **Parse Multiple Formats**: Read MCP configurations from JSON, YAML, and TOML files
 
-1. **Convert Between Providers**: Transform configurations between different LLM provider formats (Claude, Gemini, VS Code, OpenCode, NCP)
+1. **Convert Between Providers**: Transform configurations between different LLM provider formats (Claude, Gemini, VS Code, OpenCode)
 
 1. **Preserve Semantics**: Maintain all configuration details including commands, arguments, environment variables, and metadata
 
@@ -42,7 +42,7 @@ This project was created to address the challenges developers face when working 
 
 - 🔄 **Multi-format Support**: Parse and generate JSON, YAML, and TOML configurations
 
-- 🎯 **Provider-specific Formatting**: Output configurations optimized for Claude, Gemini, VS Code, OpenCode, NCP (an MCP server orchestrator), and AI-assisted conversion with multiple LLM
+- 🎯 **Provider-specific Formatting**: Output configurations optimized for Claude, Gemini, VS Code, OpenCode, and AI-assisted conversion with multiple LLM
   providers (OpenAI, Ollama, DeepSeek, SambaNova, Perplexity, OpenRouter)
 
 - ✅ **Validation**: Validate MCP configurations against the protocol schema
@@ -182,7 +182,7 @@ Default output paths for converted configurations can be overridden via environm
 - **Provider-specific**: `MCP_CONFIG_CONV_<PROVIDER>_DEFAULT_OUTPUT`
 - **Generic fallback**: `MCP_CONFIG_CONV_DEFAULT_OUTPUT` (applies to all providers)
 
-Supported providers include: `VSCODE`, `GEMINI`, `CLAUDE`, `CODEX`, `OPENCODE`, `MISTRAL`, `QWEN`, `LLXPRT`, `CRUSH`, `NCP`
+Supported providers include: `VSCODE`, `GEMINI`, `CLAUDE`, `CODEX`, `OPENCODE`, `MISTRAL`, `QWEN`, `LLXPRT`, `CRUSH`
 
 #### Example Usage
 
@@ -198,7 +198,6 @@ uv run mcp-config-converter show-defaults
 ```
 
 The `show-defaults` command displays a table showing:
-
 - Default output path for each provider
 - Environment variable name for overriding
 - Current override value (if set)
@@ -316,14 +315,11 @@ uv run pytest tests/test_cli.py
 # Convert an MCP configuration file to Claude format using LiteLLM with Ollama (local, no API key)
 uv run mcp-config-converter convert config.yaml --provider claude --output claude_config.json --preferred-provider litellm --llm-model ollama/llama2
 
-# Convert using LiteLLM with GPT-4 (using -lm alias for --llm-model)
-uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider litellm -lm gpt-4
+# Convert using LiteLLM with GPT-4
+uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider litellm --llm-model gpt-4
 
 # Convert using LiteLLM with Claude (requires ANTHROPIC_API_KEY)
 uv run mcp-config-converter convert config.yaml --provider vscode --output output.json --preferred-provider litellm --llm-model claude-3-5-sonnet-20241022
-
-# Convert to NCP format (MCP server orchestrator, uses Claude-compatible format)
-uv run mcp-config-converter convert config.yaml --provider ncp --output .ncp/all.json --preferred-provider auto
 
 # Use auto provider selection (picks best available provider)
 uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider auto

@@ -45,5 +45,3 @@ opencode*.json
 tests/temp
 .litellm_cache
 temp/
-.chunkhound/
-NUL

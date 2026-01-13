@@ -1,87 +1,66 @@
-# Project-Specific Tool Configuration
+# Tools and MCP servers used for agentic coding
 
-> **Note:** For universal MCP server patterns, memory storage, and problem-solving workflows, refer to the skills in `.claude/skills/tool_usage/`:
->
-> - [mcp_servers](../../.claude/skills/tool_usage/mcp_servers/SKILL.md) - MCP server discovery and usage
-> - [knowledge_management](../../.claude/skills/tool_usage/knowledge_management/SKILL.md) - Memory storage and recall patterns
-> - [problem_solving](../../.claude/skills/tool_usage/problem_solving/SKILL.md) - Sequential thinking and analysis
-> - [issue_tracking](../../.claude/skills/tool_usage/issue_tracking/SKILL.md) - bd/beads workflow and commands
+A concise, lint-friendly guide for contributors and agents working on this repository.
 
-## Project-Specific Rules
+## Remarks on Tool Usage
 
-### Temporary File Location
+If the coding agent, tool or any MCP server needs to create temporary files, test data, test results, or debug code (in particular those named `temp_*.*`, `tmp_*.*`, etc.), they **must** be created in the `/temp` directory. If `/temp` does not exist, it should be created. Never put temporary files in the root directory or any other directory.
 
-If the coding agent, tool, or any MCP server needs to create temporary files, test data, test results, or debug code (in particular those named `temp_*.*`, `tmp_*.*`, etc.), they **must** be created in the `/temp` directory. If `/temp` does not exist, it should be created. Never put temporary files in the root directory or any other directory.
+## Tool: Issue tracking with beads (bd)
 
-### subAgents Delegation
+See `./110_Tool_beads.md` for detailed usage instructions.
 
-If the subagent capability is enabled, create specialized subagents for complex workflows (e.g., multi-step refactors or downloads), delegate tasks and coordinate results before responding; mention in your summary which subagent was used if it changed the outcome.
+## Tool: Memory-Graph
 
-### Context7 for Library Documentation
+If MCP server `memorygraph` is available, recall project context using Memory-Graph when starting a new task:
+
+```python
+recall_memories(query="mcp server config converter implementation")
+```
+
+Store and recall relevant project-specific context (like `AGENTS.md` requirements or ongoing tasks) across turns; remind yourself of persisted notes before suggesting new changes to avoid repeating work.
+
+See `./120_Tool_memorygraph.md` for detailed setup and usage instructions.
+
+## Tool: Sequential Thinking
+
+If MCP server `sequential-thinking` is available, use it to analyze problems through a flexible thinking process that can adapt and evolve.
+
+See `./130_Tool_sequential_thinking.md` for detailed setup and usage instructions.
+
+## Other recommended Tools
+
+### subAgents
+
+If the subagent capability is enabled, please create specialized subagents for complex workflows (e.g., multi-step refactors or downloads), delegate tasks and coordinate results before responding; mention in your summary which subagent was used if it changed the outcome.
+
+### Code examples and documentation
 
 If MCP server `context7` is available, always use it when code, setup or configuration steps are generated, or for library/API documentation. This means you should automatically use the Context7 MCP tools to resolve library id and get library docs without you having to explicitly ask.
 
-## bd/beads: SESSION CLOSE PROTOCOL
+### Tool discovery
 
-> **Note:** For complete bd/beads workflow, commands, and best practices, see [issue_tracking](../../.claude/skills/tool_usage/issue_tracking/SKILL.md)
+If MCP server `ncp` is available, use it to discover the most suitable tools and currently available MCP servers for your current task:
 
-### 🚨 CRITICAL WORKFLOW 🚨
+- This server can analyze the task description and will delegate to other MCP servers or appropriate tools from its available set.
+- Use before starting significant work to find optimal tools
+- Example: `"I need to analyze test failures"` → ncp may suggest test analysis tools
 
-**Before saying "done" or "complete"**, you MUST run this checklist:
+### Desktop Commander
 
-```shell
-[ ] 1. git status              (check what changed)
-[ ] 2. git add <files>         (stage code changes)
-[ ] 3. bd sync                 (commit beads changes)
-[ ] 4. git commit -m "..."     (commit code)
-[ ] 5. bd sync                 (commit any new beads changes)
-[ ] 6. git push                (push to remote)
-```
+If MCP server `desktop-commander` is available, use this tool for:
 
-**NEVER skip this.** Work is not done until pushed.
+- File system operations (create, edit, read directories)
+- Process management and terminal interaction
+- Search operations (files, content)
+- Useful for workspace exploration and file organization
 
-This 6-step protocol is specific to this project's git workflow integration with beads.
+### Fetching web content
 
-## Memory Graph MCP Setup
+If MCP server `fetch` is available, use it to fetch web content and extract relevant information from given URLs.
 
-> **Note:** For universal memory storage patterns, recall workflows, and best practices, see [knowledge_management](../../.claude/skills/tool_usage/knowledge_management/SKILL.md)
+### Additional MCP server search and selection
 
-### Project Configuration
+If MCP server `mcpadvisor` is available, use it to explore additional MCP servers and their capabilities, which might be useful for your task.
 
-To enable the Memory Graph tool for this project, add the following to your `mcp.json` (project or user) configuration file:
-
-```json
-{
-    "servers": {
-        "memorygraph": {
-            "command": "uvx",
-            "type": "stdio",
-            "args": [
-                "--refresh",
-                "--from",
-                "https://github.com/gregorydickson/memory-graph.git",
-                "--",
-                "memorygraph",
-                "--profile",
-                "extended"
-            ],
-            "env": {
-                "PYTHONIOENCODING": "utf-8"
-            }
-        }
-    }
-}
-```
-
-**Important:** The `PYTHONIOENCODING: utf-8` environment variable is required for proper Unicode handling in this project.
-
-See [memory-graph](https://github.com/gregorydickson/memory-graph) for more details.
-
-### Timing Mode
-
-For this project, the default timing mode is `on-commit`:
-
-`memory_mode: immediate | on-commit | session-end`
-
-This can be adjusted based on workflow preferences.
-
+If MCP server `mcp-compass` is also available, use it to cross-check MCP servers identified by the `mcpadvisor` server.

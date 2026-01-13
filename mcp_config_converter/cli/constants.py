@@ -21,7 +21,6 @@ class EnvVarName(StrEnum):
     LLM_MODEL = "MCP_CONFIG_CONF_LLM_MODEL"
     LLM_API_KEY = "MCP_CONFIG_CONF_API_KEY"
     LLM_CACHE_ENABLED = "MCP_CONFIG_CONF_LLM_CACHE_ENABLED"
-    LLM_CHECK_PROVIDER_ENDPOINT = "MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT"
     MAX_TESTS = "MCP_CONFIG_CONF_MAX_TESTS"
     TEST_LLM_PROVIDERS = "MCP_CONFIG_CONF_TEST_LLM_PROVIDERS"
 
@@ -39,7 +38,6 @@ class DefaultOutputEnvVar(StrEnum):
     QWEN = "MCP_CONFIG_CONV_QWEN_DEFAULT_OUTPUT"
     LLXPRT = "MCP_CONFIG_CONV_LLXPRT_DEFAULT_OUTPUT"
     CRUSH = "MCP_CONFIG_CONV_CRUSH_DEFAULT_OUTPUT"
-    NCP = "MCP_CONFIG_CONV_NCP_DEFAULT_OUTPUT"
 
 
 def get_default_output_path(provider: str) -> tuple[Path, str | None, str | None]:
@@ -89,7 +87,6 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
         "qwen": Path(".qwen/settings.json"),
         "llxprt": Path(".llxprt/settings.json"),
         "crush": Path(".crush.json"),
-        "ncp": Path(".ncp/all.json"),
     },
 )
 

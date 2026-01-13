@@ -6,13 +6,34 @@ from functools import wraps
 from typing import Any, TypeVar
 
 import typer
+from rich.prompt import Prompt
 
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import PROVIDER_DEFAULT_OUTPUT_FILES, SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS
 from mcp_config_converter.cli.registry import create_llm_client
-from mcp_config_converter.llm import LiteLLMClient, create_client_from_env
+from mcp_config_converter.llm import create_client_from_env
+from mcp_config_converter.types import ProviderConfig
 
 T = TypeVar("T")
+
+
+class CliPrompt:
+    @staticmethod
+    def select_provider(providers: list[str] | None = None, default: str = ProviderConfig.CLAUDE.value) -> str:
+        if providers is None:
+            providers = list(SUPPORTED_PROVIDERS)
+        return Prompt.ask("Select target LLM provider", choices=providers, default=default)
+
+    @staticmethod
+    def select_format(formats: list[str] | None = None) -> str:
+        if formats is None:
+            formats = list(PROVIDER_DEFAULT_OUTPUT_FILES.keys())
+
+        return Prompt.ask(
+            "Select target output format (provider type)",
+            choices=formats,
+            default=formats[0],
+        )
 
 
 def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
@@ -25,7 +46,7 @@ def get_context_llm_config(ctx: typer.Context | None) -> dict[str, str | None]:
     return ctx.obj.get("llm_config", {})
 
 
-def select_auto_client() -> LiteLLMClient:
+def select_auto_client():
     """Select and create a LiteLLM client automatically.
 
     Returns:

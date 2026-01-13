@@ -15,22 +15,14 @@ from litellm.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-# Environment variable name constants to avoid circular import
-MCP_CONFIG_CONF_LLM_PROVIDER = "MCP_CONFIG_CONF_LLM_PROVIDER"
-MCP_CONFIG_CONF_LLM_MODEL = "MCP_CONFIG_CONF_LLM_MODEL"
-MCP_CONFIG_CONF_API_KEY = "MCP_CONFIG_CONF_API_KEY"
-MCP_CONFIG_CONF_LLM_BASE_URL = "MCP_CONFIG_CONF_LLM_BASE_URL"
-MCP_CONFIG_CONF_LLM_CACHE_ENABLED = "MCP_CONFIG_CONF_LLM_CACHE_ENABLED"
-MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT = "MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT"
-
 
 # Provider-specific default models
 PROVIDER_DEFAULT_MODELS: dict[str, str | int] = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-3-5-sonnet-20241022",
-    "gemini": "gemini-3-flash-preview",
+    "gemini": "gemini-2.5-flash-preview-04-17",
     "vertex_ai": "gemini-2.0-flash-exp",
-    "ollama": 0,  # Use first available model from Ollama
+    "ollama": -1,
     "mistral": "mistral-medium-latest",
     "deepseek": "deepseek-chat",
     "openrouter": "xiaomi/mimo-v2-flash:free",
@@ -82,8 +74,8 @@ class LiteLLMClient:
 
     def __init__(
         self,
-        provider: str,
-        model: str | int,
+        provider: str | None = None,
+        model: str | int | None = None,
         api_key: str | None = None,
         base_url: str | None = None,
         max_retries: int = 3,
@@ -91,7 +83,6 @@ class LiteLLMClient:
         enable_cache: bool = False,
         cache_type: str = "disk",
         cache_dir: str | None = None,
-        check_provider_endpoint: bool = False,
         **kwargs: Any,
     ):
         """Initialize LiteLLM client.
@@ -99,14 +90,13 @@ class LiteLLMClient:
         Args:
             provider: Provider type (e.g., 'openai', 'anthropic', 'gemini')
             model: Model name to use, or integer index into available models list
-            api_key: API key for provider
-            base_url: Custom base URL for provider
+            api_key: API key for the provider
+            base_url: Custom base URL for the provider
             max_retries: Maximum number of retry attempts for rate limits
             retry_delay: Initial delay between retries (exponential backoff)
             enable_cache: Enable caching for completion calls
             cache_type: Type of cache to use (default: "disk")
             cache_dir: Directory for disk cache (optional)
-            check_provider_endpoint: Query provider endpoints for accurate model lists
             **kwargs: Additional provider-specific arguments
         """
         self.provider = provider
@@ -114,8 +104,7 @@ class LiteLLMClient:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.kwargs = kwargs
-        self.enable_cache = enable_cache or os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
-        self.check_provider_endpoint = check_provider_endpoint or os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
+        self.enable_cache = enable_cache or os.getenv("MCP_CONFIG_CONF_LLM_CACHE_ENABLED", "false").lower() == "true"
 
         # Get API key (provided or from environment)
         self.api_key = api_key or self._get_api_key_from_env()
@@ -161,10 +150,9 @@ class LiteLLMClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Prepare completion parameters - combine provider and model
-        model_spec = f"{self.provider}/{self.model}"
+        # Prepare completion parameters
         completion_kwargs: dict[str, Any] = {
-            "model": model_spec,
+            "model": self.model,
             "messages": messages,
             "max_tokens": max_tokens,
         }
@@ -216,21 +204,7 @@ class LiteLLMClient:
             List of model names available through LiteLLM
         """
         try:
-            # For Ollama, always check the actual endpoint to get installed models
-            if self.provider == "ollama":
-                models = get_valid_models(check_provider_endpoint=True, custom_llm_provider="ollama")
-                # Filter out embedding models (they can't generate text)
-                generative_models = [m for m in models if "embed" not in m.lower()]
-                return generative_models if generative_models else models
-
-            if self.check_provider_endpoint:
-                if self.provider:
-                    models = get_valid_models(check_provider_endpoint=True, custom_llm_provider=self.provider)
-                else:
-                    models = get_valid_models(check_provider_endpoint=True)
-            else:
-                models = get_valid_models()
-
+            models = get_valid_models()
             if self.provider:
                 filtered = [m for m in models if m.startswith(f"{self.provider}/") or (self.provider in m and "/" not in m)]
                 return filtered if filtered else models
@@ -260,9 +234,9 @@ class LiteLLMClient:
     def _resolve_model(self, model: str | int) -> str:
         """Resolve model specification to actual model name.
 
-        If model is an integer, use it as an index into the available models list.
+        If model is an integer or string representation of integer,
+        use it as an index into the available models list.
         Supports negative indices (e.g., -1 for last model).
-        If model is a string, return it as-is (no provider prefixing).
 
         Args:
             model: Model name or index
@@ -271,10 +245,20 @@ class LiteLLMClient:
             Resolved model name as string
 
         Raises:
-            ValueError: If index is out of bounds, no models are available, or invalid type
+            ValueError: If index is out of bounds or no models are available
         """
         if isinstance(model, str):
-            return model
+            # Try to parse string as integer
+            try:
+                model_as_int = int(model)
+                return self._resolve_model(model_as_int)
+            except ValueError:
+                # Not an integer, check if it needs provider prefix
+                resolved_model = model
+                # Add provider prefix if we have a provider and model doesn't already have a provider prefix
+                if self.provider and "/" not in resolved_model:
+                    resolved_model = f"{self.provider}/{resolved_model}"
+                return resolved_model
 
         if isinstance(model, int):
             available_models = self.get_available_models()
@@ -292,7 +276,7 @@ class LiteLLMClient:
                     f"(valid indices: {-len(available_models)} to {len(available_models) - 1})"
                 )
 
-        raise ValueError(f"Invalid model type: {type(model)}. Expected str or int")
+        raise ValueError(f"Invalid model type: {type(model)}")
 
     def _get_api_key_from_env(self) -> str | None:
         """Get API key from environment variables based on provider."""
@@ -394,25 +378,18 @@ def create_client_from_env() -> LiteLLMClient | None:
         LiteLLMClient instance or None if no configuration found
     """
     # Check for explicit configuration
-    provider = os.getenv(MCP_CONFIG_CONF_LLM_PROVIDER)
-    model = os.getenv(MCP_CONFIG_CONF_LLM_MODEL)
-    api_key = os.getenv(MCP_CONFIG_CONF_API_KEY)
-    base_url = os.getenv(MCP_CONFIG_CONF_LLM_BASE_URL)
-    enable_cache = os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
-    check_provider_endpoint = os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
+    provider = os.getenv("MCP_CONFIG_CONF_LLM_PROVIDER")
+    model = os.getenv("MCP_CONFIG_CONF_LLM_MODEL")
+    api_key = os.getenv("MCP_CONFIG_CONF_API_KEY")
+    base_url = os.getenv("MCP_CONFIG_CONF_LLM_BASE_URL")
 
     if provider or model or api_key or base_url:
         logger.debug(f"Creating client from explicit configuration: provider={provider}, model={model}")
-        if not provider:
-            logger.debug("No provider specified in environment, cannot create client")
-            return None
         return LiteLLMClient(
             provider=provider,
-            model=model or PROVIDER_DEFAULT_MODELS.get(provider, "gpt-4o-mini"),
+            model=model,
             api_key=api_key,
             base_url=base_url,
-            enable_cache=enable_cache,
-            check_provider_endpoint=check_provider_endpoint,
         )
 
     # Auto-detect available providers
@@ -420,14 +397,7 @@ def create_client_from_env() -> LiteLLMClient | None:
     if available:
         provider_name, api_key = available[0]  # Use first available
         logger.debug(f"Auto-detected provider: {provider_name}")
-        default_model = PROVIDER_DEFAULT_MODELS.get(provider_name, "gpt-4o-mini")
-        return LiteLLMClient(
-            provider=provider_name,
-            model=default_model,
-            api_key=api_key,
-            enable_cache=enable_cache,
-            check_provider_endpoint=check_provider_endpoint,
-        )
+        return LiteLLMClient(provider=provider_name, api_key=api_key)
 
     logger.debug("No LiteLLM configuration found")
     return None

@@ -28,40 +28,40 @@ class TestLiteLLMClient:
     @staticmethod
     def test_initialization_with_provider_only() -> None:
         """Test client initialization with provider only (uses default model)."""
-        client = LiteLLMClient(provider="openai", model=PROVIDER_DEFAULT_MODELS["openai"])
+        client = LiteLLMClient(provider="openai")
         assert client.provider == "openai"
-        assert client.model == "gpt-4o-mini"
+        assert client.model == PROVIDER_DEFAULT_MODELS["openai"]
 
     @staticmethod
     def test_initialization_with_model_only() -> None:
-        """Test client initialization with model only (provider defaults to openai)."""
-        client = LiteLLMClient(provider="openai", model="gpt-4")
+        """Test client initialization with model only."""
+        client = LiteLLMClient(model="gpt-4")
         assert client.model == "gpt-4"
 
     @staticmethod
     def test_initialization_defaults() -> None:
         """Test client initialization with no parameters uses fallback."""
-        client = LiteLLMClient(provider="openai", model="gpt-4o-mini")
+        client = LiteLLMClient()
         assert client.model == "gpt-4o-mini"  # Fallback default
 
     @staticmethod
     def test_api_key_from_parameter() -> None:
         """Test that explicit API key is used."""
-        client = LiteLLMClient(provider="openai", model="gpt-4", api_key="explicit-key")
+        client = LiteLLMClient(provider="openai", api_key="explicit-key")
         assert client.api_key == "explicit-key"
 
     @staticmethod
     def test_api_key_from_env_openai() -> None:
         """Test API key detection from environment for OpenAI."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=False):
-            client = LiteLLMClient(provider="openai", model="gpt-4")
+            client = LiteLLMClient(provider="openai")
             assert client.api_key == "test-key"
 
     @staticmethod
     def test_api_key_from_env_anthropic() -> None:
         """Test API key detection from environment for Anthropic."""
         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-claude-key"}, clear=False):
-            client = LiteLLMClient(provider="anthropic", model="claude-3")
+            client = LiteLLMClient(provider="anthropic")
             assert client.api_key == "test-claude-key"
 
     @staticmethod
@@ -77,28 +77,28 @@ class TestLiteLLMClient:
                 },
                 clear=False,
             ):
-                client = LiteLLMClient(provider="gemini", model="gemini-2.0-flash")
+                client = LiteLLMClient(provider="gemini")
             assert client.api_key == "test-google-key"
 
     @staticmethod
     def test_api_key_from_env_zai() -> None:
         """Test API key detection from environment for z.ai."""
         with patch.dict(os.environ, {"ZAI_API_KEY": "test-zai-key"}, clear=False):
-            client = LiteLLMClient(provider="zai", model="glm-4")
+            client = LiteLLMClient(provider="zai")
             assert client.api_key == "test-zai-key"
 
     @staticmethod
     def test_api_key_from_env_multiple_vars() -> None:
         """Test API key detection when multiple env vars are possible."""
         with patch.dict(os.environ, {"GEMINI_API_KEY": "gemini-key"}, clear=False):
-            client = LiteLLMClient(provider="gemini", model="gemini-2.0-flash")
+            client = LiteLLMClient(provider="gemini")
             assert client.api_key == "gemini-key"
 
     @staticmethod
     def test_api_key_explicit_overrides_env() -> None:
         """Test that explicit API key takes precedence over environment."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "env-key"}, clear=False):
-            client = LiteLLMClient(provider="openai", model="gpt-4", api_key="explicit-key")
+            client = LiteLLMClient(provider="openai", api_key="explicit-key")
             assert client.api_key == "explicit-key"
 
     @staticmethod
@@ -125,8 +125,8 @@ class TestLiteLLMClient:
     @staticmethod
     def test_validate_config_no_model() -> None:
         """Test config validation fails without model."""
-        client = LiteLLMClient(provider="openai", model="gpt-4", api_key="test-key")
-        client.model = ""  # Force no model
+        client = LiteLLMClient(provider="openai", api_key="test-key")
+        client.model = None  # Force no model
         assert client.validate_config() is False
 
     @staticmethod
@@ -145,7 +145,7 @@ class TestLiteLLMClient:
         assert result == "Generated text"
         mock_completion.assert_called_once()
         call_kwargs = mock_completion.call_args[1]
-        assert call_kwargs["model"] == "openai/gpt-4"
+        assert call_kwargs["model"] == "gpt-4"
         assert len(call_kwargs["messages"]) == 1
         assert call_kwargs["messages"][0]["role"] == "user"
         assert call_kwargs["messages"][0]["content"] == "Test prompt"
@@ -314,7 +314,7 @@ class TestCreateClientFromEnv:
         with patch.dict(
             os.environ,
             {
-                "MCP_CONFIG_CONF_LLM_PROVIDER": "openai",
+                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
                 "MCP_CONFIG_CONF_LLM_MODEL": "gpt-4",
                 "MCP_CONFIG_CONF_API_KEY": "test-key",
             },
@@ -348,7 +348,7 @@ class TestCreateClientFromEnv:
         with patch.dict(
             os.environ,
             {
-                "MCP_CONFIG_CONF_LLM_PROVIDER": "openai",
+                "MCP_CONFIG_CONF_LLM_PROVIDER_TYPE": "openai",
                 "MCP_CONFIG_CONF_LLM_BASE_URL": "https://custom.api.com/v1",
                 "MCP_CONFIG_CONF_API_KEY": "test-key",
             },

@@ -1,93 +1,78 @@
 {
-  "servers": {
-    "serena": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "ide",
-        "--project-from-cwd"
-      ]
-    },
-    "chunkhound": {
-      "type": "stdio",
-      "command": "uv",
-      "args": [
-        "run",
-        "--env-file",
-        ".env",
-        "chunkhound",
-        "mcp",
-      ]
-    },
-    "fetch": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "mcp-server-fetch"
-      ]
-    },
-    "gh_grep": {
-      "type": "http",
-      "url": "https://mcp.grep.app"
-    },
-    "upstash-context7": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp"
-      ]
-    },
-    "memorygraph": {
-      "type": "stdio",
-      "command": "uv",
-      "args": [
-        "run",
-        "memorygraph",
-        "--profile",
-        "extended"
-      ],
-      "env": {
-        "PYTHONIOENCODING": "utf-8"
-      }
-    },
-    "sequential-thinking": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking@latest"
-      ]
-    },
-    "desktop-commander": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@wonderwhy-er/desktop-commander@latest",
-        "--no-onboarding"
-      ]
-    },
-    "beads": {
-      "type": "stdio",
-      "command": "uv",
-      "args": [
-        "run",
-        "beads-mcp"
-      ]
-    },
-    "uv-mcp": {
-      "type": "stdio",
-      "command": "uv",
-      "args": [
-        "run",
-        "uv-mcp"
-      ]
+    "servers": {
+        "mcpadvisor": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@xiaohui-wang/mcpadvisor@latest"
+            ]
+        },
+        "fetch": {
+            "args": [
+                "mcp-fetch-server"
+            ],
+            "command": "npx",
+            "env": {
+                "DEFAULT_LIMIT": "50000"
+            }
+        },
+        "gh_grep": {
+            "type": "http",
+            "url": "https://mcp.grep.app"
+        },
+        "mcp-compass": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@liuyoshio/mcp-compass@latest"
+            ]
+        },
+        "upstash-context7": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp"
+            ]
+        },
+        "memorygraph": {
+            "command": "uvx",
+            "type": "stdio",
+            "args": [
+                "--refresh",
+                "--from",
+                "https://github.com/gregorydickson/memory-graph.git",
+                "--with",
+                "memorygraphMCP[ladybugdb]",
+                "--",
+                "memorygraph",
+                "--profile",
+                "extended"
+            ],
+            "env": {
+                "PYTHONIOENCODING": "utf-8"
+            }
+        },
+        "sequential-thinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking@latest"
+            ]
+        },
+        "desktop-commander": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@wonderwhy-er/desktop-commander@latest",
+                "--no-onboarding"
+            ]
+        },
+        "beads": {
+            "command": "uvx",
+            "args": [
+                "beads-mcp"
+            ],
+            "type": "stdio"
+        }
     }
-  }
 }
