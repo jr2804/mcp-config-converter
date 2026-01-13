@@ -1,3 +1,5 @@
+# ruff: noqa: S101  # asserts are intended in tests
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -10,7 +12,7 @@ TEST_DATA_DIR = Path(__file__).parent / "data"
 
 
 @pytest.fixture
-def mock_llm_client():
+def mock_llm_client() -> MagicMock:
     client = MagicMock()
     # Mock the generate method directly since ConfigTransformer calls it
     client.generate.return_value = '{"servers": {"mock": {}}}'
@@ -19,7 +21,7 @@ def mock_llm_client():
     return client
 
 
-def test_convert_pseudo_structured_text(mock_llm_client) -> None:
+def test_convert_pseudo_structured_text(mock_llm_client: MagicMock) -> None:
     """Test converting a pseudo-structured text file."""
     input_file = TEST_DATA_DIR / "config_pseudo.txt"
     if not input_file.exists():
@@ -37,8 +39,6 @@ def test_convert_pseudo_structured_text(mock_llm_client) -> None:
 
     # Verify result is what our mock returned (cleaned)
     # The output is pretty printed now, so we parse it to verify structure
-    import json
-
     parsed_result = json.loads(result)
     assert parsed_result == {"servers": {"mock": {}}}
 
@@ -52,7 +52,7 @@ def test_convert_pseudo_structured_text(mock_llm_client) -> None:
     assert input_content in prompt_arg
 
 
-def test_convert_prose_text(mock_llm_client) -> None:
+def test_convert_prose_text(mock_llm_client: MagicMock) -> None:
     """Test converting a prose text file."""
     input_file = TEST_DATA_DIR / "config_prose.txt"
     if not input_file.exists():
@@ -64,8 +64,6 @@ def test_convert_prose_text(mock_llm_client) -> None:
     transformer = ConfigTransformer(llm_client=mock_llm_client, encoding=EncodingFormat.TOON.value)
 
     result = transformer.transform(input_content, "vscode")
-
-    import json
 
     parsed_result = json.loads(result)
     assert parsed_result == {"servers": {"mock": {}}}

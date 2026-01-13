@@ -1,5 +1,7 @@
+# ruff: noqa: S101  # asserts are intended in tests
 import json
 
+from mcp_config_converter.cli.constants import convert_from_json
 from mcp_config_converter.types import ConfigFormat, ProviderConfig
 from mcp_config_converter.utils import convert_format, determine_config_format, parse_config_string
 
@@ -72,12 +74,9 @@ def test_convert_format_json_to_yaml_to_json_roundtrip() -> None:
     }
 
     # Convert to JSON string
-    json_str = json.dumps(original_json_data, indent=2)
+    json.dumps(original_json_data, indent=2)
 
     # Since no providers expect YAML, we'll use direct conversion utilities
-    # Import the conversion functions from cli.constants
-    from mcp_config_converter.cli.constants import convert_from_json, convert_to_json
-
     # Convert JSON to YAML using direct conversion
     yaml_result = convert_from_json(original_json_data, "yaml")
 

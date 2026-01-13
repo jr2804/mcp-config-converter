@@ -1,11 +1,15 @@
 """Utility functions for MCP Config Converter."""
 
 import contextlib
+import json
+import logging
 import os
 import tempfile
+import tomllib
 from pathlib import Path
 from typing import Any
 
+import ison_parser
 import mistune
 import orjson
 import remarshal
@@ -17,6 +21,111 @@ from mistune.renderers.markdown import MarkdownRenderer
 from rich.prompt import Confirm, Prompt
 
 from mcp_config_converter.types import PROVIDER_OUTPUT_FORMAT, ConfigFormat, ProviderConfig
+
+
+def convert_to_json(content: str, format_type: ConfigFormat) -> dict | list:
+    """Convert content from various formats to JSON (Python dict).
+
+    Supports JSON, YAML, TOML (read-only via tomllib), TOON, ISON and TEXT.
+    """
+    result: dict | list | None = None
+
+    if format_type == ConfigFormat.JSON:
+        result = json.loads(content)
+    elif format_type == ConfigFormat.YAML:
+        try:
+            result = yaml.safe_load(content) or {}
+        except yaml.YAMLError as e:
+            raise ValueError(f"YAML parsing error: {str(e)}")
+    elif format_type == ConfigFormat.TOML:
+        try:
+            result = tomllib.loads(content)
+        except Exception as e:
+            raise ValueError(f"TOML parsing error: {str(e)}")
+    elif format_type == ConfigFormat.TOON:
+        try:
+            decoded = toon_format.decode(content)
+            if isinstance(decoded, (dict, list)):
+                result = decoded
+            # If decode returned a plain string, try to parse it as JSON
+            elif isinstance(decoded, str):
+                result = convert_to_json(decoded, ConfigFormat.JSON)
+            else:
+                raise ValueError("TOON decoding did not return a container")
+
+        except Exception as e:
+            raise ValueError(f"TOON decoding error: {str(e)}")
+
+    elif format_type == ConfigFormat.ISON:
+        try:
+            # ison_parser API varies; prefer loads -> object -> to_dict when available
+            if hasattr(ison_parser, "loads"):
+                obj = ison_parser.loads(content)
+                # some implementations return an object with to_dict
+                if hasattr(obj, "to_dict"):
+                    result = obj.to_dict()
+                # some return plain dict/list
+                elif isinstance(obj, (dict, list)):
+                    result = obj
+                # if string, try parsing as JSON
+                elif isinstance(obj, str):
+                    result = convert_to_json(obj, ConfigFormat.JSON)
+            # fallback: try parse/parse_string variants
+            elif hasattr(ison_parser, "parse"):
+                obj = ison_parser.parse(content)
+                if isinstance(obj, (dict, list)):
+                    result = obj
+            if result is None:
+                raise ValueError("ISON parsing did not produce a container")
+        except Exception as e:
+            raise ValueError(f"ISON decoding error: {str(e)}")
+    elif format_type == ConfigFormat.TEXT:
+        raise ValueError("TEXT format conversion to JSON is not supported. TEXT is a raw text format.")
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
+
+    return result
+
+
+def convert_from_json(data: dict, format_type: ConfigFormat) -> str:
+    """Convert Python dict to various formats.
+
+    Supports JSON, YAML, TOON and ISON. TOML writing not supported (tomllib is read-only).
+    """
+    result: str | None = None
+
+    if format_type == ConfigFormat.JSON:
+        result = json.dumps(data, indent=2)
+    elif format_type == ConfigFormat.YAML:
+        result = yaml.dump(data, sort_keys=False, indent=2)
+    elif format_type == ConfigFormat.TOML:
+        raise ValueError("TOML writing is not supported. tomllib is read-only.")
+    elif format_type == ConfigFormat.TOON:
+        try:
+            if hasattr(toon_format, "encode"):
+                result = toon_format.encode(data)
+            elif hasattr(toon_format, "dumps"):
+                result = toon_format.dumps(data)
+            else:
+                raise ValueError("toon_format does not expose an encode/dumps API")
+        except Exception as e:
+            raise ValueError(f"TOON encoding error: {str(e)}")
+    elif format_type == ConfigFormat.ISON:
+        try:
+            if hasattr(ison_parser, "dumps"):
+                result = ison_parser.dumps(data)
+            elif hasattr(ison_parser, "to_string"):
+                result = ison_parser.to_string(data)
+            elif hasattr(ison_parser, "serialize"):
+                result = ison_parser.serialize(data)
+            else:
+                raise ValueError("ison_parser does not expose a known serialization API")
+        except Exception as e:
+            raise ValueError(f"ISON encoding error: {str(e)}")
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
+
+    return result
 
 
 def determine_config_format(cfg: str) -> ConfigFormat:
@@ -308,9 +417,8 @@ def convert_format(data: str, target_config: ProviderConfig | str) -> str:
 
                 try:
                     return format_to_text(parsed_data, target_fmt_str, compact=False, escape=False, indent=indent, sort_keys=False)
-                except Exception:
-                    # If formatting fails, fall back to original data or continue to remarshal fallback (if we kept it)
-                    pass
+                except Exception as e:
+                    logging.debug("jsonfmt formatting failed: %s", e)
 
         # Fallback legacy path (remarshal)
         if current_format != expected_format:

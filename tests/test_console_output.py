@@ -1,3 +1,4 @@
+# ruff: noqa: S101  # asserts are intended in tests
 from unittest.mock import patch
 
 from typer.testing import CliRunner

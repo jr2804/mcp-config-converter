@@ -1,3 +1,5 @@
+# ruff: noqa: S101  # asserts are intended in tests
+import ison_parser
 import pytest
 
 from mcp_config_converter.prompts.conversion import build_conversion_prompt
@@ -6,17 +8,10 @@ from mcp_config_converter.types import EncodingFormat
 
 def test_ison_encoding_integration() -> None:
     """Test that build_conversion_prompt uses ISON encoding when requested."""
-    input_config = '{"key": "value"}'
-
-    # We mock ison_parser to avoid dependency on actual library behavior details
-    # (though we verified it exists).
-    # However, since we installed it, we can also test with the real one if we want integration test.
-    # Let's try integration test first since we have the lib.
-
-    try:
-        import ison_parser
-    except ImportError:
+    if ison_parser is None:
         pytest.skip("ison_parser not installed")
+
+    input_config = '{"key": "value"}'
 
     system_prompt, formatted_prompt = build_conversion_prompt(target_provider="claude", input_config=input_config, encoding=EncodingFormat.ISON.value)
 
