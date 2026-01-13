@@ -88,10 +88,10 @@ class LiteLLMClient:
         base_url: str | None = None,
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        enable_cache: bool = False,
+        enable_cache: bool | None = None,
         cache_type: str = "disk",
         cache_dir: str | None = None,
-        check_provider_endpoint: bool = False,
+        check_provider_endpoint: bool | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.25,
         **kwargs: Any,
@@ -105,10 +105,10 @@ class LiteLLMClient:
             base_url: Custom base URL for provider
             max_retries: Maximum number of retry attempts for rate limits
             retry_delay: Initial delay between retries (exponential backoff)
-            enable_cache: Enable caching for completion calls
+            enable_cache: Enable caching for completion calls (None checks env var)
             cache_type: Type of cache to use (default: "disk")
             cache_dir: Directory for disk cache (optional)
-            check_provider_endpoint: Query provider endpoints for accurate model lists
+            check_provider_endpoint: Query provider endpoints for accurate model lists (None checks env var)
             max_tokens: Maximum tokens to generate (default set in generate method)
             temperature: Default temperature for generation (may not be supported by all providers)
             **kwargs: Additional provider-specific arguments
@@ -120,8 +120,18 @@ class LiteLLMClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.add_model_kwargs = kwargs
-        self.enable_cache = enable_cache or os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
-        self.check_provider_endpoint = check_provider_endpoint or os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
+
+        # Handle enable_cache: None means check env var, otherwise use explicit value
+        if enable_cache is None:
+            self.enable_cache = os.getenv(MCP_CONFIG_CONF_LLM_CACHE_ENABLED, "false").lower() == "true"
+        else:
+            self.enable_cache = enable_cache
+
+        # Handle check_provider_endpoint: None means check env var, otherwise use explicit value
+        if check_provider_endpoint is None:
+            self.check_provider_endpoint = os.getenv(MCP_CONFIG_CONF_LLM_CHECK_PROVIDER_ENDPOINT, "false").lower() == "true"
+        else:
+            self.check_provider_endpoint = check_provider_endpoint
 
         # Get API key (provided or from environment)
         self.api_key = api_key or self._get_api_key_from_env()
@@ -167,13 +177,15 @@ class LiteLLMClient:
 
         # Prepare completion parameters - combine mandatory client params with any overrides
         completion_kwargs: dict[str, Any] = self.add_model_kwargs.copy()
-        completion_kwargs.update({
-            "model": f"{self.provider}/{self.model}",
-            "messages": messages,
-            "max_tokens": self.max_tokens,
-            "drop_params": True,
-            "temperature": self.temperature,
-        })
+        completion_kwargs.update(
+            {
+                "model": f"{self.provider}/{self.model}",
+                "messages": messages,
+                "max_tokens": self.max_tokens,
+                "drop_params": True,
+                "temperature": self.temperature,
+            }
+        )
 
         # do not pass None to completion function
         if self.api_key:
