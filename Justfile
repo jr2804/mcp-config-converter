@@ -34,6 +34,10 @@ build:
     @uv run scripts/remove_version.py
     uv build --clear --refresh .
 
+# Run tests
+test:
+    @cls
+    @uv run pytest --cov=mcp_config_converter --cov-report=term-missing tests --tb=short
 
 # LLM overview
 check-llm:

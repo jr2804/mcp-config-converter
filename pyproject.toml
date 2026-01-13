@@ -41,6 +41,7 @@ dev = [
     "beads-mcp>=0.43.0",
     "chunkhound>=4.0.1",
     "uv-mcp>=0.3.0",
+    "pytest-cov>=7.0.0",
 ]
 
 # ---- Formatting/Linter/Type-Checking ----
