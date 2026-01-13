@@ -33,8 +33,10 @@ class ConfigFormat(StrEnum):
     JSON = "json"
     YAML = "yaml"
     TOML = "toml"
-    TOON = "toon"
     TEXT = "text"
+    # Special formats for encoding; not actual file formats for output
+    TOON = "toon"
+    ISON = "ison"
 
 
 class EncodingFormat(StrEnum):
