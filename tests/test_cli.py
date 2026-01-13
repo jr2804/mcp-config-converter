@@ -27,7 +27,6 @@ def _parse_test_llm_providers(input_str: str) -> list[tuple[str, str]]:
     - Single: "openrouter/subprovider/model"
     - List (comma): "ollama/gemma3, deepseek/deepseek-chat"
     - List (semicolon): "ollama/gemma3; deepseek/deepseek-chat"
-    - List (colon): "ollama/gemma3: deepseek/deepseek-chat"
     - Mixed separators: "ollama/gemma3; deepseek/deepseek-chat,sambanova/model"
 
     Args:
@@ -41,23 +40,23 @@ def _parse_test_llm_providers(input_str: str) -> list[tuple[str, str]]:
     """
     configs = []
 
-    for part in re.split(r"[,;:]", input_str.strip()):
-        part = part.strip()
-        if not part:
+    for part in re.split(r"[,;]", input_str.strip()):
+        p = part.strip()
+        if not p:
             raise ValueError(f"Empty provider specification in: {input_str}")
 
-        if "/" in part:
-            parts = part.split("/", 1)
+        if "/" in p:
+            parts = p.split("/", 1)
             provider = parts[0].strip()
             model = parts[1].strip()
         else:
-            provider = part.strip()
+            provider = p
             model = "-1"
 
         if not provider:
-            raise ValueError(f"Missing provider in specification: {part}")
+            raise ValueError(f"Missing provider in specification: {p}")
         if not model:
-            raise ValueError(f"Missing model in specification: {part}")
+            raise ValueError(f"Missing model in specification: {p}")
 
         configs.append((provider, model))
 

@@ -5,6 +5,7 @@ import typer
 from mcp_config_converter._version import version as _version
 from mcp_config_converter.cli import console
 from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, EnvVarName, RichHelpPanel
+from mcp_config_converter.types import EncodingFormat
 
 
 def version_callback(value: bool = True) -> None:
@@ -21,9 +22,9 @@ ConfigFileArg = typer.Argument(None, help="Configuration file to validate")
 # Option definitions
 OutputOpt = typer.Option(None, "--output", "-o", help="Output file path")
 ProviderOpt = typer.Option(None, "--provider", "-p", help=f"Target provider format ({', '.join(SUPPORTED_PROVIDERS)})")
-InteractiveOpt = typer.Option(False, "--interactive", "-i", help="Run in interactive mode")
+
 OutputActionOpt = typer.Option(
-    "overwrite",
+    "update",
     "--output-action",
     "-a",
     help=f"Action when output file exists: {', '.join(VALID_OUTPUT_ACTIONS)}",
@@ -64,6 +65,7 @@ LlmApiKeyOpt = typer.Option(
 LlmModelOpt = typer.Option(
     None,
     "--llm-model",
+    "-lm",
     envvar=EnvVarName.LLM_MODEL,
     help="Model name or index (e.g., 'gpt-4o-mini' or 0 for first model, -1 for last)",
     rich_help_panel=RichHelpPanel.LLM,
@@ -88,6 +90,13 @@ CacheDirOpt = typer.Option(
     help="Custom directory for disk cache (default: LiteLLM's default)",
     rich_help_panel=RichHelpPanel.LLM,
 )
+CheckProviderEndpointOpt = typer.Option(
+    False,
+    "--check-provider-endpoint",
+    help="Query provider endpoints for accurate model lists (slower but more accurate)",
+    envvar=EnvVarName.LLM_CHECK_PROVIDER_ENDPOINT,
+    rich_help_panel=RichHelpPanel.LLM,
+)
 
 # Conversion-specific options
 InputContentOpt = typer.Option(
@@ -96,8 +105,10 @@ InputContentOpt = typer.Option(
     "-c",
     help="Raw input configuration content (alternative to input file)",
 )
-EncodeToonOpt = typer.Option(
-    True,
-    "--encode-toon/--no-encode-toon",
-    help="Encode JSON input to TOON format for LLM processing",
+EncodingOpt = typer.Option(
+    EncodingFormat.TOON.value,
+    "--encoding",
+    "-e",
+    help=f"Input encoding format for LLM processing: {', '.join([e.value for e in EncodingFormat])}",
+    case_sensitive=False,
 )

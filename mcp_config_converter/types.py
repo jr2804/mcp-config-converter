@@ -4,7 +4,8 @@ from enum import StrEnum
 class OutputAction(StrEnum):
     OVERWRITE = "overwrite"
     SKIP = "skip"
-    MERGE = "merge"
+    REPLACE = "replace"
+    UPDATE = "update"
 
 
 class ProviderConfig(StrEnum):
@@ -30,8 +31,10 @@ class ConfigFormat(StrEnum):
     JSON = "json"
     YAML = "yaml"
     TOML = "toml"
-    TOON = "toon"
     TEXT = "text"
+    # Special formats for encoding; not actual file formats for output
+    TOON = "toon"
+    ISON = "ison"
 
 
 # Expected output formats per provider (if known)

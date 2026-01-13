@@ -5,19 +5,44 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, get_default_output_path
+from mcp_config_converter.cli.constants import (
+    SUPPORTED_PROVIDERS,
+    VALID_OUTPUT_ACTIONS,
+    convert_from_json,
+    convert_to_json,
+    get_default_output_path,
+)
 from mcp_config_converter.cli.utils import (
-    CliPrompt,
     console,
     validate_format_choice,
-    validate_output_action,
 )
 from mcp_config_converter.llm import LiteLLMClient, create_client_from_env
+from mcp_config_converter.llm.client import PROVIDER_DEFAULT_MODELS
 from mcp_config_converter.transformers import ConfigTransformer
+from mcp_config_converter.types import OutputAction
+from mcp_config_converter.utils import determine_config_format
+
+
+def _parse_model_arg(model_arg: str | None) -> str | int | None:
+    """Parse model argument, converting numeric strings to integers.
+
+    Args:
+        model_arg: Model argument from CLI (string or None)
+
+    Returns:
+        Integer if the string represents a valid integer, otherwise the original string or None
+    """
+    if model_arg is None:
+        return None
+
+    # Try to parse as integer
+    try:
+        return int(model_arg)
+    except ValueError:
+        # Not a number, return as string
+        return model_arg
 
 
 @app.command(name="convert")
@@ -26,10 +51,9 @@ def convert(
     input_file: Path | None = arguments.InputFileArg,
     output: Path | None = arguments.OutputOpt,
     provider: str | None = arguments.ProviderOpt,
-    interactive: bool = arguments.InteractiveOpt,
     output_action: str = arguments.OutputActionOpt,
     input_content: str | None = arguments.InputContentOpt,
-    encode_toon: bool = arguments.EncodeToonOpt,
+    encoding: str = arguments.EncodingOpt,
     llm_base_url: str | None = arguments.LlmBaseUrlOpt,
     llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
@@ -46,15 +70,16 @@ def convert(
         input_file: Input file path
         output: Output file path
         provider: Target provider format (claude, gemini, vscode, opencode)
-        interactive: Run in interactive mode
         output_action: Action when output file exists
         input_content: Raw input configuration content
-        encode_toon: Whether to encode JSON input to TOON format
+        encoding: Input encoding format for LLM processing (none, toon, ison)
         llm_base_url: Custom base URL for LLM provider
         llm_provider: LLM provider type
+
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
         cache_dir: Custom directory for disk cache
+        enable_cache: Enable disk caching for LLM API calls
         verbose: Verbose output
         version: Show version and exit
     """
@@ -73,29 +98,15 @@ def convert(
             actual_input_file = input_file
             input_content = None
 
-        if interactive:
-            console.print(Panel.fit("Interactive Conversion Mode", style="bold blue"))
-
-            if not provider:
-                provider = CliPrompt.select_format()
-
-            if not output:
-                suggested_output = get_default_output_path(provider)[0] if provider else None
-                output = Path(Prompt.ask("Enter output file path", default=str(suggested_output)))
-
-            if not Confirm.ask(
-                f"\nConvert [cyan]{input_file}[/cyan] → [green]{output}[/green]",
-                default=True,
-            ):
-                console.print("[yellow]Conversion cancelled.[/yellow]")
-                raise typer.Exit(0)
-
         if provider and not validate_format_choice(provider):
             valid_formats = ", ".join(SUPPORTED_PROVIDERS)
             console.print(f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: {valid_formats}")
             raise typer.Exit(1)
 
-        if not validate_output_action(output_action):
+        # Convert output_action to OutputAction enum
+        try:
+            output_action_enum = OutputAction(output_action.lower())
+        except ValueError:
             valid_actions = ", ".join(VALID_OUTPUT_ACTIONS)
             console.print(f"[red]Error:[/red] Invalid output action. Choose from: {valid_actions}")
             raise typer.Exit(1)
@@ -109,23 +120,24 @@ def convert(
 
         try:
             # Create LiteLLM client instance
-            llm_client_kwargs = {}
-            if llm_base_url:
-                llm_client_kwargs["base_url"] = llm_base_url
-            if llm_api_key:
-                llm_client_kwargs["api_key"] = llm_api_key
-            if llm_model:
-                llm_client_kwargs["model"] = llm_model
             if llm_provider:
-                llm_client_kwargs["provider"] = llm_provider
-            if cache_dir:
-                llm_client_kwargs["cache_dir"] = cache_dir
-            if enable_cache:
-                llm_client_kwargs["enable_cache"] = enable_cache
+                # Explicit provider specified - create client with provided/default parameters
+                # Parse model argument - convert numeric strings to integers for index-based selection
+                parsed_model = _parse_model_arg(llm_model)
+                model = parsed_model if parsed_model is not None else PROVIDER_DEFAULT_MODELS.get(llm_provider, "gpt-4o-mini")
 
-            if llm_client_kwargs:
-                # Create with explicit parameters
-                llm_client = LiteLLMClient(**llm_client_kwargs)
+                # Build optional kwargs
+                optional_kwargs = {}
+                if llm_api_key:
+                    optional_kwargs["api_key"] = llm_api_key
+                if llm_base_url:
+                    optional_kwargs["base_url"] = llm_base_url
+                if cache_dir:
+                    optional_kwargs["cache_dir"] = cache_dir
+                if enable_cache:
+                    optional_kwargs["enable_cache"] = enable_cache
+
+                llm_client = LiteLLMClient(provider=llm_provider, model=model, **optional_kwargs)
             else:
                 # Auto-detect from environment
                 llm_client = create_client_from_env()
@@ -134,7 +146,7 @@ def convert(
                     raise typer.Exit(1)
 
             # Create transformer instance
-            transformer = ConfigTransformer(llm_client=llm_client, encode_toon=encode_toon)
+            transformer = ConfigTransformer(llm_client=llm_client, encoding=encoding)
 
             if provider:
                 # Perform conversion
@@ -142,18 +154,46 @@ def convert(
 
                 # Handle output file actions
                 if output and output.exists():
-                    match output_action.lower():
-                        case "skip":
+                    # Read existing file content to determine format
+                    existing_content = output.read_text(encoding="utf-8")
+                    file_format = determine_config_format(existing_content)
+
+                    # Map ConfigFormat enum to string format for our conversion functions
+                    format_map = {"JSON": "json", "YAML": "yaml", "TOML": "toml"}
+                    format_str = format_map.get(file_format.name, "json")
+
+                    match output_action_enum:
+                        case OutputAction.SKIP:
                             console.print(f"[yellow]Skipping conversion: output file {output} already exists (action: skip)[/yellow]")
                             return
-                        case "merge":
-                            console.print(f"[blue]Merging with existing file: {output} (action: merge)[/blue]")
+                        case OutputAction.REPLACE:
+                            console.print(f"[blue]Replacing MCP server root node in existing file: {output} (action: replace)[/blue]")
 
-                            existing_data = json.loads(output.read_text(encoding="utf-8"))
+                            # Convert existing file to JSON format for processing
+                            existing_data = convert_to_json(existing_content, format_str)
                             new_data = json.loads(result)
+
+                            # Replace the entire MCP server root node
                             existing_data.update(new_data)
-                            result = json.dumps(existing_data, indent=2)
-                        case _:
+                            result = convert_from_json(existing_data, format_str)
+                        case OutputAction.UPDATE:
+                            console.print(f"[blue]Updating entries below MCP server root node: {output} (action: update)[/blue]")
+
+                            # Convert existing file to JSON format for processing
+                            existing_data = convert_to_json(existing_content, format_str)
+                            new_data = json.loads(result)
+
+                            # Update only entries below the MCP server root node (granular merge)
+                            for key, value in new_data.items():
+                                if key in existing_data and isinstance(existing_data[key], dict) and isinstance(value, dict):
+                                    # Deep merge for nested objects
+                                    existing_data[key].update(value)
+                                else:
+                                    # Replace or add new entries
+                                    existing_data[key] = value
+
+                            result = convert_from_json(existing_data, format_str)
+                        case OutputAction.OVERWRITE:
                             console.print(f"[blue]Will overwrite existing file: {output} (action: overwrite)[/blue]")
 
                 # Write output file if specified
@@ -163,6 +203,8 @@ def convert(
 
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Provider: [cyan]{llm_client.provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Model: [cyan]{llm_client.model}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
                     if verbose:
                         console.print("\n[bold blue]Converted Configuration:[/bold blue]")
@@ -170,6 +212,8 @@ def convert(
                 else:
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{actual_input_file or 'raw input'}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Provider: [cyan]{llm_client.provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Model: [cyan]{llm_client.model}[/cyan]")
                     console.print("[green]SUCCESS[/green] Output: [green]No output file specified (result generated)[/green]")
                     console.print("\n[bold blue]Converted Configuration:[/bold blue]")
                     console.print(result)

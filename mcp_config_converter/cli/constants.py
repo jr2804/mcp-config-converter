@@ -90,6 +90,5 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
     },
 )
 
-
 SUPPORTED_PROVIDERS: set[str] = {provider.value for provider in ProviderConfig}
 VALID_OUTPUT_ACTIONS: set[str] = {action.value for action in OutputAction}

@@ -22,12 +22,15 @@ This project was created to address the challenges developers face when working 
 - **Configuration Complexity**: MCP server configurations can include commands, arguments, environment variables, and metadata that need to be carefully
   preserved during conversion
 
-- **Lack of Standardization**: While MCP itself is standardized, the configuration formats are not, leading to compatibility issues
+- **Lack of Standardization**: While MCP itself is standardized, configuration formats are not, leading to compatibility issues
 
-### The Solution
+- **Subjective Tool Preference**: Developers and teams have varying preferences for coding assistants and CLIs. This tool is intentionally **tool-agnostic** and works seamlessly across all major LLM platforms and coding environments, including when accessed via different CLIs.
+
+**What This Tool Enables**
 
 `mcp-config-converter` provides a unified tool to:
 
+**Core Capabilities:**
 1. **Parse Multiple Formats**: Read MCP configurations from JSON, YAML, and TOML files
 
 1. **Convert Between Providers**: Transform configurations between different LLM provider formats (Claude, Gemini, VS Code, OpenCode)
@@ -38,6 +41,12 @@ This project was created to address the challenges developers face when working 
 
 1. **Streamline Workflows**: Enable easy sharing and reuse of MCP server configurations across different platforms
 
+**Practical Use Cases:**
+- **Cross-platform Development**: Develop MCP servers that work across multiple LLM platforms
+- **Configuration Sharing**: Share MCP server setups with teams using different tools
+- **Migration**: Move MCP configurations when switching between LLM providers
+- **Standardization**: Maintain a single source of truth for MCP configurations in your preferred format
+
 ## Key Features
 
 - 🔄 **Multi-format Support**: Parse and generate JSON, YAML, and TOML configurations
@@ -45,7 +54,9 @@ This project was created to address the challenges developers face when working 
 - 🎯 **Provider-specific Formatting**: Output configurations optimized for Claude, Gemini, VS Code, OpenCode, and AI-assisted conversion with multiple LLM
   providers (OpenAI, Ollama, DeepSeek, SambaNova, Perplexity, OpenRouter)
 
-- ✅ **Validation**: Validate MCP configurations against the protocol schema
+- 🔀 **Intelligent File Merging**: Format-agnostic merge options (update, replace, overwrite, skip) for JSON, YAML, and TOML configurations
+
+- ✅ **Validation**: Validate MCP configurations against to protocol schema
 
 - 🎨 **Rich CLI Experience**: User-friendly command-line interface with colorful output powered by Rich and Typer
 
@@ -58,26 +69,34 @@ This project was created to address the challenges developers face when working 
 This project uses **LiteLLM** as a unified interface to support 100+ LLM providers. The LiteLLM integration provides:
 
 - **Single Unified API**: One consistent interface for all LLM providers
+
 - **Automatic Retry Logic**: Built-in retry mechanism with exponential backoff for rate limits and service unavailability
+
 - **Smart Model Mapping**: Friendly model names automatically mapped to provider-specific identifiers
+
 - **Flexible Configuration**: Support for API keys via environment variables or direct parameters
 
 ### Supported Providers & Models
 
-The tool supports all major LLM providers through LiteLLM:
+The tool supports all major LLM providers through LiteLLM. When no model is specified, the tool uses the following hard-coded default model:
 
-| Provider | Example Models | Environment Variable |
-| ---------- | ---------------- | --------------------- |
-| **OpenAI** | `gpt-4`, `gpt-4o`, `gpt-3.5-turbo` | `OPENAI_API_KEY` |
-| **Anthropic (Claude)** | `claude-3-5-sonnet-20241022`, `claude-3-opus-20240229` | `ANTHROPIC_API_KEY` |
-| **Google Gemini** | `gemini-2.5-flash`, `gemini-1.5-pro` | `GOOGLE_API_KEY`, `GEMINI_API_KEY` |
-| **Ollama** | `ollama/llama2`, `ollama/mistral` | None (local) |
-| **Mistral** | `mistral-large`, `mistral-medium` | `MISTRAL_API_KEY` |
-| **DeepSeek** | `deepseek-chat`, `deepseek-coder` | `DEEPSEEK_API_KEY` |
-| **Perplexity** | `sonar`, `sonar-pro` | `PERPLEXITY_API_KEY` |
-| **OpenRouter** | `openai/gpt-4` | `OPENROUTER_API_KEY` |
-| **SambaNova** | Various models | `SAMBANOVA_API_KEY` |
-| **z.ai** | `zai/glm-4.7` | `ZAI_API_KEY` |
+| Provider | Environment Variable | Default Model |
+| ---------- | ---------------- | ------------- |
+| **OpenAI** | `OPENAI_API_KEY` | `gpt-4o-mini` |
+| **Anthropic (Claude)** | `ANTHROPIC_API_KEY` | `claude-3-5-sonnet-20241022` |
+| **Google Gemini** | `GOOGLE_API_KEY`, `GEMINI_API_KEY` | `gemini-3-flash-preview` |
+| **Vertex AI** | `GOOGLE_APPLICATION_CREDENTIALS` | `gemini-2.0-flash-exp` |
+| **Ollama** | None (local) | First available model |
+| **Mistral** | `MISTRAL_API_KEY` | `mistral-medium-latest` |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | `deepseek-chat` |
+| **OpenRouter** | `OPENROUTER_API_KEY` | `xiaomi/mimo-v2-flash:free` |
+| **Perplexity** | `PERPLEXITY_API_KEY` | `sonar` |
+| **Poe** | `POE_API_KEY` | `gemini-2.5-flash-lite` |
+| **SambaNova** | `SAMBANOVA_API_KEY` | `Meta-Llama-3.1-8B-Instruct` |
+| **z.ai** | `ZAI_API_KEY` | Various models |
+| **Cohere** | `COHERE_API_KEY` | `command` |
+
+> **Note**: The providers listed above are those that have been tested and integrated with this tool. Other providers are available via [LiteLLM](https://www.litellm.ai/)'s great unified interface. The default model listed above is the hard-coded fallback used when no other model is specified.
 
 ### Using LiteLLM Provider
 
@@ -89,6 +108,7 @@ uv run mcp-config-converter convert config.yaml --preferred-provider auto --outp
 
 # Use specific provider
 uv run mcp-config-converter convert config.yaml --preferred-provider openai --output output.json
+
 ```
 
 **Provider Cost Priorities (cheapest to most expensive):**
@@ -96,7 +116,7 @@ uv run mcp-config-converter convert config.yaml --preferred-provider openai --ou
 | Cost | Provider | Notes |
 |------|-----------|-------|
 | 0 | **ollama** | Local, no API cost |
-| 15 | **zai** | Very cheap Chinese provider |
+| 15 | **z.ai** | Very cheap Chinese provider |
 | 20 | **deepseek** | Very cheap Chinese provider |
 | 25 | **openrouter** | Cheap aggregation with free tiers |
 | 30 | **sambanova** | Cheap cloud provider |
@@ -136,25 +156,38 @@ export MCP_CONVERT_CONF_ANTHROPIC_COST=85
 
 ## Installation
 
-This project uses `uv` for dependency management. Install dependencies with:
+This project uses `uv` for dependency management and supports multiple installation methods:
+
+### Installation Methods
 
 ```bash
+# Clone repository
+git clone https://github.com/yourusername/mcp-config-converter.git
+cd mcp-config-converter
+
+# Install using uv (recommended for Python projects)
 uv sync
+
+# Or install using pip
+pip install mcp-config-converter
+
+# Or use uvx to run directly without installation
+uvx --from git+https://github.com/yourusername/mcp-config-converter run mcp-config-converter convert ...
 ```
 
-**Note**: With the unified LiteLLM implementation, all LLM providers are now supported out of the box without additional optional dependencies. Simply set the appropriate API key environment variable for your chosen provider.
+**Note**: With a unified LiteLLM implementation, all LLM providers are now supported out of the box without additional optional dependencies. Simply set the appropriate API key environment variable for your chosen provider.
 
 ### Environment Configuration
 
 The tool supports loading API keys and configuration from a `.env` file. This allows you to securely manage your LLM provider credentials without hardcoding them.
 
-1. **Copy the example file**:
+**1. Copy example file:**
 
 ```bash
 cp .env.example .env
 ```
 
-1. **Edit the `.env` file** and add your API keys:
+**2. Edit `.env` file** and add your API keys:
 
 ```env
 # OpenAI API Key
@@ -169,7 +202,7 @@ GOOGLE_API_KEY=your_google_api_key_here
 # Other providers...
 ```
 
-1. **The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
+**Note**: The `.env` file is automatically loaded** when running tests or the CLI tool, so you don't need to manually set environment variables.
 
 **Note**: Never commit your `.env` file with real API keys! It's already excluded in `.gitignore`.
 
@@ -216,7 +249,9 @@ The tool includes a disk caching feature for LLM responses to reduce API calls a
 ### Benefits
 
 - **Reduced API Costs**: Cache responses avoid redundant API calls for identical conversions
+
 - **Faster Iterations**: Subsequent conversions of the same configuration are nearly instant
+
 - **Offline Development**: Work with cached responses when API access is unavailable
 
 ### Enabling Cache
@@ -231,6 +266,7 @@ export MCP_CONFIG_CONF_LLM_CACHE_ENABLED=true
 
 # Now conversions will use cached responses when available
 uv run mcp-config-converter convert config.yaml --provider claude --output output.json
+
 ```
 
 #### CLI Flag
@@ -239,6 +275,7 @@ Alternatively, enable caching per-command using the `--enable-cache` flag:
 
 ```bash
 uv run mcp-config-converter convert config.yaml --provider claude --output output.json --enable-cache
+
 ```
 
 ### Cache Directory
@@ -251,7 +288,9 @@ uv run mcp-config-converter convert config.yaml --provider claude --output outpu
 
 # Or set an environment variable
 export MCP_CONFIG_CONF_LLM_CACHE_DIR=/path/to/custom/cache
+
 uv run mcp-config-converter convert config.yaml --provider claude --output output.json --enable-cache
+
 ```
 
 ### Example Usage
@@ -266,6 +305,7 @@ uv run mcp-config-converter convert config.yaml --provider gemini --output gemin
 
 # Use custom cache directory
 uv run mcp-config-converter convert config.yaml --provider claude --output claude_mcp.json --enable-cache --cache-dir ~/.mcp-cache
+
 ```
 
 ### Important Note
@@ -277,7 +317,7 @@ The default `.litellm_cache` directory is included in `.gitignore` to prevent ac
 The test suite can be configured via environment variables:
 
 | Variable | Purpose | Default | Example |
-|----------|----------|----------|----------|
+|----------|----------|----------|
 | `MCP_CONFIG_CONF_MAX_TESTS` | Maximum successful conversions per output provider | 2 | `export MCP_CONFIG_CONF_MAX_TESTS=5` |
 | `MCP_CONFIG_CONF_TEST_LLM_PROVIDERS` | Specific LLM providers to test | ollama/-1 | `export MCP_CONFIG_CONF_TEST_LLM_PROVIDERS="deepseek/deepseek-chat,openrouter/model"` |
 
@@ -297,19 +337,21 @@ export MCP_CONFIG_CONF_TEST_LLM_PROVIDERS="openai/gpt-4o-mini"
 uv run pytest tests/test_cli.py
 ```
 
-**Provider/Model Format:**
+### Provider/Model Format
 
 - Single: `provider/model` (e.g., `openrouter/subprovider/model`)
 - List: Comma, semicolon, or colon-separated (e.g., `ollama/gemma3, deepseek/deepseek-chat; sambanova/model`)
 - Provider only: Uses model index `-1` (last model)
 
-**Error Behavior:**
+### Error Behavior
 
 - Parsing failures cause test suite to fail immediately
 - Missing API keys cause test suite to fail
 - Invalid providers cause client instantiation to fail
 
 ## Quick Start
+
+### Quick Usage
 
 ```bash
 # Convert an MCP configuration file to Claude format using LiteLLM with Ollama (local, no API key)
@@ -319,7 +361,7 @@ uv run mcp-config-converter convert config.yaml --provider claude --output claud
 uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider litellm --llm-model gpt-4
 
 # Convert using LiteLLM with Claude (requires ANTHROPIC_API_KEY)
-uv run mcp-config-converter convert config.yaml --provider vscode --output output.json --preferred-provider litellm --llm-model claude-3-5-sonnet-20241022
+uv run mcp-config-converter convert config.yaml --provider vscode --output output.json --preferred-provider litellm --llm-model claude-3.5-sonnet-20241022
 
 # Use auto provider selection (picks best available provider)
 uv run mcp-config-converter convert config.yaml --provider claude --output output.json --preferred-provider auto
@@ -327,16 +369,6 @@ uv run mcp-config-converter convert config.yaml --provider claude --output outpu
 # Check LLM provider status
 uv run mcp-config-converter llm-check
 ```
-
-## Use Cases
-
-- **Cross-platform Development**: Develop MCP servers that work across multiple LLM platforms
-
-- **Configuration Sharing**: Share MCP server setups with teams using different tools
-
-- **Migration**: Move MCP configurations when switching between LLM providers
-
-- **Standardization**: Maintain a single source of truth for MCP configurations in your preferred format
 
 ## Project Structure
 
@@ -365,6 +397,7 @@ mcp-config-converter/
 ## Contributing
 
 Contributions are welcome!
+
 This project aims to support the growing MCP ecosystem by making configurations portable and accessible across platforms.
 
 ## License
@@ -374,3 +407,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 This project supports the Model Context Protocol ecosystem and aims to improve interoperability between different MCP implementations.
+
+This project builds on [LiteLLM](https://www.litellm.ai/)'s great unified interface for 100+ LLM providers.
