@@ -24,7 +24,7 @@ OutputOpt = typer.Option(None, "--output", "-o", help="Output file path")
 ProviderOpt = typer.Option(None, "--provider", "-p", help=f"Target provider format ({', '.join(SUPPORTED_PROVIDERS)})")
 
 OutputActionOpt = typer.Option(
-    "overwrite",
+    "update",
     "--output-action",
     "-a",
     help=f"Action when output file exists: {', '.join(VALID_OUTPUT_ACTIONS)}",

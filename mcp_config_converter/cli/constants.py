@@ -93,6 +93,84 @@ PROVIDER_DEFAULT_OUTPUT_FILES: defaultdict[str, Path] = defaultdict(
     },
 )
 
-
 SUPPORTED_PROVIDERS: set[str] = {provider.value for provider in ProviderConfig}
 VALID_OUTPUT_ACTIONS: set[str] = {action.value for action in OutputAction}
+
+
+def convert_to_json(content: str, format_type: str) -> dict:
+    """Convert content from various formats to JSON (Python dict).
+
+    Args:
+        content: String content to convert
+        format_type: Format of the content ('json', 'yaml', 'toml')
+
+    Returns:
+        Python dict representing the JSON data
+
+    Raises:
+        ValueError: If format is unsupported or conversion fails
+    """
+    import json
+
+    if format_type == "json":
+        return json.loads(content)
+    elif format_type == "yaml":
+        try:
+            import yaml
+
+            return yaml.safe_load(content) or {}
+        except ImportError:
+            raise ValueError("PyYAML not installed. Please install with: pip install pyyaml")
+        except yaml.YAMLError as e:
+            raise ValueError(f"YAML parsing error: {str(e)}")
+    elif format_type == "toml":
+        try:
+            import tomllib
+
+            return tomllib.loads(content)
+        except ImportError:
+            try:
+                import tomli
+
+                return tomli.loads(content)
+            except ImportError:
+                raise ValueError("tomllib/tomli not installed. Please install with: pip install tomli")
+        except Exception as e:
+            raise ValueError(f"TOML parsing error: {str(e)}")
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
+
+
+def convert_from_json(data: dict, format_type: str) -> str:
+    """Convert Python dict to various formats.
+
+    Args:
+        data: Python dict to convert
+        format_type: Target format ('json', 'yaml', 'toml')
+
+    Returns:
+        String content in the target format
+
+    Raises:
+        ValueError: If format is unsupported or conversion fails
+    """
+    import json
+
+    if format_type == "json":
+        return json.dumps(data, indent=2)
+    elif format_type == "yaml":
+        try:
+            import yaml
+
+            return yaml.dump(data, sort_keys=False, indent=2)
+        except ImportError:
+            raise ValueError("PyYAML not installed. Please install with: pip install pyyaml")
+    elif format_type == "toml":
+        try:
+            import tomli_w
+
+            return tomli_w.dumps(data)
+        except ImportError:
+            raise ValueError("tomli_w not installed. Please install with: pip install tomli_w")
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")

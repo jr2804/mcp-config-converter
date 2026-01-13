@@ -4,7 +4,8 @@ from enum import StrEnum
 class OutputAction(StrEnum):
     OVERWRITE = "overwrite"
     SKIP = "skip"
-    MERGE = "merge"
+    REPLACE = "replace"
+    UPDATE = "update"
 
 
 class ProviderConfig(StrEnum):

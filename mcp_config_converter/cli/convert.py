@@ -7,15 +7,22 @@ from typing import Annotated
 import typer
 
 from mcp_config_converter.cli import app, arguments
-from mcp_config_converter.cli.constants import SUPPORTED_PROVIDERS, VALID_OUTPUT_ACTIONS, get_default_output_path
+from mcp_config_converter.cli.constants import (
+    SUPPORTED_PROVIDERS,
+    VALID_OUTPUT_ACTIONS,
+    convert_from_json,
+    convert_to_json,
+    get_default_output_path,
+)
 from mcp_config_converter.cli.utils import (
     console,
     validate_format_choice,
-    validate_output_action,
 )
 from mcp_config_converter.llm import LiteLLMClient, create_client_from_env
 from mcp_config_converter.llm.client import PROVIDER_DEFAULT_MODELS
 from mcp_config_converter.transformers import ConfigTransformer
+from mcp_config_converter.types import OutputAction
+from mcp_config_converter.utils import determine_config_format
 
 
 def _parse_model_arg(model_arg: str | None) -> str | int | None:
@@ -96,7 +103,10 @@ def convert(
             console.print(f"[red]Error:[/red] Invalid provider '{provider}'. Choose from: {valid_formats}")
             raise typer.Exit(1)
 
-        if not validate_output_action(output_action):
+        # Convert output_action to OutputAction enum
+        try:
+            output_action_enum = OutputAction(output_action.lower())
+        except ValueError:
             valid_actions = ", ".join(VALID_OUTPUT_ACTIONS)
             console.print(f"[red]Error:[/red] Invalid output action. Choose from: {valid_actions}")
             raise typer.Exit(1)
@@ -144,18 +154,46 @@ def convert(
 
                 # Handle output file actions
                 if output and output.exists():
-                    match output_action.lower():
-                        case "skip":
+                    # Read existing file content to determine format
+                    existing_content = output.read_text(encoding="utf-8")
+                    file_format = determine_config_format(existing_content)
+
+                    # Map ConfigFormat enum to string format for our conversion functions
+                    format_map = {"JSON": "json", "YAML": "yaml", "TOML": "toml"}
+                    format_str = format_map.get(file_format.name, "json")
+
+                    match output_action_enum:
+                        case OutputAction.SKIP:
                             console.print(f"[yellow]Skipping conversion: output file {output} already exists (action: skip)[/yellow]")
                             return
-                        case "merge":
-                            console.print(f"[blue]Merging with existing file: {output} (action: merge)[/blue]")
+                        case OutputAction.REPLACE:
+                            console.print(f"[blue]Replacing MCP server root node in existing file: {output} (action: replace)[/blue]")
 
-                            existing_data = json.loads(output.read_text(encoding="utf-8"))
+                            # Convert existing file to JSON format for processing
+                            existing_data = convert_to_json(existing_content, format_str)
                             new_data = json.loads(result)
+
+                            # Replace the entire MCP server root node
                             existing_data.update(new_data)
-                            result = json.dumps(existing_data, indent=2)
-                        case _:
+                            result = convert_from_json(existing_data, format_str)
+                        case OutputAction.UPDATE:
+                            console.print(f"[blue]Updating entries below MCP server root node: {output} (action: update)[/blue]")
+
+                            # Convert existing file to JSON format for processing
+                            existing_data = convert_to_json(existing_content, format_str)
+                            new_data = json.loads(result)
+
+                            # Update only entries below the MCP server root node (granular merge)
+                            for key, value in new_data.items():
+                                if key in existing_data and isinstance(existing_data[key], dict) and isinstance(value, dict):
+                                    # Deep merge for nested objects
+                                    existing_data[key].update(value)
+                                else:
+                                    # Replace or add new entries
+                                    existing_data[key] = value
+
+                            result = convert_from_json(existing_data, format_str)
+                        case OutputAction.OVERWRITE:
                             console.print(f"[blue]Will overwrite existing file: {output} (action: overwrite)[/blue]")
 
                 # Write output file if specified
