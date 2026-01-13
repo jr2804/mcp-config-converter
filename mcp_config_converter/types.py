@@ -22,9 +22,21 @@ class ProviderConfig(StrEnum):
 
 # Provider alias mapping - maps providers to their actual implementation
 PROVIDER_ALIAS_MAP: dict[ProviderConfig | str, ProviderConfig | str] = {
-    ProviderConfig.QWEN: ProviderConfig.GEMINI,  # qwen uses the same spec as gemini
-    ProviderConfig.LLXPRT: ProviderConfig.GEMINI,  # qwen uses the same spec as gemini
+    ProviderConfig.QWEN: ProviderConfig.GEMINI,  # qwen uses same spec as gemini
+    ProviderConfig.LLXPRT: ProviderConfig.GEMINI,  # qwen uses same spec as gemini
 }
+
+
+class EncodingFormat(StrEnum):
+    """Encoding formats for LLM processing.
+
+    These are formats used when encoding input for LLM processing,
+    separate from actual configuration file formats.
+    """
+
+    TOON = "toon"
+    ISON = "ison"
+    NONE = "none"
 
 
 class ConfigFormat(StrEnum):

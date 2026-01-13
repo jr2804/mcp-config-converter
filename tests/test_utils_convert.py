@@ -1,9 +1,8 @@
 # ruff: noqa: S101  # asserts are intended in tests
 import json
 
-from mcp_config_converter.cli.constants import convert_from_json
 from mcp_config_converter.types import ConfigFormat, ProviderConfig
-from mcp_config_converter.utils import convert_format, determine_config_format, parse_config_string
+from mcp_config_converter.utils import convert_format, convert_from_json, determine_config_format, parse_config_string
 
 
 def test_convert_format_json_to_json_pretty() -> None:
@@ -78,7 +77,7 @@ def test_convert_format_json_to_yaml_to_json_roundtrip() -> None:
 
     # Since no providers expect YAML, we'll use direct conversion utilities
     # Convert JSON to YAML using direct conversion
-    yaml_result = convert_from_json(original_json_data, "yaml")
+    yaml_result = convert_from_json(original_json_data, ConfigFormat.YAML)
 
     # Verify it's actually YAML format
     assert determine_config_format(yaml_result) == ConfigFormat.YAML
@@ -89,10 +88,10 @@ def test_convert_format_json_to_yaml_to_json_roundtrip() -> None:
     assert isinstance(yaml_parsed, dict)
 
     # Convert YAML back to JSON using direct conversion
-    json_roundtrip = convert_from_json(yaml_parsed, "json")
+    json_roundtrip = convert_from_json(yaml_parsed, ConfigFormat.JSON)
 
     # Verify final result is JSON
-    assert determine_config_format(json_roundtrip) == "JSON"
+    assert determine_config_format(json_roundtrip) == ConfigFormat.JSON
 
     # Parse final JSON and compare content with original
     final_parsed = parse_config_string(json_roundtrip)
@@ -126,7 +125,7 @@ def test_convert_format_json_to_toml_to_json_roundtrip() -> None:
     toml_result = convert_format(json_str, ProviderConfig.MISTRAL)  # Mistral expects TOML
 
     # Verify it's actually TOML format
-    assert determine_config_format(toml_result) == "TOML"
+    assert determine_config_format(toml_result) == ConfigFormat.TOML
 
     # Parse TOML back to Python object
     toml_parsed = parse_config_string(toml_result)
@@ -136,7 +135,7 @@ def test_convert_format_json_to_toml_to_json_roundtrip() -> None:
     json_roundtrip = convert_format(toml_result, ProviderConfig.CLAUDE)  # Claude expects JSON
 
     # Verify final result is JSON
-    assert determine_config_format(json_roundtrip) == "JSON"
+    assert determine_config_format(json_roundtrip) == ConfigFormat.JSON
 
     # Parse final JSON and compare content with original
     final_parsed = parse_config_string(json_roundtrip)
