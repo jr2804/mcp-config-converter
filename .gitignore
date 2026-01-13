@@ -47,3 +47,4 @@ tests/temp
 temp/
 .chunkhound/
 NUL
+/.coverage
