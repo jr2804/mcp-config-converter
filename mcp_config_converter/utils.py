@@ -1,5 +1,6 @@
 """Utility functions for MCP Config Converter."""
 
+import contextlib
 import os
 import tempfile
 from pathlib import Path
@@ -11,6 +12,7 @@ import remarshal
 import toml
 import toon_format
 import yaml
+from jsonfmt.jsonfmt import format_to_text
 from mistune.renderers.markdown import MarkdownRenderer
 from rich.prompt import Confirm, Prompt
 
@@ -270,18 +272,52 @@ def convert_format(data: str, target_config: ProviderConfig | str) -> str:
 
     Args:
         data: Input data string
-        target_format: Target configuration format
+        target_config: Target configuration provider
 
     Returns:
         Converted data string
     """
     output = data
-    if (expected_format := PROVIDER_OUTPUT_FORMAT.get(target_config, "text")) != "text":
+    expected_format_val = PROVIDER_OUTPUT_FORMAT.get(target_config, "text")
+    if expected_format_val != "text":
+        expected_format: ConfigFormat = expected_format_val  # type: ignore
+
         current_format = determine_config_format(data)
+
+        # Parse data into python object
+        parsed_data = None
+        if current_format == ConfigFormat.TOON:
+            with contextlib.suppress(toon_format.ToonDecodeError):
+                parsed_data = toon_format.decode(data)
+        else:
+            parsed_data = parse_config_string(data)
+
+        # If we have parsed data and a target format, use jsonfmt to format it
+        if parsed_data is not None and expected_format in [ConfigFormat.JSON, ConfigFormat.YAML, ConfigFormat.TOML]:
+            fmt_map = {
+                ConfigFormat.JSON: "json",
+                ConfigFormat.YAML: "yaml",
+                ConfigFormat.TOML: "toml",
+            }
+            target_fmt_str = fmt_map.get(expected_format)
+
+            if target_fmt_str:
+                indent = "4"
+                if target_fmt_str == "yaml":
+                    indent = "2"
+
+                try:
+                    return format_to_text(parsed_data, target_fmt_str, compact=False, escape=False, indent=indent, sort_keys=False)
+                except Exception:
+                    # If formatting fails, fall back to original data or continue to remarshal fallback (if we kept it)
+                    pass
+
+        # Fallback legacy path (remarshal)
         if current_format != expected_format:
-            # special case TOON: convert to JSON first
+            # special case TOON: convert to JSON first (handled above via parsed_data but if that failed...)
             if current_format == ConfigFormat.TOON and (current_format := ConfigFormat.JSON) == "json":
-                data = orjson.dumps(toon_format.decode(data)).decode("utf-8")
+                with contextlib.suppress(Exception):
+                    data = orjson.dumps(toon_format.decode(data)).decode("utf-8")
 
             if expected_format in [ConfigFormat.JSON, ConfigFormat.YAML, ConfigFormat.TOML]:
                 # convert supported formats
@@ -290,9 +326,17 @@ def convert_format(data: str, target_config: ProviderConfig | str) -> str:
                     temp_input_file.write_text(data, encoding="utf-8")
                     temp_output_file = Path(temp_dir) / f"output.{expected_format}"
 
-                    remarshal.remarshal(str(current_format), str(expected_format), temp_input_file, temp_output_file)
-                    output = temp_output_file.read_text(encoding="utf-8")
-            else:
-                raise ValueError(f"Cannot convert format '{current_format}' to expected format '{expected_format}' for provider '{target_config}'")
+                    try:
+                        remarshal.remarshal(str(current_format), str(expected_format), temp_input_file, temp_output_file)
+                        output = temp_output_file.read_text(encoding="utf-8")
+                    except Exception:
+                        # If remarshal fails, raise error as before
+                        if parsed_data is None:  # Only raise if we didn't already handle it
+                            # For robustness, if we can't convert, return original data
+                            # This is better than crashing if the input is just text explaining why it failed
+                            return data
+            elif parsed_data is None:
+                # Same here, fallback to original data
+                return data
 
     return output

@@ -198,6 +198,44 @@ class TestCLI:
         # - Check for provider-specific constraints (e.g., timeout values)
 
     @staticmethod
+    def test_llm_model_short_alias(runner: CliRunner) -> None:
+        """Test the -lm short alias for --llm-model."""
+        llm_provider = "ollama"
+        llm_model = "-1"
+        output_provider = "claude"
+
+        # Check if provider is available
+        try:
+            TestCLI._ensure_provider_available(llm_provider, llm_model)
+        except ValueError:
+            pytest.skip("Default provider not available for alias test")
+
+        llm_output_dir = TEST_OUTPUT_ROOT / "alias_test"
+        llm_output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = llm_output_dir / "alias_output.json"
+
+        result = runner.invoke(
+            app,
+            [
+                "convert",
+                str(TEST_INPUT_FILE),
+                "-p",
+                output_provider,
+                "-o",
+                str(output_file),
+                "--llm-provider",
+                llm_provider,
+                "-lm",  # Testing the alias
+                llm_model,
+                "--output-action",
+                "overwrite",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert output_file.exists()
+
+    @staticmethod
     def test_validate_command(runner: CliRunner) -> None:
         """Test validate command."""
         result = runner.invoke(app, ["validate", "data/config.json"])

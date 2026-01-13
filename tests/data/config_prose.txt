@@ -1,0 +1,19 @@
+I need to set up several MCP servers for my development environment.
+
+First, please add the 'mcpadvisor' server. It should be run using 'npx' with the arguments '-y' and '@xiaohui-wang/mcpadvisor@latest'.
+
+Next, I need the 'fetch' server. This one also uses 'npx' with the argument 'mcp-fetch-server'. It needs an environment variable named 'DEFAULT_LIMIT' set to '50000'.
+
+I also want to include 'gh_grep'. This is an HTTP server located at 'https://mcp.grep.app'.
+
+Then there is 'mcp-compass', running via 'npx' with '-y' and '@liuyoshio/mcp-compass@latest'.
+
+Please include 'upstash-context7' as well, using 'npx', '-y', and '@upstash/context7-mcp'.
+
+For memory, I'll use 'memorygraph'. This is a stdio server running via 'uvx'. The arguments are quite specific: '--refresh', '--from', 'https://github.com/gregorydickson/memory-graph.git', '--with', 'memorygraphMCP[ladybugdb]', '--', 'memorygraph', '--profile', 'extended'. It also needs 'PYTHONIOENCODING' set to 'utf-8' in the environment.
+
+I need 'sequential-thinking' for reasoning, running via 'npx' with '-y' and '@modelcontextprotocol/server-sequential-thinking@latest'.
+
+Add 'desktop-commander' using 'npx' with '-y', '@wonderwhy-er/desktop-commander@latest', and '--no-onboarding'.
+
+Finally, add the 'beads' server. It's a stdio server running 'uvx' with the argument 'beads-mcp'.

@@ -46,7 +46,7 @@ def convert(
     provider: str | None = arguments.ProviderOpt,
     output_action: str = arguments.OutputActionOpt,
     input_content: str | None = arguments.InputContentOpt,
-    encode_toon: bool = arguments.EncodeToonOpt,
+    encoding: str = arguments.EncodingOpt,
     llm_base_url: str | None = arguments.LlmBaseUrlOpt,
     llm_provider: str | None = arguments.LlmProviderOpt,
     llm_api_key: str | None = arguments.LlmApiKeyOpt,
@@ -65,9 +65,10 @@ def convert(
         provider: Target provider format (claude, gemini, vscode, opencode)
         output_action: Action when output file exists
         input_content: Raw input configuration content
-        encode_toon: Whether to encode JSON input to TOON format
+        encoding: Input encoding format for LLM processing (none, toon, ison)
         llm_base_url: Custom base URL for LLM provider
         llm_provider: LLM provider type
+
         llm_api_key: API key for LLM provider
         llm_model: Model name or index for LLM provider
         cache_dir: Custom directory for disk cache
@@ -89,8 +90,6 @@ def convert(
             # Using file input
             actual_input_file = input_file
             input_content = None
-
-
 
         if provider and not validate_format_choice(provider):
             valid_formats = ", ".join(SUPPORTED_PROVIDERS)
@@ -137,7 +136,7 @@ def convert(
                     raise typer.Exit(1)
 
             # Create transformer instance
-            transformer = ConfigTransformer(llm_client=llm_client, encode_toon=encode_toon)
+            transformer = ConfigTransformer(llm_client=llm_client, encoding=encoding)
 
             if provider:
                 # Perform conversion
@@ -166,6 +165,8 @@ def convert(
 
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{input_file}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Provider: [cyan]{llm_client.provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Model: [cyan]{llm_client.model}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Output file: [green]{output}[/green]")
                     if verbose:
                         console.print("\n[bold blue]Converted Configuration:[/bold blue]")
@@ -173,6 +174,8 @@ def convert(
                 else:
                     console.print(f"[green]SUCCESS[/green] Input file: [cyan]{actual_input_file or 'raw input'}[/cyan]")
                     console.print(f"[green]SUCCESS[/green] Target provider: [cyan]{provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Provider: [cyan]{llm_client.provider}[/cyan]")
+                    console.print(f"[green]SUCCESS[/green] LLM Model: [cyan]{llm_client.model}[/cyan]")
                     console.print("[green]SUCCESS[/green] Output: [green]No output file specified (result generated)[/green]")
                     console.print("\n[bold blue]Converted Configuration:[/bold blue]")
                     console.print(result)

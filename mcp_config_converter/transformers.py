@@ -4,22 +4,22 @@ from pathlib import Path
 
 from mcp_config_converter.llm import LiteLLMClient
 from mcp_config_converter.prompts import build_conversion_prompt
-from mcp_config_converter.types import PROVIDER_ALIAS_MAP
+from mcp_config_converter.types import PROVIDER_ALIAS_MAP, EncodingFormat
 from mcp_config_converter.utils import clean_llm_output, convert_format
 
 
 class ConfigTransformer:
     """Transform MCP configurations between formats and providers."""
 
-    def __init__(self, llm_client: LiteLLMClient, encode_toon: bool = True):
+    def __init__(self, llm_client: LiteLLMClient, encoding: str = EncodingFormat.TOON.value):
         """Initialize the transformer with an LLM client.
 
         Args:
             llm_client: LiteLLM client instance for conversion
-            encode_toon: Whether to encode structured input to TOON format for LLM
+            encoding: Input encoding format for LLM processing (none, toon, ison)
         """
         self.llm_client = llm_client
-        self.encode_toon = encode_toon
+        self.encoding = encoding
 
     def transform(self, input_content: str, target_provider: str) -> str:
         """Transform configuration using LLM-based conversion.
@@ -76,7 +76,7 @@ class ConfigTransformer:
             system_prompt, formatted_prompt = build_conversion_prompt(
                 target_provider=target_provider,
                 input_config=input_content,
-                encode_toon=self.encode_toon,
+                encoding=self.encoding,
             )
         except Exception as e:
             raise RuntimeError(f"Failed to create conversion prompt: {e}")

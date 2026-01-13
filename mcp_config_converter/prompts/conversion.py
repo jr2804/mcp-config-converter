@@ -4,8 +4,10 @@ import contextlib
 import importlib.resources
 import json
 
+import ison_parser as ison
 from toon_format import encode
 
+from mcp_config_converter.types import EncodingFormat
 from mcp_config_converter.utils import parse_config_string
 
 
@@ -49,13 +51,13 @@ def _get_provider_specification(target_provider: str, shift_heading_levels: int 
         raise RuntimeError(f"Failed to load template for {target_provider}: {e}")
 
 
-def build_conversion_prompt(target_provider: str, input_config: str, encode_toon: bool = True) -> tuple[str, str]:
+def build_conversion_prompt(target_provider: str, input_config: str, encoding: str = EncodingFormat.TOON.value) -> tuple[str, str]:
     """Build the complete conversion prompt.
 
     Args:
         target_provider: Target provider (claude, gemini, vscode, opencode)
         input_config: The input configuration text to process
-        encode_toon: Whether to encode structured input to TOON format
+        encoding: Input encoding format for LLM processing (none, toon, ison)
 
     Returns:
         Complete prompt string
@@ -65,11 +67,19 @@ def build_conversion_prompt(target_provider: str, input_config: str, encode_toon
 
     # Handle input processing
     processed_input = input_config
-    if encode_toon:
-        parsed_config = parse_config_string(input_config)
-        if parsed_config is not None:
+    parsed_config = parse_config_string(input_config)
+
+    if parsed_config is not None:
+        if encoding == EncodingFormat.TOON.value:
             with contextlib.suppress(Exception):
                 processed_input = encode(parsed_config)
+        elif encoding == EncodingFormat.ISON.value:
+            with contextlib.suppress(Exception):
+                # ison.dumps returns string and requires a Document object created via from_dict
+                if isinstance(parsed_config, dict):
+                    processed_input = ison.dumps(ison.from_dict(parsed_config))
+                # If parsed_config is not a dict (e.g. list), ISON encoding via from_dict isn't supported directly
+                # We simply fall back to using the original input in that case (no-op)
 
     # Load template
     system_prompt = _load_template("system.md")
