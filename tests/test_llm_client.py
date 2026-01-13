@@ -170,9 +170,11 @@ class TestLiteLLMClient:
 
     @staticmethod
     def test_cache_disabled_by_default() -> None:
-        """Test that caching is disabled by default."""
-        client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4")
-        assert client.enable_cache is False
+        """Test that caching is disabled by default (when env var is not set)."""
+        # Clear the environment variable to test the default behavior
+        with patch.dict(os.environ, {"MCP_CONFIG_CONF_LLM_CACHE_ENABLED": ""}, clear=False):
+            client = LiteLLMClient(provider="openai", api_key="test-key", model="gpt-4")
+            assert client.enable_cache is False
 
     @staticmethod
     def test_cache_enabled_when_true() -> None:
