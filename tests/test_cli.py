@@ -27,7 +27,6 @@ def _parse_test_llm_providers(input_str: str) -> list[tuple[str, str]]:
     - Single: "openrouter/subprovider/model"
     - List (comma): "ollama/gemma3, deepseek/deepseek-chat"
     - List (semicolon): "ollama/gemma3; deepseek/deepseek-chat"
-    - List (colon): "ollama/gemma3: deepseek/deepseek-chat"
     - Mixed separators: "ollama/gemma3; deepseek/deepseek-chat,sambanova/model"
 
     Args:
@@ -41,7 +40,7 @@ def _parse_test_llm_providers(input_str: str) -> list[tuple[str, str]]:
     """
     configs = []
 
-    for part in re.split(r"[,;:]", input_str.strip()):
+    for part in re.split(r"[,;]", input_str.strip()):
         part = part.strip()
         if not part:
             raise ValueError(f"Empty provider specification in: {input_str}")
