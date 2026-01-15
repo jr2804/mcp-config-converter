@@ -1,78 +1,11 @@
 {
-    "servers": {
-        "mcpadvisor": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@xiaohui-wang/mcpadvisor@latest"
-            ]
-        },
-        "fetch": {
-            "args": [
-                "mcp-fetch-server"
-            ],
-            "command": "npx",
-            "env": {
-                "DEFAULT_LIMIT": "50000"
-            }
-        },
-        "gh_grep": {
-            "type": "http",
-            "url": "https://mcp.grep.app"
-        },
-        "mcp-compass": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@liuyoshio/mcp-compass@latest"
-            ]
-        },
-        "upstash-context7": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@upstash/context7-mcp"
-            ]
-        },
-        "memorygraph": {
-            "command": "uvx",
-            "type": "stdio",
-            "args": [
-                "--refresh",
-                "--from",
-                "https://github.com/gregorydickson/memory-graph.git",
-                "--with",
-                "memorygraphMCP[ladybugdb]",
-                "--",
-                "memorygraph",
-                "--profile",
-                "extended"
-            ],
-            "env": {
-                "PYTHONIOENCODING": "utf-8"
-            }
-        },
-        "sequential-thinking": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-sequential-thinking@latest"
-            ]
-        },
-        "desktop-commander": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@wonderwhy-er/desktop-commander@latest",
-                "--no-onboarding"
-            ]
-        },
-        "beads": {
-            "command": "uvx",
-            "args": [
-                "beads-mcp"
-            ],
-            "type": "stdio"
-        }
+  "servers": {
+    "mcpcute": {
+      "command": "npx",
+      "args": ["-y", "mcpcute"],
+      "env": {
+        "MCPCUTE_CONFIG": ".mcpcute/config.json"
+      }
     }
+  }
 }

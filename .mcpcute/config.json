@@ -1,0 +1,77 @@
+{
+  "mcpServers": {
+    "zai-mcp-server": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["@z_ai/mcp-server"],
+      "env": {
+        "Z_AI_MODE": "ZAI",
+        "Z_AI_API_KEY": "c5669c84c64c477d9eb8360e51c02037.QvyfcBShb2KbmWZw"
+      }
+    },
+    "beads": {
+      "command": "uvx",
+      "args": ["beads-mcp"]
+    },
+    "uv-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/saadmanrafat/uv-mcp.git",
+        "uv-mcp"
+      ]
+    },
+    "desktop-commander": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "@wonderwhy-er/desktop-commander@latest"]
+    },
+    "sequential-thinking": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@latest"]
+    },
+    "upstash-context7": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "gh_grep": {
+      "url": "https://mcp.grep.app"
+    },
+    "memorygraph": {
+      "command": "uvx",
+      "type": "stdio",
+      "args": [
+        "--refresh",
+        "--from",
+        "https://github.com/gregorydickson/memory-graph.git",
+        "--with",
+        "memorygraphMCP[ladybugdb]",
+        "--",
+        "memorygraph",
+        "--profile",
+        "extended"
+      ],
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    },
+    "chunkHound": {
+      "command": "uv",
+      "args": ["run", "chunkhound", "mcp"]
+    },
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide",
+        "--project-from-cwd"
+      ]
+    }
+  }
+}
