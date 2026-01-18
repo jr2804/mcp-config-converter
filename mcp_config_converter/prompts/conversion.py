@@ -4,6 +4,7 @@ import contextlib
 import importlib.resources
 import json
 
+import ison_parser
 from toon_format import encode
 
 from mcp_config_converter.utils import parse_config_string
@@ -49,13 +50,13 @@ def _get_provider_specification(target_provider: str, shift_heading_levels: int 
         raise RuntimeError(f"Failed to load template for {target_provider}: {e}")
 
 
-def build_conversion_prompt(target_provider: str, input_config: str, encode_toon: bool = True) -> tuple[str, str]:
+def build_conversion_prompt(target_provider: str, input_config: str, encoding: str = "toon") -> tuple[str, str]:
     """Build the complete conversion prompt.
 
     Args:
         target_provider: Target provider (claude, gemini, vscode, opencode)
         input_config: The input configuration text to process
-        encode_toon: Whether to encode structured input to TOON format
+        encoding: Encoding format for LLM processing (toon, ison, none)
 
     Returns:
         Complete prompt string
@@ -63,13 +64,27 @@ def build_conversion_prompt(target_provider: str, input_config: str, encode_toon
     target_provider = target_provider.lower()
     output_format = "JSON"
 
-    # Handle input processing
+    # Handle input processing based on encoding format
     processed_input = input_config
-    if encode_toon:
+    encoding_lower = encoding.lower()
+
+    if encoding_lower == "toon":
+        # Use TOON format
         parsed_config = parse_config_string(input_config)
         if parsed_config is not None:
             with contextlib.suppress(Exception):
                 processed_input = encode(parsed_config)
+    elif encoding_lower == "ison":
+        # Use ISON format
+        parsed_config = parse_config_string(input_config)
+        if parsed_config is not None:
+            with contextlib.suppress(Exception):
+                if isinstance(parsed_config, dict):
+                    doc = ison_parser.from_dict(parsed_config)
+                    # Try to serialize the document
+                    if hasattr(ison_parser, "Serializer"):
+                        processed_input = ison_parser.Serializer.dumps(doc)
+    # For "none" or any other value, keep processed_input as input_config (no encoding)
 
     # Load template
     system_prompt = _load_template("system.md")
