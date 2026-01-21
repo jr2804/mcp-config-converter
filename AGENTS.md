@@ -7,5 +7,4 @@ This file serves as a central entry point for the modular documentation located 
   - [110_Tool_beads.md](docs/agents-md/110_Tool_beads.md) - Tool usage for tracking issues.
   - [120_Tool_memorygraph.md](docs/agents-md/120_Tool_memorygraph.md) - Tool usage for memorizing findings (Memory Graph setup and practical usage examples).
   - [130_Tool_sequential_thinking.md](docs/agents-md/130_Tool_sequential_thinking.md) - Tool usage for MCP server discovery and selection.
-- [600_Development.md](docs/agents-md/600_Development.md) - Technical Requirements, Development Workflow, Coding Guidelines.
-- [700_Development_Testing.md](docs/agents-md/700_Development_Testing.md) - Testing Strategy, Instructions.
+- [600_Python_Development.md](docs/agents-md/600_Python_Development.md) - Technical Requirements, Development Workflow, Coding Guidelines and Testing Instructions.
